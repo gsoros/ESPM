@@ -2,11 +2,12 @@
 #define STRAIN_H
 
 #include <HX711_ADC.h>
+#include "idle.h"
 
 #define DOUT_PIN 5
 #define SCK_PIN 18
 
-class Strain {
+class Strain : public Idle {
     public:
     HX711_ADC *adc;
     float lastMeasurement = 0;
@@ -32,6 +33,10 @@ class Strain {
         if (adc->update()) {
             lastMeasurement = adc->getData();
             lastMeasurementTime = millis();
+            resetIdleCycles();
+        }
+        else {
+            increaseIdleCycles();
         }
     }
 };

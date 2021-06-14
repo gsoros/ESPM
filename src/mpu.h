@@ -32,9 +32,9 @@ class MPU : public Idle {
         if (mpu.update()) {
             yaw = mpu.getYaw();
             lastMeasurementTime = millis();
-            increaseIdleCycles();
-        } else {
             resetIdleCycles();
+        } else {
+            increaseIdleCycles();
         }
     }
 };

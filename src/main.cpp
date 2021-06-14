@@ -29,11 +29,12 @@ void loop() {
 
     unsigned long t = millis();
     if (lastSerialOutput < t - 1) {
-        Serial.printf("%d %f %f %d\n", 
+        Serial.printf("%d %f %f %d %d\n", 
             ((int)t)%100, 
             mpu.yaw, 
             strain.lastMeasurement,
-            mpu.lastIdleCycles
+            mpu.lastIdleCycles,
+            strain.lastIdleCycles
         );
         lastSerialOutput = t;
     }
