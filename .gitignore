@@ -1,3 +1,4 @@
 .pio
 .vscode/
 lib/NimBLE-Arduino
+lib/HX711_ADC

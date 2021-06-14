@@ -1,8 +1,11 @@
-#ifndef BLE_H
-#define BLE_H
-
+#include <Arduino.h>
 #include <NimBLEDevice.h>
-#include "ble_constants.h"
+
+#define CYCLING_POWER_SERVICE_UUID ((uint16_t) 0x1818)
+#define CYCLING_POWER_FEATURE_CHAR_UUID ((uint16_t) 0x2A65)
+#define SENSOR_LOCATION_CHAR_UUID ((uint16_t) 0x2A5D)
+#define SENSOR_LOCATION_RIGHT_CRANK ((uint8_t) 6)
+#define CYCLING_POWER_MEASUREMENT_CHAR_UUID ((uint16_t) 0x2A63)
 
 class BLE : public BLEServerCallbacks {
     public:
@@ -23,9 +26,6 @@ class BLE : public BLEServerCallbacks {
 
     void setup() {
         BLEDevice::init("PM");
-        //NimBLEDevice::setSecurityAuth(false, false, false);
-        //NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
-        //NimBLEDevice::setSecurityPasskey(0);
         this->server = BLEDevice::createServer();
         this->server->setCallbacks(this);
         BLEUUID serviceUUID = BLEUUID(CYCLING_POWER_SERVICE_UUID);
@@ -34,7 +34,6 @@ class BLE : public BLEServerCallbacks {
         BLECharacteristic *featureCharasteristic = service->createCharacteristic(
             BLEUUID(CYCLING_POWER_FEATURE_CHAR_UUID), 
             NIMBLE_PROPERTY::READ
-            //| NIMBLE_PROPERTY::READ_ENC
         );
         this->bufFeature[0] = 0xff;
         this->bufFeature[1] = 0xff;
@@ -50,20 +49,9 @@ class BLE : public BLEServerCallbacks {
         this->bufSensorLocation[0] = SENSOR_LOCATION_RIGHT_CRANK & 0xff;
         sensorLocationCharasteristic->setValue((uint8_t *)&this->bufSensorLocation, 1);
 
-        /*
-        BLECharacteristic *controlPointCharasteristic = service->createCharacteristic(
-            BLEUUID(SC_CONTROL_POINT_CHAR_UUID), 
-            NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE
-        );
-        this->bufControlPoint[0] = SC_CONTROL_POINT_OP_SET_CUMULATIVE_VALUE;
-        controlPointCharasteristic->setValue((uint8_t *)&this->bufControlPoint, 1);
-        */
-
         this->measurementCharacteristic = service->createCharacteristic(
             BLEUUID(CYCLING_POWER_MEASUREMENT_CHAR_UUID),
             NIMBLE_PROPERTY::READ 
-            //| NIMBLE_PROPERTY::READ_ENC
-            //| NIMBLE_PROPERTY::WRITE
             | NIMBLE_PROPERTY::NOTIFY
             | NIMBLE_PROPERTY::INDICATE
         );
@@ -71,8 +59,6 @@ class BLE : public BLEServerCallbacks {
         service->start();
         BLEAdvertising *advertising = BLEDevice::getAdvertising();
         advertising->addServiceUUID(serviceUUID);
-        //advertising->setScanResponse(false);
-        //advertising->setMinPreferred(0x0);
         BLEDevice::startAdvertising();
     }
 
@@ -115,10 +101,21 @@ class BLE : public BLEServerCallbacks {
         this->connected = false;
         Serial.println("Server onDisconnect");
     }
-
-    //bool onConfirmPIN(uint32_t pin) { Serial.println("onConfirmPIN"); return true; }
-    //uint32_t onPassKeyRequest() {Serial.println("onPassKeyRequest");  return 0; }
-    //void onAuthenticationComplete(ble_gap_conn_desc *desc) { Serial.println("onAuthenticationComplete"); }
 };
 
-#endif
+BLE ble;
+
+void setup() {
+    Serial.begin(115200);
+    ble.setup();
+}
+
+void loop() {
+    if (ble.connected) {
+        ble.power = random(300);
+        ble.revolutions = random(2); 
+        ble.timestamp = (ushort)millis();
+        delay(100);
+    }
+    ble.loop();
+}
