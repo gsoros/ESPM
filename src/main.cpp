@@ -11,6 +11,9 @@ unsigned long lastSerialOutput = 0;
 
 void setup() {
     Serial.begin(115200);
+    //Serial.println(getXtalFrequencyMhz());
+    //while(1);
+    setCpuFrequencyMhz(80);
     strain.setup();
     mpu.setup();
     //ble.setup();
@@ -29,8 +32,8 @@ void loop() {
 
     unsigned long t = millis();
     if (lastSerialOutput < t - 1) {
-        Serial.printf("%d %f %f %d %d\n", 
-            ((int)t)%100, 
+        Serial.printf("%f %f %d %d\n", 
+            //((int)t)%100, 
             mpu.yaw, 
             strain.lastMeasurement,
             mpu.lastIdleCycles,
