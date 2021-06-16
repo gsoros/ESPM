@@ -41,18 +41,20 @@ public:
     {
 #ifdef STRAIN_USE_INTERRUPT
         if (dataReady) {
-#else
-        if (device->update()) {
 #endif
-            lastMeasurement = device->getData();
-            lastMeasurementTime = millis();
+            if (device->update()) {
+                lastMeasurement = device->getData();
+                lastMeasurementTime = millis();
+                resetIdleCycles();
 #ifdef STRAIN_USE_INTERRUPT
-            dataReady = false;
+                dataReady = false;
 #endif
-            resetIdleCycles();
-        } else {
-            increaseIdleCycles();
+                return;
+            }
+#ifdef STRAIN_USE_INTERRUPT
         }
+#endif
+        increaseIdleCycles();
     }
 };
 

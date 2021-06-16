@@ -1,16 +1,23 @@
 #ifndef IDLE_H
 #define IDLE_H
 
-class Idle {
-    public:
-    int lastIdleCycles = 0;
-    int idleCycles = 0;
+class Idle
+{
+public:
+    unsigned int lastIdleCycles = 0;
+    unsigned int idleCycles = 0;
+    unsigned int idleCyclesMax = 0;
 
-    void increaseIdleCycles() {
-       idleCycles++;
+    void increaseIdleCycles()
+    {
+        idleCycles++;
+        if (idleCycles > idleCyclesMax) {
+            idleCyclesMax = idleCycles;
+        }
     }
 
-    void resetIdleCycles() {
+    void resetIdleCycles()
+    {
         lastIdleCycles = idleCycles;
         idleCycles = 0;
     }

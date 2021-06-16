@@ -10,20 +10,16 @@ MPU mpu;
 //BLE ble;
 
 #ifdef STRAIN_USE_INTERRUPT
-void strainDataReadyISR()
+void IRAM_ATTR strainDataReadyISR()
 {
-    if (strain.device->update()) {
-        strain.dataReady = true;
-    }
+    strain.dataReady = true;
 }
 #endif
 
 #ifdef MPU_USE_INTERRUPT
-void mpuDataReadyISR()
+void IRAM_ATTR mpuDataReadyISR()
 {
-    if (mpu.device->update()) {
-        mpu.dataReady = true;
-    }
+    mpu.dataReady = true;
 }
 #endif
 
@@ -39,34 +35,39 @@ void serialOutput()
 {
     static unsigned long lastSerialOutput = 0;
     unsigned long t = millis();
-    if (lastSerialOutput < t - 1) {
+    if (lastSerialOutput < t - 10) {
         Serial.printf("%f %f %d %d\n",
                       //((int)t)%100,
                       mpu.yaw,
                       strain.lastMeasurement,
-                      mpu.lastIdleCycles,
-                      strain.lastIdleCycles);
+                      mpu.idleCyclesMax,
+                      strain.idleCyclesMax);
+        mpu.idleCyclesMax = 0;
+        strain.idleCyclesMax = 0;
         lastSerialOutput = t;
     }
 }
 
 void handleSerialInput()
 {
-    if (Serial.available() > 0) {
-        switch (serialGetChar()) {
-        case ' ':
-            break;
-        case 'c':
-            mpu.calibrate();
-            handleSerialInput();
-            break;
-        default:
-            Serial.println("Press 'c' to calibrate, [space] to continue.");
-            while (!Serial.available()) {
-                delay(10);
-            }
-            handleSerialInput();
-        }
+    while (!Serial.available()) {
+        delay(10);
+    }
+    switch (serialGetChar()) {
+    case ' ':
+        break;
+    case 'p':
+        Serial.println("Paused");
+        handleSerialInput();
+        break;
+    case 'c':
+        mpu.calibrate();
+        Serial.println("Press 'c' to recalibrate, [space] to continue.");
+        handleSerialInput();
+        break;
+    default:
+        Serial.println("Press 'c' to calibrate, [space] to continue.");
+        handleSerialInput();
     }
 }
 
@@ -102,5 +103,7 @@ void loop()
     strain.loop();
     mpu.loop();
     serialOutput();
-    handleSerialInput();
+    if (Serial.available() > 0) {
+        handleSerialInput();
+    }
 }
