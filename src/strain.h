@@ -1,41 +1,56 @@
 #ifndef STRAIN_H
 #define STRAIN_H
 
-#include <HX711_ADC.h>
 #include "idle.h"
+#include <Arduino.h>
+#include <HX711_ADC.h>
 
-#define DOUT_PIN 5
-#define SCK_PIN 18
+#define STRAIN_DOUT_PIN 5
+#define STRAIN_SCK_PIN 18
+#define STRAIN_USE_INTERRUPT
 
-class Strain : public Idle {
-    public:
-    HX711_ADC *adc;
+class Strain : public Idle
+{
+public:
+    HX711_ADC *device;
+    const uint8_t doutPin = STRAIN_DOUT_PIN;
+    const uint8_t sckPin = STRAIN_SCK_PIN;
+#ifdef STRAIN_USE_INTERRUPT
+    volatile bool dataReady;
+#endif
     float lastMeasurement = 0;
     unsigned long lastMeasurementTime = 0;
 
-    void setup() {
-        adc = new HX711_ADC(DOUT_PIN, SCK_PIN);
-        adc->begin();
-        float calibrationValue = 696.0; 
+    void setup()
+    {
+        device = new HX711_ADC(doutPin, sckPin);
+        device->begin();
+        float calibrationValue = 696.0;
         unsigned long stabilizingTime = 2000;
         bool tare = true;
-        adc->start(stabilizingTime, tare);
-        if (adc->getTareTimeoutFlag()) {
+        device->start(stabilizingTime, tare);
+        if (device->getTareTimeoutFlag()) {
             Serial.println("[Error] HX711 Tare Timeout");
-            while (1);
+            while (1)
+                ;
         }
-        else {
-            adc->setCalFactor(calibrationValue);
-        }
+        device->setCalFactor(calibrationValue);
     }
 
-    void loop() {
-        if (adc->update()) {
-            lastMeasurement = adc->getData();
+    void loop()
+    {
+#ifdef STRAIN_USE_INTERRUPT
+        if (dataReady) {
+#else
+        if (device->update()) {
+#endif
+            lastMeasurement = device->getData();
             lastMeasurementTime = millis();
+#ifdef STRAIN_USE_INTERRUPT
+            dataReady = false;
+#endif
             resetIdleCycles();
-        }
-        else {
+        } else {
             increaseIdleCycles();
         }
     }
