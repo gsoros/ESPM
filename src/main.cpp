@@ -1,27 +1,21 @@
+#include "battery.h"
 #include "ble.h"
 #include "mpu.h"
 #include "strain.h"
+#include "websockets.h"
+#include "wificonnection.h"
 #include <Arduino.h>
 #include <Preferences.h>
+
+//#define LED_PIN 22
 
 Preferences preferences;
 Strain strain;
 MPU mpu;
-//BLE ble;
-
-#ifdef STRAIN_USE_INTERRUPT
-void IRAM_ATTR strainDataReadyISR()
-{
-    strain.dataReady = true;
-}
-#endif
-
-#ifdef MPU_USE_INTERRUPT
-void IRAM_ATTR mpuDataReadyISR()
-{
-    mpu.dataReady = true;
-}
-#endif
+BLE ble;
+Battery battery;
+Websockets websockets;
+WifiConnection wifi;
 
 char serialGetChar()
 {
@@ -31,19 +25,22 @@ char serialGetChar()
     return Serial.read();
 }
 
-void serialOutput()
+void serialOutput(const ulong t)
 {
-    static unsigned long lastSerialOutput = 0;
-    unsigned long t = millis();
-    if (lastSerialOutput < t - 10) {
-        Serial.printf("%f %f %d %d\n",
-                      //((int)t)%100,
-                      mpu.yaw,
-                      strain.lastMeasurement,
-                      mpu.idleCyclesMax,
-                      strain.idleCyclesMax);
-        mpu.idleCyclesMax = 0;
-        strain.idleCyclesMax = 0;
+    static ulong lastSerialOutput = 0;
+    if (lastSerialOutput < t - 2000) {
+        Serial.printf(
+            //"%f %f %d %d\n",
+            "%f %f %f\n",
+            //((int)t)%100,
+            mpu.measurement,
+            strain.lastMeasurement,
+            battery.voltage
+            //mpu.idleCyclesMax,
+            //strain.idleCyclesMax
+        );
+        //mpu.idleCyclesMax = 0;
+        //strain.idleCyclesMax = 0;
         lastSerialOutput = t;
     }
 }
@@ -76,34 +73,39 @@ void setup()
     //Serial.println(getXtalFrequencyMhz());
     //while(1);
     setCpuFrequencyMhz(80);
+    //esp_log_level_set();
     Serial.begin(115200);
     while (!Serial)
         delay(1);
     strain.setup();
-#ifdef STRAIN_USE_INTERRUPT
-    attachInterrupt(digitalPinToInterrupt(strain.doutPin), strainDataReadyISR, FALLING);
-#endif
-#ifdef MPU_USE_INTERRUPT
-    attachInterrupt(digitalPinToInterrupt(mpu.intPin), mpuDataReadyISR, FALLING);
-#endif
     mpu.setup(&preferences);
-    //ble.setup();
-    //while (1)
-    //    ;
+    ble.setup();
+    wifi.setup(&preferences, &mpu);
+    websockets.setup();
 }
 void loop()
 {
+    const ulong t = millis();
     // if (ble.connected) {
     //     mpu.loop();
     //     ble.power = (short)mpu.power;
     //     ble.revolutions = 2; // TODO
     //     ble.timestamp = (ushort)millis(); // TODO
     // }
-    // ble.loop();
-    strain.loop();
-    mpu.loop();
-    serialOutput();
+    strain.loop(t);
+    websockets.strain = strain.lastMeasurement;
+    mpu.loop(t);
+    websockets.qX = mpu.qX;
+    websockets.qY = mpu.qY;
+    websockets.qZ = mpu.qZ;
+    websockets.qW = mpu.qW;
+    serialOutput(t);
+    ble.loop(t);
     if (Serial.available() > 0) {
         handleSerialInput();
     }
+    battery.loop(t);
+    ble.batteryLevel = battery.level;
+    wifi.loop(t);
+    websockets.loop(t);
 }
