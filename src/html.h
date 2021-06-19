@@ -57,8 +57,6 @@ R"===========(
       renderer.render(scene, camera);
     }
     function webSocketBegin() {
-      setupScene();
-
       if (!"WebSocket" in window) {
         console.log("ws unsupported");
         return;
@@ -77,14 +75,14 @@ R"===========(
       };
 
       ws.onclose = function () {
-        console.log("ws closed");
+        webSocketBegin();
       };
 
     }
   </script>
 </head>
 
-<body onLoad="javascript:webSocketBegin()">
+<body onLoad="javascript: setupScene(); webSocketBegin()">
   <div id="animation"></div>
   <button
     onclick="if (confirm('Device should be motionless')) request('/calibrateAccelGyro', function(response) {alert(response)})">

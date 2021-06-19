@@ -160,9 +160,10 @@ public:
 
     void handle404()
     {
-        Serial.println(ws->uri().c_str());
-        ws->sendHeader("Location", "/", true);
-        ws->send(302, "text/plain", "302 Moved");
+        Serial.printf("404 %s\n", ws->uri().c_str());
+        //ws->sendHeader("Location", "/", true);
+        //ws->send(302, "text/plain", "302 Moved");
+        ws->send(404, "text/plain", "404 Not found");
     }
 };
 
