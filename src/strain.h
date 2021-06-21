@@ -24,8 +24,8 @@ public:
     const uint8_t doutPin = STRAIN_DOUT_PIN;
     const uint8_t sckPin = STRAIN_SCK_PIN;
 
-    float lastMeasurement = 0.0;
-    ulong lastMeasurementTime = 0;
+    float measurement = 0.0;
+    ulong measurementTime = 0;
 
     void setup()
     {
@@ -50,8 +50,8 @@ public:
         if (strainDataReady) {
 #endif
             if (device->update()) {
-                lastMeasurement = device->getData();
-                lastMeasurementTime = t;
+                measurement = device->getData();
+                measurementTime = t;
                 resetIdleCycles();
 #ifdef STRAIN_USE_INTERRUPT
                 strainDataReady = false;

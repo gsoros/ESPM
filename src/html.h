@@ -64,10 +64,11 @@ R"===========(
       ws = new WebSocket("ws://" + location.hostname + ":8001/");
 
       ws.onopen = function () {
-        console.log("ws conn");
+        console.log("ws open");
       };
 
       ws.onmessage = function (evt) {
+        //console.log(evt);
         var j = JSON.parse(evt.data);
         cube.quaternion.set(j.qX, -j.qY, -j.qZ, j.qW);
         cube.material.color.setRGB(.3 + j.strain / 200, .3, .3 - j.strain / 200);
@@ -75,6 +76,7 @@ R"===========(
       };
 
       ws.onclose = function () {
+        console.log("ws close");
         webSocketBegin();
       };
 

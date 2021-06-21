@@ -1,6 +1,7 @@
 #include "battery.h"
 #include "ble.h"
 #include "mpu.h"
+#include "serialio.h"
 #include "strain.h"
 #include "websockets.h"
 #include "wificonnection.h"
@@ -9,79 +10,26 @@
 
 //#define LED_PIN 22
 
+SerialIO sio;
 Preferences preferences;
 Strain strain;
 MPU mpu;
 BLE ble;
 Battery battery;
-Websockets websockets;
+Websockets ws;
 WifiConnection wifi;
-
-char serialGetChar()
-{
-    while (!Serial.available()) {
-        delay(10);
-    }
-    return Serial.read();
-}
-
-void serialOutput(const ulong t)
-{
-    static ulong lastSerialOutput = 0;
-    if (lastSerialOutput < t - 2000) {
-        Serial.printf(
-            //"%f %f %d %d\n",
-            "%f %f %f\n",
-            //((int)t)%100,
-            mpu.measurement,
-            strain.lastMeasurement,
-            battery.voltage
-            //mpu.idleCyclesMax,
-            //strain.idleCyclesMax
-        );
-        //mpu.idleCyclesMax = 0;
-        //strain.idleCyclesMax = 0;
-        lastSerialOutput = t;
-    }
-}
-
-void handleSerialInput()
-{
-    while (!Serial.available()) {
-        delay(10);
-    }
-    switch (serialGetChar()) {
-    case ' ':
-        break;
-    case 'p':
-        Serial.println("Paused");
-        handleSerialInput();
-        break;
-    case 'c':
-        mpu.calibrate();
-        Serial.println("Press 'c' to recalibrate, [space] to continue.");
-        handleSerialInput();
-        break;
-    default:
-        Serial.println("Press 'c' to calibrate, [space] to continue.");
-        handleSerialInput();
-    }
-}
 
 void setup()
 {
     //Serial.println(getXtalFrequencyMhz());
     //while(1);
     setCpuFrequencyMhz(80);
-    //esp_log_level_set();
-    Serial.begin(115200);
-    while (!Serial)
-        delay(1);
+    sio.setup(&battery, &mpu, &strain);
     strain.setup();
     mpu.setup(&preferences);
     ble.setup();
     wifi.setup(&preferences, &mpu);
-    websockets.setup();
+    ws.setup();
 }
 void loop()
 {
@@ -93,19 +41,16 @@ void loop()
     //     ble.timestamp = (ushort)millis(); // TODO
     // }
     strain.loop(t);
-    websockets.strain = strain.lastMeasurement;
+    ws.strain = strain.measurement;
     mpu.loop(t);
-    websockets.qX = mpu.qX;
-    websockets.qY = mpu.qY;
-    websockets.qZ = mpu.qZ;
-    websockets.qW = mpu.qW;
-    serialOutput(t);
+    ws.qX = mpu.qX;
+    ws.qY = mpu.qY;
+    ws.qZ = mpu.qZ;
+    ws.qW = mpu.qW;
+    sio.loop(t);
     ble.loop(t);
-    if (Serial.available() > 0) {
-        handleSerialInput();
-    }
     battery.loop(t);
     ble.batteryLevel = battery.level;
     wifi.loop(t);
-    websockets.loop(t);
+    ws.loop(t);
 }
