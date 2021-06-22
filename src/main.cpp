@@ -9,6 +9,8 @@
 #include <Preferences.h>
 
 //#define LED_PIN 22
+#define MPU_SDA_PIN 23
+#define MPU_SCL_PIN 19
 
 SerialIO sio;
 Preferences preferences;
@@ -26,7 +28,7 @@ void setup()
     setCpuFrequencyMhz(80);
     sio.setup(&battery, &mpu, &strain);
     strain.setup();
-    mpu.setup(&preferences);
+    mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
     ble.setup();
     wifi.setup(&preferences, &mpu);
     ws.setup();

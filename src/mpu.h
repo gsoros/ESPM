@@ -7,8 +7,6 @@
 #include <Preferences.h>
 #include <Wire.h>
 
-#define MPU_SDA_PIN 23
-#define MPU_SCL_PIN 19
 #define MPU_ADDR 0x68
 // #define MPU_USE_INTERRUPT
 // #define MPU_INT_PIN 15
@@ -25,8 +23,8 @@ class MPU : public Idle
 {
 public:
     MPU9250 *device;
-    const uint8_t sdaPin = MPU_SDA_PIN;
-    const uint8_t sclPin = MPU_SCL_PIN;
+    const uint8_t sdaPin;
+    const uint8_t sclPin;
     Preferences *preferences;
     const char *preferencesNS;
     ulong lastMeasurementTime = 0;
@@ -36,8 +34,13 @@ public:
     float qZ = 0.0;
     float qW = 0.0;
 
-    void setup(Preferences *p, const char *preferencesNS = "MPU")
+    void setup(uint8_t sdaPin,
+               uint8_t sclPin,
+               Preferences *p,
+               const char *preferencesNS = "MPU")
     {
+        this->sdaPin = sdaPin;
+        this->sclPin = sclPin;
         preferences = p;
         this->preferencesNS = preferencesNS;
         Wire.begin(sdaPin, sclPin);

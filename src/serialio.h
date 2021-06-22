@@ -75,10 +75,10 @@ public:
             break;
         case 'c':
             mpu->calibrate();
-            handleInput('h');
+            //handleInput('h');
             break;
         case 'h':
-            Serial.println("[c]alibrate, [w]ifi, [s]tatus, e[x]it");
+            Serial.println("[c]alibrate, [w]ifi, [s]tatus, [r]eboot");
             break;
         }
     }
