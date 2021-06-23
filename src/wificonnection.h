@@ -7,7 +7,8 @@
 #include <WebServer.h>
 #include <WiFi.h>
 
-typedef struct {
+typedef struct
+{
     bool apEnable;
     char apSSID[32];
     char apPassword[32];
@@ -33,18 +34,24 @@ public:
         preferences = p;
         this->preferencesNS = preferencesNS;
         mpu = m;
-        loadSettings();
+        if (!loadSettings())
+            loadDefaultSettings();
         //settings.staEnable = true;
         //strncpy(settings.staSSID, "ssid", 32);
         //strncpy(settings.staPassword, "pw", 32);
         //saveSettings();
         applySettings();
         ws = new WebServer();
-        ws->on("/", [this] { handleRoot(); });
-        ws->on("/calibrateAccelGyro", [this] { handleCalibrateAccelGyro(); });
-        ws->on("/calibrateMag", [this] { handleCalibrateMag(); });
-        ws->on("/reboot", [this] { handleReboot(); });
-        ws->onNotFound([this]() { handle404(); });
+        ws->on("/", [this]
+               { handleRoot(); });
+        ws->on("/calibrateAccelGyro", [this]
+               { handleCalibrateAccelGyro(); });
+        ws->on("/calibrateMag", [this]
+               { handleCalibrateMag(); });
+        ws->on("/reboot", [this]
+               { handleReboot(); });
+        ws->onNotFound([this]()
+                       { handle404(); });
         ws->begin();
     }
 
@@ -53,13 +60,14 @@ public:
         ws->handleClient();
     }
 
-    void loadSettings()
+    bool loadSettings()
     {
-        if (!preferences->begin(preferencesNS, true)) {      // try ro mode
-            if (!preferences->begin(preferencesNS, false)) { // open in rw mode to create ns
+        if (!preferences->begin(preferencesNS, true))
+        { // try ro mode
+            if (!preferences->begin(preferencesNS, false))
+            { // open in rw mode to create ns
                 log_e("Preferences begin failed for '%s'.", preferencesNS);
-                while (1)
-                    ;
+                return false;
             }
         }
         settings.apEnable = preferences->getBool("apEnable", false);
@@ -73,12 +81,26 @@ public:
         strncpy(settings.staSSID, preferences->getString("staSSID").c_str(), 32);
         strncpy(settings.staPassword, preferences->getString("staPassword").c_str(), 32);
         preferences->end();
+        if (!settings.staEnable && !settings.apEnable)
+            return false;
+        return true;
+    }
+
+    void loadDefaultSettings()
+    {
+        settings.apEnable = true;
+        strncpy(settings.apSSID, "ESPM", 32);
+        strncpy(settings.apPassword, "", 32);
+        settings.staEnable = false;
+        strncpy(settings.staSSID, "", 32);
+        strncpy(settings.staPassword, "", 32);
     }
 
     void saveSettings()
     {
         log_d("Saving settings to %s", preferencesNS);
-        if (!preferences->begin(preferencesNS, false)) {
+        if (!preferences->begin(preferencesNS, false))
+        {
             log_e("Preferences begin failed for '%s'.", preferencesNS);
             return;
         }
@@ -94,38 +116,65 @@ public:
 
     void printSettings()
     {
-        Serial.printf("AP %s '%s' '%s', STA %s '%s' '%s'",
+        Serial.printf("\nAP %s '%s' '%s', STA %s '%s' '%s'\n",
                       settings.apEnable ? "Enabled" : "Disabled",
                       settings.apSSID,
-                      settings.apPassword,
+                      "****", //settings.apPassword,
                       settings.staEnable ? "Enabled" : "Disabled",
                       settings.staSSID,
-                      settings.staPassword);
+                      "****" //settings.staPassword
+        );
     }
 
     void applySettings()
     {
-        if (settings.apEnable || settings.staEnable) {
+        if (settings.apEnable || settings.staEnable)
+        {
             if (settings.apEnable && settings.staEnable)
                 WiFi.mode(WIFI_MODE_APSTA);
             else if (settings.apEnable)
                 WiFi.mode(WIFI_MODE_AP);
             else if (settings.staEnable)
                 WiFi.mode(WIFI_MODE_STA);
-
-        } else
+        }
+        else
             WiFi.mode(WIFI_MODE_NULL);
-        if (settings.apEnable) {
+        if (settings.apEnable)
+        {
             WiFi.softAP(settings.apSSID, settings.apPassword);
         }
-        if (settings.staEnable) {
-            WiFi.begin(settings.staSSID, settings.staPassword);
-            Serial.print("Connecting to WiFi");
-            while (WiFi.status() != WL_CONNECTED) {
-                Serial.print(".");
-                delay(300);
+        if (settings.staEnable)
+        {
+            if (0 == strcmp("", const_cast<char *>(settings.staSSID)))
+            {
+                Serial.printf("Warning: cannot enable STA with empty SSID\n");
+                settings.staEnable = false;
             }
-            Serial.printf("connected\nLocal IP: %s\n", WiFi.localIP().toString().c_str());
+            else
+            {
+                ulong connectTimeout = 60000; // 1 min
+                ulong started = millis();
+                WiFi.begin(settings.staSSID, settings.staPassword);
+                Serial.print("Connecting to WiFi, press [c] to cancel");
+                while (WiFi.status() != WL_CONNECTED)
+                {
+                    if (Serial.available())
+                    {
+                        if ('c' == Serial.read())
+                        {
+                            return;
+                        }
+                    }
+                    if (millis() > started + connectTimeout)
+                    {
+                        Serial.printf("\nConnection timeout after %d seconds\n", (int)(connectTimeout / 1000));
+                        return;
+                    }
+                    Serial.print(".");
+                    delay(300);
+                }
+                Serial.printf("connected\nLocal IP: %s\n", WiFi.localIP().toString().c_str());
+            }
         }
     }
 

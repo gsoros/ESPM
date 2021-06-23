@@ -26,7 +26,7 @@ void setup()
     //Serial.println(getXtalFrequencyMhz());
     //while(1);
     setCpuFrequencyMhz(80);
-    sio.setup(&battery, &mpu, &strain);
+    sio.setup(&battery, &mpu, &strain, &wifi);
     strain.setup();
     mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
     ble.setup();

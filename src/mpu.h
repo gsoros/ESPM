@@ -23,8 +23,6 @@ class MPU : public Idle
 {
 public:
     MPU9250 *device;
-    const uint8_t sdaPin;
-    const uint8_t sclPin;
     Preferences *preferences;
     const char *preferencesNS;
     ulong lastMeasurementTime = 0;
@@ -39,8 +37,6 @@ public:
                Preferences *p,
                const char *preferencesNS = "MPU")
     {
-        this->sdaPin = sdaPin;
-        this->sclPin = sclPin;
         preferences = p;
         this->preferencesNS = preferencesNS;
         Wire.begin(sdaPin, sclPin);
@@ -71,9 +67,11 @@ public:
     void loop(const ulong t)
     {
 #ifdef MPU_USE_INTERRUPT
-        if (mpuDataReady) {
+        if (mpuDataReady)
+        {
 #endif
-            if (device->update()) {
+            if (device->update())
+            {
                 measurement = device->getYaw();
                 //measurement = device->getAccY();
                 //measurement = device->getEulerZ();
@@ -97,31 +95,35 @@ public:
 
     void calibrateAccelGyro()
     {
-        device->calibrateAccelGyro();
-        saveCalibration();
-    }
-
-    void calibrateMag()
-    {
-        device->calibrateMag();
-        saveCalibration();
-    }
-
-    void calibrate()
-    {
         Serial.println("Accel and Gyro calibration will start in 2 seconds...");
         Serial.println("Please leave the device still.");
         delay(2000);
         device->calibrateAccelGyro();
+    }
+
+    void calibrateMag()
+    {
         Serial.println("Mag calibration will start in 2 seconds...");
         Serial.println("Please wave device in a figure eight for 15 seconds.");
         delay(2000);
+        device->calibrateMag();
+    }
+
+    void calibrate()
+    {
+        device->calibrateAccelGyro();
         device->calibrateMag();
         printCalibration();
         saveCalibration();
     }
 
     void printCalibration()
+    {
+        printAccelGyroCalibration();
+        printMagCalibration();
+    }
+
+    void printAccelGyroCalibration()
     {
         Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
         Serial.printf("Accel bias [g]:    %14f %14f %14f\n",
@@ -132,6 +134,12 @@ public:
                       device->getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
                       device->getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
                       device->getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
+        Serial.printf("---------------------------------------------------------------\n");
+    }
+
+    void printMagCalibration()
+    {
+        Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
         Serial.printf("Mag bias [mG]:     %14f %14f %14f\n",
                       device->getMagBiasX(),
                       device->getMagBiasY(),
@@ -145,20 +153,23 @@ public:
 
     void loadCalibration()
     {
-        if (!preferences->begin(preferencesNS, true)) {      // try ro mode
-            if (!preferences->begin(preferencesNS, false)) { // open in rw mode to create ns
-                log_e("Preferences begin failed for '%s'.", preferencesNS);
-                while (1)
-                    ;
+        if (!preferences->begin(preferencesNS, true)) // try ro mode
+        {
+            if (!preferences->begin(preferencesNS, false)) // open in rw mode to create ns
+            {
+                Serial.printf("Error: preferences begin failed for '%s'\n", preferencesNS);
+                return;
             }
         }
-        if (!preferences->getBool("calibrated", false)) {
+        if (!preferences->getBool("calibrated", false))
+        {
             preferences->end();
-            Serial.println("MPU has not yet been calibrated, press any key to begin calibration.");
-            while (!Serial.available()) {
+            Serial.println("Warning: MPU has not yet been calibrated");
+            /*
+            while (!Serial.available())
                 delay(10);
-            }
             calibrate();
+            */
             return;
         }
         device->setAccBias(
@@ -183,7 +194,8 @@ public:
 
     void saveCalibration()
     {
-        if (!preferences->begin(preferencesNS, false)) {
+        if (!preferences->begin(preferencesNS, false))
+        {
             log_e("Preferences begin failed for '%s'.", preferencesNS);
             return;
         }
