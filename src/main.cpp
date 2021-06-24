@@ -3,8 +3,8 @@
 #include "mpu.h"
 #include "serialio.h"
 #include "strain.h"
-#include "websockets.h"
 #include "wificonnection.h"
+#include "webserver.h"
 #include <Arduino.h>
 #include <Preferences.h>
 
@@ -18,20 +18,20 @@ Strain strain;
 MPU mpu;
 BLE ble;
 Battery battery;
-Websockets ws;
 WifiConnection wifi;
+WebServer ws;
 
 void setup()
 {
     //Serial.println(getXtalFrequencyMhz());
     //while(1);
-    setCpuFrequencyMhz(80);
+    //setCpuFrequencyMhz(160);
     sio.setup(&battery, &mpu, &strain, &wifi);
     strain.setup();
     mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
     ble.setup();
-    wifi.setup(&preferences, &mpu);
-    ws.setup();
+    wifi.setup(&preferences);
+    ws.setup(&mpu);
 }
 void loop()
 {

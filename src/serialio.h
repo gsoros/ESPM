@@ -121,7 +121,6 @@ public:
             [p]rint config
             e[x]it
         [r]eboot
-        e[x]it
     */
     void handleInput(const char input)
     {
@@ -242,13 +241,10 @@ public:
                 ESP.restart();
                 menu[0] = '\0';
                 break;
-            case 'x':
-                printf("Exit menu\n");
-                return;
             default:
-                printf("[c]alibrate, [w]iFi, [r]eboot or e[x]it\n");
-                menu[0] = getChar();
-                menu[1] = '\0';
+                printf("[c]alibrate, [w]iFi or [r]eboot\n");
+                menu[0] = '\0';
+                return;
             }
         }
     }

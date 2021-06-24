@@ -1,10 +1,8 @@
 #ifndef WIFICONNECTION_H
 #define WIFICONNECTION_H
 
-#include "mpu.h"
 #include <Arduino.h>
 #include <Preferences.h>
-#include <WebServer.h>
 #include <WiFi.h>
 
 typedef struct
@@ -21,43 +19,20 @@ class WifiConnection
 {
 public:
     WifiConnectionSettings settings;
-    WebServer *ws;
     Preferences *preferences;
     const char *preferencesNS;
-    MPU *mpu;
-    const char *html =
-#include "html.h"
-        ;
 
-    void setup(Preferences *p, MPU *m, const char *preferencesNS = "WiFi")
+    void setup(Preferences *p, const char *preferencesNS = "WiFi")
     {
         preferences = p;
         this->preferencesNS = preferencesNS;
-        mpu = m;
         if (!loadSettings())
             loadDefaultSettings();
-        //settings.staEnable = true;
-        //strncpy(settings.staSSID, "ssid", 32);
-        //strncpy(settings.staPassword, "pw", 32);
-        //saveSettings();
         applySettings();
-        ws = new WebServer();
-        ws->on("/", [this]
-               { handleRoot(); });
-        ws->on("/calibrateAccelGyro", [this]
-               { handleCalibrateAccelGyro(); });
-        ws->on("/calibrateMag", [this]
-               { handleCalibrateMag(); });
-        ws->on("/reboot", [this]
-               { handleReboot(); });
-        ws->onNotFound([this]()
-                       { handle404(); });
-        ws->begin();
     }
 
     void loop(const ulong t)
     {
-        ws->handleClient();
     }
 
     bool loadSettings()
@@ -98,7 +73,7 @@ public:
 
     void saveSettings()
     {
-        log_d("Saving settings to %s", preferencesNS);
+        log_i("Saving settings to %s", preferencesNS);
         if (!preferences->begin(preferencesNS, false))
         {
             log_e("Preferences begin failed for '%s'.", preferencesNS);
@@ -111,19 +86,25 @@ public:
         preferences->putString("staSSID", settings.staSSID);
         preferences->putString("staPassword", settings.staPassword);
         preferences->end();
-        log_d("Settings saved");
+        log_i("Settings saved");
     }
 
     void printSettings()
     {
-        Serial.printf("\nAP %s '%s' '%s', STA %s '%s' '%s'\n",
+        Serial.printf("WiFi AP %s '%s' '%s'\n",
                       settings.apEnable ? "Enabled" : "Disabled",
                       settings.apSSID,
-                      "****", //settings.apPassword,
+                      "***" //settings.apPassword
+        );
+        if (settings.apEnable)
+            Serial.printf("AP online, IP: %s\n", WiFi.softAPIP().toString().c_str());
+        Serial.printf("WiFi STA %s '%s' '%s'\n",
                       settings.staEnable ? "Enabled" : "Disabled",
                       settings.staSSID,
-                      "****" //settings.staPassword
+                      "***" //settings.staPassword
         );
+        if (WiFi.isConnected())
+            Serial.printf("STA connected, local IP: %s\n", WiFi.localIP().toString().c_str());
     }
 
     void applySettings()
@@ -134,14 +115,31 @@ public:
                 WiFi.mode(WIFI_MODE_APSTA);
             else if (settings.apEnable)
                 WiFi.mode(WIFI_MODE_AP);
-            else if (settings.staEnable)
+            else
                 WiFi.mode(WIFI_MODE_STA);
         }
         else
             WiFi.mode(WIFI_MODE_NULL);
         if (settings.apEnable)
         {
-            WiFi.softAP(settings.apSSID, settings.apPassword);
+            if (0 == strcmp("", const_cast<char *>(settings.apSSID)))
+            {
+                Serial.printf("Warning: cannot enable AP with empty SSID\n");
+                settings.apEnable = false;
+            }
+            else
+            {
+                Serial.printf("Setting up WiFi AP '%s'\n", settings.apSSID);
+                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+                             { Serial.printf("WiFi AP new connection, now active: %d\n",
+                                             WiFi.softAPgetStationNum()); },
+                             SYSTEM_EVENT_AP_STACONNECTED);
+                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+                             { Serial.printf("WiFi AP station disconnected, now active: %d\n",
+                                             WiFi.softAPgetStationNum()); },
+                             SYSTEM_EVENT_AP_STADISCONNECTED);
+                WiFi.softAP(settings.apSSID, settings.apPassword);
+            }
         }
         if (settings.staEnable)
         {
@@ -152,28 +150,12 @@ public:
             }
             else
             {
-                ulong connectTimeout = 60000; // 1 min
-                ulong started = millis();
+                Serial.printf("Connecting WiFi STA to AP '%s'\n", settings.staSSID);
+                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+                             { Serial.printf("WiFi STA connected, IP: %s\n",
+                                             WiFi.localIP().toString().c_str()); },
+                             SYSTEM_EVENT_STA_GOT_IP);
                 WiFi.begin(settings.staSSID, settings.staPassword);
-                Serial.print("Connecting to WiFi, press [c] to cancel");
-                while (WiFi.status() != WL_CONNECTED)
-                {
-                    if (Serial.available())
-                    {
-                        if ('c' == Serial.read())
-                        {
-                            return;
-                        }
-                    }
-                    if (millis() > started + connectTimeout)
-                    {
-                        Serial.printf("\nConnection timeout after %d seconds\n", (int)(connectTimeout / 1000));
-                        return;
-                    }
-                    Serial.print(".");
-                    delay(300);
-                }
-                Serial.printf("connected\nLocal IP: %s\n", WiFi.localIP().toString().c_str());
             }
         }
     }
@@ -182,37 +164,6 @@ public:
     {
         //return WiFi.softAPgetStationNum() > 0;
         return WiFi.isConnected();
-    }
-
-    void handleRoot()
-    {
-        ws->send(200, "text/html", html);
-    }
-
-    void handleCalibrateAccelGyro()
-    {
-        mpu->calibrateAccelGyro();
-        ws->send(200, "text/plain", "Accel/Gyro calibrated.");
-    }
-
-    void handleCalibrateMag()
-    {
-        mpu->calibrateMag();
-        ws->send(200, "text/plain", "Magnetometer calibrated.");
-    }
-
-    void handleReboot()
-    {
-        Serial.println("Rebooting...");
-        ESP.restart();
-    }
-
-    void handle404()
-    {
-        Serial.printf("404 %s\n", ws->uri().c_str());
-        //ws->sendHeader("Location", "/", true);
-        //ws->send(302, "text/plain", "302 Moved");
-        ws->send(404, "text/plain", "404 Not found");
     }
 };
 

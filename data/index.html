@@ -1,7 +1,7 @@
-R"===========(
 <html>
 
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ESPM</title>
   <style>
@@ -15,7 +15,7 @@ R"===========(
       background: #000;
     }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="/three.js"></script>
   <script>
     function request(path, onDone) {
       var xhr = new XMLHttpRequest();
@@ -61,7 +61,7 @@ R"===========(
         console.log("ws unsupported");
         return;
       }
-      ws = new WebSocket("ws://" + location.hostname + ":8001/");
+      ws = new WebSocket("ws://" + location.hostname + "/ws");
 
       ws.onopen = function () {
         console.log("ws open");
@@ -100,5 +100,3 @@ R"===========(
 </body>
 
 </html>
-
-)==========="
