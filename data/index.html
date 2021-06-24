@@ -86,15 +86,13 @@
 
 <body onLoad="javascript: setupScene(); webSocketBegin()">
   <div id="animation"></div>
-  <button
-    onclick="if (confirm('Device should be motionless')) request('/calibrateAccelGyro', function(response) {alert(response)})">
+  <button onclick="request('/calibrateAccelGyro', function(response) {alert(response)})">
     Calibrate A/G
   </button>
-  <button
-    onclick="if (confirm('Wave device around gently for 15 seconds')) request('/calibrateMag', function(response) {alert(response)})">
+  <button onclick="request('/calibrateMag', function(response) {alert(response)})">
     Calibrate Mag
   </button>
-  <button onclick="if (confirm('Reboot ESP?')) request('/reboot'); setTimeout(window.location.reload(), 5000)">
+  <button onclick="if (confirm('Reboot ESP?')) request('/reboot'); setTimeout(window.location.reload(), 10000)">
     Reboot
   </button>
 </body>

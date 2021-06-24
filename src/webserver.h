@@ -1,5 +1,5 @@
-#ifndef WEBSERVER_H
-#define WEBSERVER_H
+#ifndef WEBSERVER_H____
+#define WEBSERVER_H____
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -74,17 +74,17 @@ public:
 
     void handleCalibrateAccelGyro(AsyncWebServerRequest *request)
     {
+        request->send(200, "text/plain", "Calibrating accel/gyro, device should be motionless.");
         wssBroadcastEnabled = false;
-        mpu->calibrateAccelGyro();
-        request->send(200, "text/plain", "Accel/Gyro calibrated.");
+        mpu->accelGyroNeedsCalibration = true;
         wssBroadcastEnabled = true;
     }
 
     void handleCalibrateMag(AsyncWebServerRequest *request)
     {
+        request->send(200, "text/plain", "Calibrating magnetometer, wave device around gently for 15 seconds.");
         wssBroadcastEnabled = false;
-        mpu->calibrateMag();
-        request->send(200, "text/plain", "Magnetometer calibrated.");
+        mpu->magNeedsCalibration = true;
         wssBroadcastEnabled = true;
     }
 

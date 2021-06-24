@@ -24,6 +24,8 @@ class MPU : public Idle
 public:
     MPU9250 *device;
     bool updateEnabled = false;
+    bool accelGyroNeedsCalibration = false;
+    bool magNeedsCalibration = false;
     Preferences *preferences;
     const char *preferencesNS;
     ulong lastMeasurementTime = 0;
@@ -68,6 +70,16 @@ public:
 
     void loop(const ulong t)
     {
+        if (accelGyroNeedsCalibration)
+        {
+            calibrateAccelGyro();
+            accelGyroNeedsCalibration = false;
+        }
+        if (magNeedsCalibration)
+        {
+            calibrateMag();
+            magNeedsCalibration = false;
+        }
         if (!updateEnabled)
             return;
 #ifdef MPU_USE_INTERRUPT
@@ -99,9 +111,8 @@ public:
 
     void calibrateAccelGyro()
     {
-        Serial.println("Accel and Gyro calibration will start in 2 seconds...");
-        Serial.println("Please leave the device still.");
-        delay(2000);
+        Serial.println("Accel and Gyro calibration, please leave the device still.");
+        //delay(2000);
         updateEnabled = false;
         device->calibrateAccelGyro();
         updateEnabled = true;
@@ -109,9 +120,8 @@ public:
 
     void calibrateMag()
     {
-        Serial.println("Mag calibration will start in 2 seconds...");
-        Serial.println("Please wave device in a figure eight for 15 seconds.");
-        delay(2000);
+        Serial.println("Mag calibration, please wave device in a figure eight for 15 seconds.");
+        //delay(2000);
         updateEnabled = false;
         device->calibrateMag();
         updateEnabled = true;
