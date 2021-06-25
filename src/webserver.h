@@ -53,7 +53,14 @@ public:
                { handleCalibrateMag(request); });
         ws->on("/reboot", [this](AsyncWebServerRequest *request)
                { handleReboot(request); });
-        ws->serveStatic("/", LITTLEFS, "/").setDefaultFile("index.html");
+        ws->on("/favicon.ico", [](AsyncWebServerRequest *request)
+               { request->send(204); });
+#ifdef COMPILE_TIMESTRING
+        char date[] = COMPILE_TIMESTRING;
+#else
+        char date[] = "Fri, 25 Jun 2021 10:58:00 GMT";
+#endif
+        ws->serveStatic("/", LITTLEFS, "/").setDefaultFile("index.html").setLastModified(date);
         ws->begin();
         wssBroadcastEnabled = true;
     }
@@ -75,21 +82,22 @@ public:
     void handleCalibrateAccelGyro(AsyncWebServerRequest *request)
     {
         request->send(200, "text/plain", "Calibrating accel/gyro, device should be motionless.");
-        wssBroadcastEnabled = false;
+        //wssBroadcastEnabled = false;
         mpu->accelGyroNeedsCalibration = true;
-        wssBroadcastEnabled = true;
+        //wssBroadcastEnabled = true;
     }
 
     void handleCalibrateMag(AsyncWebServerRequest *request)
     {
         request->send(200, "text/plain", "Calibrating magnetometer, wave device around gently for 15 seconds.");
-        wssBroadcastEnabled = false;
+        //wssBroadcastEnabled = false;
         mpu->magNeedsCalibration = true;
-        wssBroadcastEnabled = true;
+        //wssBroadcastEnabled = true;
     }
 
     void handleReboot(AsyncWebServerRequest *request)
     {
+        request->send(200, "text/plain", "Rebooting...");
         Serial.println("Rebooting...");
         ESP.restart();
     }

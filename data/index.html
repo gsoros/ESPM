@@ -1,4 +1,5 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
@@ -69,10 +70,12 @@
 
       ws.onmessage = function (evt) {
         //console.log(evt);
-        var j = JSON.parse(evt.data);
-        cube.quaternion.set(j.qX, -j.qY, -j.qZ, j.qW);
-        cube.material.color.setRGB(.3 + j.strain / 200, .3, .3 - j.strain / 200);
-        renderer.render(scene, camera);
+        try {
+          var j = JSON.parse(evt.data);
+          cube.quaternion.set(j.qX, -j.qY, -j.qZ, j.qW);
+          cube.material.color.setRGB(.3 + j.strain / 200, .3, .3 - j.strain / 200);
+          renderer.render(scene, camera);
+        } catch (e) {}
       };
 
       ws.onclose = function () {

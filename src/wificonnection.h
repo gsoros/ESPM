@@ -155,6 +155,9 @@ public:
                              { Serial.printf("WiFi STA connected, IP: %s\n",
                                              WiFi.localIP().toString().c_str()); },
                              SYSTEM_EVENT_STA_GOT_IP);
+                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+                             { Serial.printf("WiFi STA disconnected\n"); },
+                             SYSTEM_EVENT_STA_LOST_IP);
                 WiFi.begin(settings.staSSID, settings.staPassword);
             }
         }

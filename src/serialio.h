@@ -5,6 +5,7 @@
 #include "mpu.h"
 #include "strain.h"
 #include "wificonnection.h"
+#include "time.h"
 #include <Arduino.h>
 
 class SerialIO
@@ -26,6 +27,12 @@ public:
         while (!Serial)
             delay(1);
         statusEnabled = true;
+#ifdef COMPILE_TIMESTAMP
+        Serial.printf("Compile timestamp %d\n", COMPILE_TIMESTAMP);
+#endif
+#ifdef COMPILE_TIMESTRING
+        Serial.printf("Compile timestring %s\n", COMPILE_TIMESTRING);
+#endif
     }
 
     void loop(const ulong t)
@@ -248,46 +255,6 @@ public:
             }
         }
     }
-
-    /*
-    void handleInput(const char input = '\0')
-    {
-        const uint8_t menumax = 8;
-        static char submenu[menumax] = "       ";
-        switch ('\0' == input ? getChar() : input)
-        {
-        case 'w':
-            //strncpy(submenu, "w", menumax);
-            switch (submenu[0])
-            {
-            case 'x':
-                submenu[0] = ' ';
-                break;
-            case 'a':
-                submenu[0] = 'a';
-                Serial.println("Access point: toggle [e]nable, set [s]sid, set [p]assword, e[x]it");
-                handleInput('w');
-                break;
-            default:
-                Serial.println("configure [a]p, configure [s]ta, [p]rint config, e[x]it");
-                handleInput('w');
-            }
-            break;
-        case 's':
-            statusEnabled = !statusEnabled;
-            if (!statusEnabled)
-                Serial.println("Status output paused, press [s] to resume");
-            break;
-        case 'c':
-            mpu->calibrate();
-            //handleInput('h');
-            break;
-        case 'h':
-            Serial.println("[c]alibrate, [w]ifi, [s]tatus, [r]eboot");
-            break;
-        }
-    }
-    */
 };
 
 #endif
