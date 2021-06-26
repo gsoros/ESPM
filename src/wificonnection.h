@@ -91,20 +91,20 @@ public:
 
     void printSettings()
     {
-        Serial.printf("WiFi AP %s '%s' '%s'\n",
-                      settings.apEnable ? "Enabled" : "Disabled",
-                      settings.apSSID,
-                      "***" //settings.apPassword
+        log_i("WiFi AP %s '%s' '%s'\n",
+              settings.apEnable ? "Enabled" : "Disabled",
+              settings.apSSID,
+              "***" //settings.apPassword
         );
         if (settings.apEnable)
-            Serial.printf("AP online, IP: %s\n", WiFi.softAPIP().toString().c_str());
-        Serial.printf("WiFi STA %s '%s' '%s'\n",
-                      settings.staEnable ? "Enabled" : "Disabled",
-                      settings.staSSID,
-                      "***" //settings.staPassword
+            log_i("AP online, IP: %s\n", WiFi.softAPIP().toString().c_str());
+        log_i("WiFi STA %s '%s' '%s'\n",
+              settings.staEnable ? "Enabled" : "Disabled",
+              settings.staSSID,
+              "***" //settings.staPassword
         );
         if (WiFi.isConnected())
-            Serial.printf("STA connected, local IP: %s\n", WiFi.localIP().toString().c_str());
+            log_i("STA connected, local IP: %s\n", WiFi.localIP().toString().c_str());
     }
 
     void applySettings()
@@ -124,19 +124,19 @@ public:
         {
             if (0 == strcmp("", const_cast<char *>(settings.apSSID)))
             {
-                Serial.printf("Warning: cannot enable AP with empty SSID\n");
+                log_e("Warning: cannot enable AP with empty SSID\n");
                 settings.apEnable = false;
             }
             else
             {
-                Serial.printf("Setting up WiFi AP '%s'\n", settings.apSSID);
+                log_i("Setting up WiFi AP '%s'\n", settings.apSSID);
                 WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-                             { Serial.printf("WiFi AP new connection, now active: %d\n",
-                                             WiFi.softAPgetStationNum()); },
+                             { log_i("WiFi AP new connection, now active: %d\n",
+                                     WiFi.softAPgetStationNum()); },
                              SYSTEM_EVENT_AP_STACONNECTED);
                 WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-                             { Serial.printf("WiFi AP station disconnected, now active: %d\n",
-                                             WiFi.softAPgetStationNum()); },
+                             { log_i("WiFi AP station disconnected, now active: %d\n",
+                                     WiFi.softAPgetStationNum()); },
                              SYSTEM_EVENT_AP_STADISCONNECTED);
                 WiFi.softAP(settings.apSSID, settings.apPassword);
             }
@@ -145,18 +145,18 @@ public:
         {
             if (0 == strcmp("", const_cast<char *>(settings.staSSID)))
             {
-                Serial.printf("Warning: cannot enable STA with empty SSID\n");
+                log_e("Warning: cannot enable STA with empty SSID\n");
                 settings.staEnable = false;
             }
             else
             {
-                Serial.printf("Connecting WiFi STA to AP '%s'\n", settings.staSSID);
+                log_i("Connecting WiFi STA to AP '%s'\n", settings.staSSID);
                 WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-                             { Serial.printf("WiFi STA connected, IP: %s\n",
-                                             WiFi.localIP().toString().c_str()); },
+                             { log_i("WiFi STA connected, IP: %s\n",
+                                     WiFi.localIP().toString().c_str()); },
                              SYSTEM_EVENT_STA_GOT_IP);
                 WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-                             { Serial.printf("WiFi STA disconnected\n"); },
+                             { log_i("WiFi STA disconnected\n"); },
                              SYSTEM_EVENT_STA_LOST_IP);
                 WiFi.begin(settings.staSSID, settings.staPassword);
             }

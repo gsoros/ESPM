@@ -1,11 +1,16 @@
 #include "battery.h"
 #include "ble.h"
 #include "mpu.h"
+#ifdef FEATURE_SERIALIO
 #include "serialio.h"
+#endif
 #include "strain.h"
 #include "wificonnection.h"
-#ifdef FETURE_WEBSERVER
+#ifdef FEATURE_WEBSERVER
 #include "webserver.h"
+#endif
+#ifdef FEATURE_OTA
+#include "ota.h"
 #endif
 #include <Arduino.h>
 #include <Preferences.h>
@@ -14,15 +19,20 @@
 #define MPU_SDA_PIN 23
 #define MPU_SCL_PIN 19
 
+#ifdef FEATURE_SERIALIO
 SerialIO sio;
+#endif
 Preferences preferences;
 Strain strain;
 MPU mpu;
 BLE ble;
 Battery battery;
 WifiConnection wifi;
-#ifdef FETURE_WEBSERVER
+#ifdef FEATURE_WEBSERVER
 WebServer ws;
+#endif
+#ifdef FEATURE_OTA
+OTA ota;
 #endif
 
 void setup()
@@ -30,13 +40,18 @@ void setup()
     //Serial.println(getXtalFrequencyMhz());
     //while(1);
     //setCpuFrequencyMhz(160);
+#ifdef FEATURE_SERIALIO
     sio.setup(&battery, &mpu, &strain, &wifi);
+#endif
     strain.setup();
     mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
     ble.setup();
     wifi.setup(&preferences);
-#ifdef FETURE_WEBSERVER
+#ifdef FEATURE_WEBSERVER
     ws.setup(&mpu);
+#endif
+#ifdef FEATURE_OTA
+    ota.setup();
 #endif
 }
 void loop()
@@ -50,7 +65,7 @@ void loop()
     // }
     strain.loop(t);
     mpu.loop(t);
-#ifdef FETURE_WEBSERVER
+#ifdef FEATURE_WEBSERVER
     ws.strain = strain.measurement;
     ws.qX = mpu.qX;
     ws.qY = mpu.qY;
@@ -58,9 +73,14 @@ void loop()
     ws.qW = mpu.qW;
     ws.loop(t);
 #endif
+#ifdef FEATURE_SERIALIO
     sio.loop(t);
+#endif
     ble.loop(t);
     battery.loop(t);
     ble.batteryLevel = battery.level;
     wifi.loop(t);
+#ifdef FEATURE_OTA
+    ota.loop(t);
+#endif
 }

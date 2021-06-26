@@ -103,7 +103,7 @@ public:
     void handleReboot(AsyncWebServerRequest *request)
     {
         request->send(200, "text/plain", "Rebooting...");
-        Serial.println("Rebooting...");
+        log_i("Rebooting...");
         ESP.restart();
     }
 

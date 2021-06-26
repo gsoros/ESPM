@@ -111,7 +111,7 @@ public:
 
     void calibrateAccelGyro()
     {
-        Serial.println("Accel and Gyro calibration, please leave the device still.");
+        log_i("Accel and Gyro calibration, please leave the device still.");
         //delay(2000);
         updateEnabled = false;
         device->calibrateAccelGyro();
@@ -120,7 +120,7 @@ public:
 
     void calibrateMag()
     {
-        Serial.println("Mag calibration, please wave device in a figure eight for 15 seconds.");
+        log_i("Mag calibration, please wave device in a figure eight for 15 seconds.");
         //delay(2000);
         updateEnabled = false;
         device->calibrateMag();
@@ -143,30 +143,30 @@ public:
 
     void printAccelGyroCalibration()
     {
-        Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
-        Serial.printf("Accel bias [g]:    %14f %14f %14f\n",
+        log_i("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
+        log_i("Accel bias [g]:    %14f %14f %14f\n",
                       device->getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
                       device->getAccBiasY() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
                       device->getAccBiasZ() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
-        Serial.printf("Gyro bias [deg/s]: %14f %14f %14f\n",
+        log_i("Gyro bias [deg/s]: %14f %14f %14f\n",
                       device->getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
                       device->getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
                       device->getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
-        Serial.printf("---------------------------------------------------------------\n");
+        log_i("---------------------------------------------------------------\n");
     }
 
     void printMagCalibration()
     {
-        Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
-        Serial.printf("Mag bias [mG]:     %14f %14f %14f\n",
+        log_i("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
+        log_i("Mag bias [mG]:     %14f %14f %14f\n",
                       device->getMagBiasX(),
                       device->getMagBiasY(),
                       device->getMagBiasZ());
-        Serial.printf("Mag scale:         %14f %14f %14f\n",
+        log_i("Mag scale:         %14f %14f %14f\n",
                       device->getMagScaleX(),
                       device->getMagScaleY(),
                       device->getMagScaleZ());
-        Serial.printf("---------------------------------------------------------------\n");
+        log_i("---------------------------------------------------------------\n");
     }
 
     void loadCalibration()
@@ -175,19 +175,14 @@ public:
         {
             if (!preferences->begin(preferencesNS, false)) // open in rw mode to create ns
             {
-                Serial.printf("Error: preferences begin failed for '%s'\n", preferencesNS);
+                log_e("Preferences begin failed for '%s'\n", preferencesNS);
                 return;
             }
         }
         if (!preferences->getBool("calibrated", false))
         {
             preferences->end();
-            Serial.println("Warning: MPU has not yet been calibrated");
-            /*
-            while (!Serial.available())
-                delay(10);
-            calibrate();
-            */
+            log_e("MPU has not yet been calibrated");
             return;
         }
         device->setAccBias(

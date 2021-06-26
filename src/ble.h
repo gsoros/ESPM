@@ -97,8 +97,10 @@ public:
     void loop(const ulong t)
     {
         // notify changed value
-        if (connected) {
-            if (lastNotificationSent < t - 1000) {
+        if (connected)
+        {
+            if (lastNotificationSent < t - 1000)
+            {
                 bufMeasurent[0] = flags & 0xff;
                 bufMeasurent[1] = (flags >> 8) & 0xff;
                 bufMeasurent[2] = power & 0xff;
@@ -110,7 +112,8 @@ public:
                 cpmChar->setValue((uint8_t *)&bufMeasurent, 8);
                 cpmChar->notify();
 
-                if (batteryLevel != oldBatteryLevel) {
+                if (batteryLevel != oldBatteryLevel)
+                {
                     blChar->setValue(&batteryLevel, 1);
                     blChar->notify();
                     oldBatteryLevel = batteryLevel;
@@ -119,14 +122,16 @@ public:
             }
         }
         // disconnecting
-        if (!connected && oldConnected) {
+        if (!connected && oldConnected)
+        {
             delay(500);
             server->startAdvertising();
             log_i("start advertising");
             oldConnected = connected;
         }
         // connecting
-        if (connected && !oldConnected) {
+        if (connected && !oldConnected)
+        {
             oldConnected = connected;
         }
     }
@@ -134,14 +139,14 @@ public:
     void onConnect(BLEServer *pServer, ble_gap_conn_desc *desc)
     {
         connected = true;
-        Serial.println("Server onConnect");
+        log_i("Server onConnect");
         //NimBLEDevice::startSecurity(desc->conn_handle);
     }
 
     void onDisconnect(BLEServer *pServer)
     {
         connected = false;
-        Serial.println("Server onDisconnect");
+        log_i("Server onDisconnect");
     }
 
     //bool onConfirmPIN(uint32_t pin) { Serial.println("onConfirmPIN"); return true; }

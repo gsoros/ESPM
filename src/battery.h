@@ -19,7 +19,8 @@ public:
 
     void loop(const ulong t)
     {
-        if (lastUpdate < t - 1000) {
+        if (lastUpdate < t - 1000)
+        {
             voltage = measureVoltage();
             level = map(voltage * 1000, 3200, 4200, 0, 100000) / 1000;
             lastUpdate = t;
@@ -29,7 +30,8 @@ public:
     float measureVoltage()
     {
         int sum = 0;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++)
+        {
             sum += analogRead(BATTERY_PIN);
         }
         return map(sum, 0, 40950, 0, 33000) / 10000.0 * 2 * correctionFactor;

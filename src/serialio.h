@@ -27,10 +27,10 @@ public:
             delay(1);
         statusEnabled = true;
 #ifdef COMPILE_TIMESTAMP
-        Serial.printf("Compile timestamp %d\n", COMPILE_TIMESTAMP);
+        log_i("Compile timestamp %d\n", COMPILE_TIMESTAMP);
 #endif
 #ifdef COMPILE_TIMESTRING
-        Serial.printf("Compile timestring %s\n", COMPILE_TIMESTRING);
+        log_i("Compile timestring %s\n", COMPILE_TIMESTRING);
 #endif
     }
 
@@ -92,7 +92,7 @@ public:
             return;
         if (lastOutput < t - 2000)
         {
-            Serial.printf(
+            log_i(
                 //"%f %f %d %d\n",
                 "%f %f %f\n",
                 //((int)t)%100,
