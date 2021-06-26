@@ -5,7 +5,6 @@
 #include "mpu.h"
 #include "strain.h"
 #include "wificonnection.h"
-#include "time.h"
 #include <Arduino.h>
 
 class SerialIO

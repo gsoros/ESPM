@@ -55,12 +55,17 @@ public:
                { handleReboot(request); });
         ws->on("/favicon.ico", [](AsyncWebServerRequest *request)
                { request->send(204); });
-#ifdef COMPILE_TIMESTRING
-        char date[] = COMPILE_TIMESTRING;
-#else
-        char date[] = "Fri, 25 Jun 2021 10:58:00 GMT";
+        AsyncStaticWebHandler *aswh = &ws->serveStatic("/", LITTLEFS, "/").setDefaultFile("index.html");
+        time_t lastModified = (time_t)0;
+        if (!(lastModified = getLastModified()))
+        {
+#ifdef COMPILE_TIMESTAMP
+            log_i("Setting last modified to %d\n", COMPILE_TIMESTAMP);
+            lastModified = COMPILE_TIMESTAMP;
 #endif
-        ws->serveStatic("/", LITTLEFS, "/").setDefaultFile("index.html").setLastModified(date);
+        }
+        if (lastModified)
+            aswh->setLastModified((struct tm *)gmtime(&lastModified));
         ws->begin();
         wssBroadcastEnabled = true;
     }
@@ -215,6 +220,24 @@ public:
                 }
             }
         }
+    }
+
+    time_t getLastModified()
+    {
+        time_t t = (time_t)0;
+        File file = LITTLEFS.open("/lastmodified");
+        if (!file || file.isDirectory())
+        {
+            file.close();
+            return t;
+        }
+        char buf[11];
+        file.readBytes(buf, 10);
+        file.close();
+        buf[10] = '\0';
+        t = (time_t)atoi(buf);
+        log_i("From FS: %d\n", t);
+        return t;
     }
 };
 

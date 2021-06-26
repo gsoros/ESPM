@@ -4,7 +4,7 @@
 #include "serialio.h"
 #include "strain.h"
 #include "wificonnection.h"
-#ifdef ENABLE_WEBSERVER
+#ifdef FETURE_WEBSERVER
 #include "webserver.h"
 #endif
 #include <Arduino.h>
@@ -21,7 +21,7 @@ MPU mpu;
 BLE ble;
 Battery battery;
 WifiConnection wifi;
-#ifdef ENABLE_WEBSERVER
+#ifdef FETURE_WEBSERVER
 WebServer ws;
 #endif
 
@@ -35,7 +35,7 @@ void setup()
     mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
     ble.setup();
     wifi.setup(&preferences);
-#ifdef ENABLE_WEBSERVER
+#ifdef FETURE_WEBSERVER
     ws.setup(&mpu);
 #endif
 }
@@ -50,7 +50,7 @@ void loop()
     // }
     strain.loop(t);
     mpu.loop(t);
-#ifdef ENABLE_WEBSERVER
+#ifdef FETURE_WEBSERVER
     ws.strain = strain.measurement;
     ws.qX = mpu.qX;
     ws.qY = mpu.qY;
