@@ -143,30 +143,36 @@ public:
 
     void printAccelGyroCalibration()
     {
-        log_i("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
-        log_i("Accel bias [g]:    %14f %14f %14f\n",
+#ifdef FEATURE_SERIALIO
+
+        Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
+        Serial.printf("Accel bias [g]:    %14f %14f %14f\n",
                       device->getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
                       device->getAccBiasY() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
                       device->getAccBiasZ() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
-        log_i("Gyro bias [deg/s]: %14f %14f %14f\n",
+        Serial.printf("Gyro bias [deg/s]: %14f %14f %14f\n",
                       device->getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
                       device->getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
                       device->getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
-        log_i("---------------------------------------------------------------\n");
+        Serial.printf("---------------------------------------------------------------\n");
+#endif
     }
 
     void printMagCalibration()
     {
-        log_i("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
-        log_i("Mag bias [mG]:     %14f %14f %14f\n",
+#ifdef FEATURE_SERIALIO
+
+        Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
+        Serial.printf("Mag bias [mG]:     %14f %14f %14f\n",
                       device->getMagBiasX(),
                       device->getMagBiasY(),
                       device->getMagBiasZ());
-        log_i("Mag scale:         %14f %14f %14f\n",
+        Serial.printf("Mag scale:         %14f %14f %14f\n",
                       device->getMagScaleX(),
                       device->getMagScaleY(),
                       device->getMagScaleZ());
-        log_i("---------------------------------------------------------------\n");
+        Serial.printf("---------------------------------------------------------------\n");
+#endif
     }
 
     void loadCalibration()

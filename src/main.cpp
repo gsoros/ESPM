@@ -43,6 +43,7 @@ void setup()
 #ifdef FEATURE_SERIALIO
     sio.setup(&battery, &mpu, &strain, &wifi);
 #endif
+    battery.setup(&preferences);
     strain.setup();
     mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
     ble.setup();

@@ -82,6 +82,7 @@ public:
         }
         buffer[received] = '\0';
         strncpy(str, buffer, maxLength);
+        Serial.printf("\n");
         return received;
     }
 
@@ -92,7 +93,7 @@ public:
             return;
         if (lastOutput < t - 2000)
         {
-            log_i(
+            Serial.printf(
                 //"%f %f %d %d\n",
                 "%f %f %f\n",
                 //((int)t)%100,
@@ -112,6 +113,7 @@ public:
         [c]alibrate 
             [a]ccel/gyro
             [m]ag
+            [b]attery
             e[x]it
         [w]ifi
             [a]p
@@ -152,11 +154,18 @@ public:
                     mpu->printMagCalibration();
                     menu[1] = '\0';
                     break;
+                case 'b':
+                    Serial.printf("Enter measured battery voltage and press [Enter]: ");
+                    char voltage[32];
+                    getStr(voltage, 32);
+                    battery->calibrateTo(atoi(voltage));
+                    menu[1] = '\0';
+                    break;
                 case 'x':
                     strncpy(menu, " ", 2);
                     break;
                 default:
-                    printf("Calibrate [a]ccel/gyro, [m]ag or e[x]it\n");
+                    printf("Calibrate [a]ccel/gyro, [m]ag, [b]attery or e[x]it\n");
                     menu[1] = getChar();
                     menu[2] = '\0';
                 }
