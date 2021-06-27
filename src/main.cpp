@@ -35,8 +35,7 @@ WebServer ws;
 OTA ota;
 #endif
 
-void setup()
-{
+void setup() {
     //Serial.println(getXtalFrequencyMhz());
     //while(1);
     //setCpuFrequencyMhz(160);
@@ -55,8 +54,8 @@ void setup()
     ota.setup();
 #endif
 }
-void loop()
-{
+
+void loop() {
     const ulong t = millis();
     // if (ble.connected) {
     //     mpu.loop();

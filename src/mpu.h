@@ -1,11 +1,12 @@
 #ifndef MPU_H
 #define MPU_H
 
-#include "idle.h"
 #include <Arduino.h>
 #include <MPU9250.h>
 #include <Preferences.h>
 #include <Wire.h>
+
+#include "idle.h"
 
 #define MPU_ADDR 0x68
 // #define MPU_USE_INTERRUPT
@@ -13,15 +14,13 @@
 
 #ifdef MPU_USE_INTERRUPT
 volatile bool mpuDataReady;
-void IRAM_ATTR mpuDataReadyISR()
-{
+void IRAM_ATTR mpuDataReadyISR() {
     mpuDataReady = true;
 }
 #endif
 
-class MPU : public Idle
-{
-public:
+class MPU : public Idle {
+   public:
     MPU9250 *device;
     bool updateEnabled = false;
     bool accelGyroNeedsCalibration = false;
@@ -38,8 +37,7 @@ public:
     void setup(uint8_t sdaPin,
                uint8_t sclPin,
                Preferences *p,
-               const char *preferencesNS = "MPU")
-    {
+               const char *preferencesNS = "MPU") {
         preferences = p;
         this->preferencesNS = preferencesNS;
         Wire.begin(sdaPin, sclPin);
@@ -58,7 +56,7 @@ public:
         device->selectFilter(QuatFilterSel::NONE);
         //device->selectFilter(QuatFilterSel::MADGWICK);
         //device->calibrateAccelGyro();
-        device->setMagneticDeclination(5 + 19 / 60); // 5° 19'
+        device->setMagneticDeclination(5 + 19 / 60);  // 5° 19'
         //device->setMagBias(129.550766, -762.064697, 213.780151);
         //device->setMagScale(1.044610, 0.996454, 0.962329);
         loadCalibration();
@@ -68,26 +66,21 @@ public:
         updateEnabled = true;
     }
 
-    void loop(const ulong t)
-    {
-        if (accelGyroNeedsCalibration)
-        {
+    void loop(const ulong t) {
+        if (accelGyroNeedsCalibration) {
             calibrateAccelGyro();
             accelGyroNeedsCalibration = false;
         }
-        if (magNeedsCalibration)
-        {
+        if (magNeedsCalibration) {
             calibrateMag();
             magNeedsCalibration = false;
         }
         if (!updateEnabled)
             return;
 #ifdef MPU_USE_INTERRUPT
-        if (mpuDataReady)
-        {
+        if (mpuDataReady) {
 #endif
-            if (device->update())
-            {
+            if (device->update()) {
                 measurement = device->getYaw();
                 //measurement = device->getAccY();
                 //measurement = device->getEulerZ();
@@ -109,8 +102,7 @@ public:
         increaseIdleCycles();
     }
 
-    void calibrateAccelGyro()
-    {
+    void calibrateAccelGyro() {
         log_i("Accel and Gyro calibration, please leave the device still.");
         //delay(2000);
         updateEnabled = false;
@@ -118,8 +110,7 @@ public:
         updateEnabled = true;
     }
 
-    void calibrateMag()
-    {
+    void calibrateMag() {
         log_i("Mag calibration, please wave device in a figure eight for 15 seconds.");
         //delay(2000);
         updateEnabled = false;
@@ -127,24 +118,20 @@ public:
         updateEnabled = true;
     }
 
-    void calibrate()
-    {
+    void calibrate() {
         device->calibrateAccelGyro();
         device->calibrateMag();
         printCalibration();
         saveCalibration();
     }
 
-    void printCalibration()
-    {
+    void printCalibration() {
         printAccelGyroCalibration();
         printMagCalibration();
     }
 
-    void printAccelGyroCalibration()
-    {
+    void printAccelGyroCalibration() {
 #ifdef FEATURE_SERIALIO
-
         Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
         Serial.printf("Accel bias [g]:    %14f %14f %14f\n",
                       device->getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
@@ -158,10 +145,8 @@ public:
 #endif
     }
 
-    void printMagCalibration()
-    {
+    void printMagCalibration() {
 #ifdef FEATURE_SERIALIO
-
         Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
         Serial.printf("Mag bias [mG]:     %14f %14f %14f\n",
                       device->getMagBiasX(),
@@ -175,18 +160,16 @@ public:
 #endif
     }
 
-    void loadCalibration()
-    {
-        if (!preferences->begin(preferencesNS, true)) // try ro mode
+    void loadCalibration() {
+        if (!preferences->begin(preferencesNS, true))  // try ro mode
         {
-            if (!preferences->begin(preferencesNS, false)) // open in rw mode to create ns
+            if (!preferences->begin(preferencesNS, false))  // open in rw mode to create ns
             {
                 log_e("Preferences begin failed for '%s'\n", preferencesNS);
                 return;
             }
         }
-        if (!preferences->getBool("calibrated", false))
-        {
+        if (!preferences->getBool("calibrated", false)) {
             preferences->end();
             log_e("MPU has not yet been calibrated");
             return;
@@ -211,10 +194,8 @@ public:
         printCalibration();
     }
 
-    void saveCalibration()
-    {
-        if (!preferences->begin(preferencesNS, false))
-        {
+    void saveCalibration() {
+        if (!preferences->begin(preferencesNS, false)) {
             log_e("Preferences begin failed for '%s'.", preferencesNS);
             return;
         }

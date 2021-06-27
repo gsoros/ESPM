@@ -1,9 +1,10 @@
 #ifndef STRAIN_H
 #define STRAIN_H
 
-#include "idle.h"
 #include <Arduino.h>
 #include <HX711_ADC.h>
+
+#include "idle.h"
 
 #define STRAIN_DOUT_PIN 5
 #define STRAIN_SCK_PIN 18
@@ -11,15 +12,13 @@
 
 #ifdef STRAIN_USE_INTERRUPT
 volatile bool strainDataReady;
-void IRAM_ATTR strainDataReadyISR()
-{
+void IRAM_ATTR strainDataReadyISR() {
     strainDataReady = true;
 }
 #endif
 
-class Strain : public Idle
-{
-public:
+class Strain : public Idle {
+   public:
     HX711_ADC *device;
     const uint8_t doutPin = STRAIN_DOUT_PIN;
     const uint8_t sckPin = STRAIN_SCK_PIN;
@@ -27,16 +26,14 @@ public:
     float measurement = 0.0;
     ulong measurementTime = 0;
 
-    void setup()
-    {
+    void setup() {
         device = new HX711_ADC(doutPin, sckPin);
         device->begin();
         float calibrationValue = 696.0;
         ulong stabilizingTime = 2000;
         bool tare = true;
         device->start(stabilizingTime, tare);
-        if (device->getTareTimeoutFlag())
-        {
+        if (device->getTareTimeoutFlag()) {
             log_e("[Error] HX711 Tare Timeout");
         }
         device->setCalFactor(calibrationValue);
@@ -45,14 +42,11 @@ public:
 #endif
     }
 
-    void loop(const ulong t)
-    {
+    void loop(const ulong t) {
 #ifdef STRAIN_USE_INTERRUPT
-        if (strainDataReady)
-        {
+        if (strainDataReady) {
 #endif
-            if (device->update())
-            {
+            if (device->update()) {
                 measurement = device->getData();
                 measurementTime = t;
                 resetIdleCycles();

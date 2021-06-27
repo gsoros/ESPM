@@ -1,16 +1,16 @@
 #ifndef BLE_H
 #define BLE_H
 
-#include "ble_constants.h"
 #include <Arduino.h>
 #include <NimBLEDevice.h>
 
-class BLE : public BLEServerCallbacks
-{
-public:
+#include "ble_constants.h"
+
+class BLE : public BLEServerCallbacks {
+   public:
     BLEServer *server;
-    BLECharacteristic *cpmChar; // cycling power measurement char
-    BLECharacteristic *blChar;  // battery level char
+    BLECharacteristic *cpmChar;  // cycling power measurement char
+    BLECharacteristic *blChar;   // battery level char
     uint8_t batteryLevel = 0;
     uint8_t oldBatteryLevel = 0;
     bool connected = false;
@@ -20,15 +20,14 @@ public:
     short power = 0;
     unsigned short revolutions = 0;
     unsigned short timestamp = 0;
-    const unsigned short flags = 0x20; // TODO
+    const unsigned short flags = 0x20;  // TODO
 
     unsigned char bufMeasurent[8];
     unsigned char bufSensorLocation[1];
     unsigned char bufControlPoint[1];
     unsigned char bufFeature[4];
 
-    void setup(const char *deviceName = "ESPM")
-    {
+    void setup(const char *deviceName = "ESPM") {
         BLEDevice::init(deviceName);
         //NimBLEDevice::setSecurityAuth(false, false, false);
         //NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
@@ -47,7 +46,7 @@ public:
         bufFeature[0] = 0xff;
         bufFeature[1] = 0xff;
         bufFeature[2] = 0xff;
-        bufFeature[3] = 0xff; // TODO
+        bufFeature[3] = 0xff;  // TODO
         cpfChar->setValue((uint8_t *)&bufFeature, 4);
 
         BLECharacteristic *slChar = cps->createCharacteristic(
@@ -94,13 +93,10 @@ public:
         BLEDevice::startAdvertising();
     }
 
-    void loop(const ulong t)
-    {
+    void loop(const ulong t) {
         // notify changed value
-        if (connected)
-        {
-            if (lastNotificationSent < t - 1000)
-            {
+        if (connected) {
+            if (lastNotificationSent < t - 1000) {
                 bufMeasurent[0] = flags & 0xff;
                 bufMeasurent[1] = (flags >> 8) & 0xff;
                 bufMeasurent[2] = power & 0xff;
@@ -112,8 +108,7 @@ public:
                 cpmChar->setValue((uint8_t *)&bufMeasurent, 8);
                 cpmChar->notify();
 
-                if (batteryLevel != oldBatteryLevel)
-                {
+                if (batteryLevel != oldBatteryLevel) {
                     blChar->setValue(&batteryLevel, 1);
                     blChar->notify();
                     oldBatteryLevel = batteryLevel;
@@ -122,29 +117,25 @@ public:
             }
         }
         // disconnecting
-        if (!connected && oldConnected)
-        {
+        if (!connected && oldConnected) {
             delay(500);
             server->startAdvertising();
             log_i("start advertising");
             oldConnected = connected;
         }
         // connecting
-        if (connected && !oldConnected)
-        {
+        if (connected && !oldConnected) {
             oldConnected = connected;
         }
     }
 
-    void onConnect(BLEServer *pServer, ble_gap_conn_desc *desc)
-    {
+    void onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
         connected = true;
         log_i("Server onConnect");
         //NimBLEDevice::startSecurity(desc->conn_handle);
     }
 
-    void onDisconnect(BLEServer *pServer)
-    {
+    void onDisconnect(BLEServer *pServer) {
         connected = false;
         log_i("Server onDisconnect");
     }

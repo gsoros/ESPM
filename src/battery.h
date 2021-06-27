@@ -6,9 +6,8 @@
 
 #define BATTERY_PIN 35
 
-class Battery
-{
-public:
+class Battery {
+   public:
     Preferences *preferences;
     const char *preferencesNS;
     float corrF = 1.0;
@@ -17,28 +16,23 @@ public:
     ulong lastUpdate = 0;
 
     void setup(Preferences *p,
-               const char *preferencesNS = "Battery")
-    {
+               const char *preferencesNS = "Battery") {
         preferences = p;
         this->preferencesNS = preferencesNS;
         this->loadCalibration();
     }
 
-    void loop(const ulong t)
-    {
-        if (lastUpdate < t - 1000)
-        {
+    void loop(const ulong t) {
+        if (lastUpdate < t - 1000) {
             voltage = measureVoltage();
             level = map(voltage * 1000, 3200, 4200, 0, 100000) / 1000;
             lastUpdate = t;
         }
     }
 
-    float measureVoltage(bool useCorrection = true)
-    {
+    float measureVoltage(bool useCorrection = true) {
         int sum = 0;
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             sum += analogRead(BATTERY_PIN);
         }
         float uncorrected = map(sum, 0, 40950, 0, 33000) / 10000.0 * 2;
@@ -47,18 +41,16 @@ public:
         return uncorrected * corrF;
     }
 
-    void loadCalibration()
-    {
-        if (!preferences->begin(preferencesNS, true)) // try ro mode
+    void loadCalibration() {
+        if (!preferences->begin(preferencesNS, true))  // try ro mode
         {
-            if (!preferences->begin(preferencesNS, false)) // open in rw mode to create ns
+            if (!preferences->begin(preferencesNS, false))  // open in rw mode to create ns
             {
                 log_e("Preferences begin failed for '%s'\n", preferencesNS);
                 return;
             }
         }
-        if (!preferences->getBool("calibrated", false))
-        {
+        if (!preferences->getBool("calibrated", false)) {
             log_e("Not calibrated");
             preferences->end();
             return;
@@ -67,10 +59,8 @@ public:
         preferences->end();
     }
 
-    void calibrateTo(float realVoltage)
-    {
-        if (!preferences->begin(preferencesNS, false))
-        {
+    void calibrateTo(float realVoltage) {
+        if (!preferences->begin(preferencesNS, false)) {
             log_e("Preferences begin failed for '%s'\n", preferencesNS);
             return;
         }
