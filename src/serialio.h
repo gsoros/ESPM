@@ -139,10 +139,13 @@ class SerialIO {
                             menu[1] = '\0';
                             break;
                         case 'b':
+                            battery->printCalibration();
                             Serial.printf("Enter measured battery voltage and press [Enter]: ");
                             char voltage[32];
                             getStr(voltage, 32);
                             battery->calibrateTo(atof(voltage));
+                            battery->saveCalibration();
+                            battery->printCalibration();
                             menu[1] = '\0';
                             break;
                         case 's':
