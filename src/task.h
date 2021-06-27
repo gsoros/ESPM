@@ -53,6 +53,7 @@ class Task {
         for (;;) {
             thisPtr->loop();
             vTaskDelay(thisPtr->taskDelay);
+            // or vTaskDelayUntil() if precise freq is required
         }
     }
 

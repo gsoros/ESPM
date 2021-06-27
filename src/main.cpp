@@ -43,7 +43,7 @@ void setup() {
     sio.setup(&battery, &mpu, &strain, &wifi);
 #endif
     battery.setup(&preferences);
-    strain.setup();
+    strain.setup(&preferences);
     mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
     ble.setup();
     wifi.setup(&preferences);

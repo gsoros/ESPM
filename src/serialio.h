@@ -101,6 +101,7 @@ class SerialIO {
             [a]ccel/gyro
             [m]ag
             [b]attery
+            [s]train
             e[x]it
         [w]ifi
             [a]p
@@ -141,14 +142,24 @@ class SerialIO {
                             Serial.printf("Enter measured battery voltage and press [Enter]: ");
                             char voltage[32];
                             getStr(voltage, 32);
-                            battery->calibrateTo(atoi(voltage));
+                            battery->calibrateTo(atof(voltage));
+                            menu[1] = '\0';
+                            break;
+                        case 's':
+                            strain->printCalibration();
+                            Serial.printf("Enter known mass and press [Enter]: ");
+                            char mass[32];
+                            getStr(mass, 32);
+                            strain->calibrateTo(atof(mass));
+                            strain->saveCalibration();
+                            strain->printCalibration();
                             menu[1] = '\0';
                             break;
                         case 'x':
                             strncpy(menu, " ", 2);
                             break;
                         default:
-                            printf("Calibrate [a]ccel/gyro, [m]ag, [b]attery or e[x]it\n");
+                            printf("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train or e[x]it\n");
                             menu[1] = getChar();
                             menu[2] = '\0';
                     }

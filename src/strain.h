@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <HX711_ADC.h>
+#include <Preferences.h>
 
 #include "idle.h"
 
@@ -22,21 +23,25 @@ class Strain : public Idle {
     HX711_ADC *device;
     const uint8_t doutPin = STRAIN_DOUT_PIN;
     const uint8_t sckPin = STRAIN_SCK_PIN;
+    Preferences *preferences;
+    const char *preferencesNS;
 
     float measurement = 0.0;
     ulong measurementTime = 0;
 
-    void setup() {
+    void setup(Preferences *p,
+               const char *preferencesNS = "STRAIN") {
+        preferences = p;
+        this->preferencesNS = preferencesNS;
         device = new HX711_ADC(doutPin, sckPin);
         device->begin();
-        float calibrationValue = 696.0;
         ulong stabilizingTime = 2000;
         bool tare = true;
         device->start(stabilizingTime, tare);
         if (device->getTareTimeoutFlag()) {
             log_e("[Error] HX711 Tare Timeout");
         }
-        device->setCalFactor(calibrationValue);
+        loadCalibration();
 #ifdef STRAIN_USE_INTERRUPT
         attachInterrupt(digitalPinToInterrupt(doutPin), strainDataReadyISR, FALLING);
 #endif
@@ -59,6 +64,56 @@ class Strain : public Idle {
         }
 #endif
         increaseIdleCycles();
+    }
+
+    void calibrateTo(float knownMass) {
+        float calFactor = device->getCalFactor();
+        if (isnan(calFactor) ||
+            isinf(calFactor) ||
+            (-0.000000001 < calFactor && calFactor < 0.000000001) ||
+            isnan(knownMass) ||
+            isinf(knownMass) ||
+            (-0.000000001 < knownMass && knownMass < 0.000000001)) {
+            device->setCalFactor(1.0);
+            return;
+        }
+        device->getNewCalibration(knownMass);
+    }
+
+    void printCalibration() {
+        Serial.printf("Strain calibration factor: %f\n", device->getCalFactor());
+    }
+
+    void loadCalibration() {
+        if (!preferences->begin(preferencesNS, true))  // try ro mode
+        {
+            if (!preferences->begin(preferencesNS, false))  // open in rw mode to create ns
+            {
+                log_e("Preferences begin failed for '%s'\n", preferencesNS);
+                return;
+            }
+        }
+        if (!preferences->getBool("calibrated", false)) {
+            preferences->end();
+            log_e("Device has not yet been calibrated");
+            return;
+        }
+        device->setCalFactor(preferences->getFloat("calibration", 0));
+        preferences->end();
+    }
+
+    void saveCalibration() {
+        if (!preferences->begin(preferencesNS, false)) {
+            log_e("Preferences begin failed for '%s'.", preferencesNS);
+            return;
+        }
+        preferences->putBool("calibrated", true);
+        preferences->putFloat("calibration", device->getCalFactor());
+        preferences->end();
+    }
+
+    void tare() {
+        device->tare();
     }
 };
 
