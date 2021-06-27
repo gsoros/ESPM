@@ -6,6 +6,7 @@
 #include <Preferences.h>
 
 #include "idle.h"
+#include "task.h"
 
 #define STRAIN_DOUT_PIN 5
 #define STRAIN_SCK_PIN 18
@@ -18,16 +19,18 @@ void IRAM_ATTR strainDataReadyISR() {
 }
 #endif
 
-class Strain : public Idle {
+class Strain : public Idle, public Task {
    public:
     HX711_ADC *device;
     const uint8_t doutPin = STRAIN_DOUT_PIN;
     const uint8_t sckPin = STRAIN_SCK_PIN;
+    char taskName[32] = "Strain Task";
     Preferences *preferences;
     const char *preferencesNS;
 
     float measurement = 0.0;
     ulong measurementTime = 0;
+    ulong lastMeasurementDelay = 0;
 
     void setup(Preferences *p,
                const char *preferencesNS = "STRAIN") {
@@ -48,6 +51,17 @@ class Strain : public Idle {
     }
 
     void loop(const ulong t) {
+        if (device->update()) {
+            measurement = device->getData();
+            lastMeasurementDelay = t - measurementTime;
+            measurementTime = t;
+            return;
+        }
+        increaseIdleCycles();
+    }
+
+    /*
+    void loop(const ulong t) {
 #ifdef STRAIN_USE_INTERRUPT
         if (strainDataReady) {
 #endif
@@ -65,6 +79,7 @@ class Strain : public Idle {
 #endif
         increaseIdleCycles();
     }
+    */
 
     void calibrateTo(float knownMass) {
         float calFactor = device->getCalFactor();

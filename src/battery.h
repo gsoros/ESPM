@@ -4,16 +4,19 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
+#include "task.h"
+
 #define BATTERY_PIN 35
 
-class Battery {
+class Battery : public Task {
    public:
+    char taskName[32] = "Battery Task";
     Preferences *preferences;
     const char *preferencesNS;
     float corrF = 1.0;
     float voltage = 0.0;
+    float pinVoltage = 0.0;
     uint8_t level = 0;
-    ulong lastUpdate = 0;
 
     void setup(Preferences *p,
                const char *preferencesNS = "Battery") {
@@ -23,43 +26,36 @@ class Battery {
     }
 
     void loop(const ulong t) {
-        if (lastUpdate < t - 1000) {
-            voltage = measureVoltage();
-            level = map(voltage * 1000, 3200, 4200, 0, 100000) / 1000;
-            lastUpdate = t;
-        }
+        measureVoltage();
+        calculateLevel();
+    }
+
+    int calculateLevel() {
+        level = map(voltage * 1000, 3200, 4200, 0, 100000) / 1000;
+        return level;
     }
 
     float measureVoltage(bool useCorrection = true) {
-        ulong t = millis();
-        ulong lt = t;
-        uint8_t samplesNeeded = 10;
-        uint8_t sampleCount = 0;
         uint32_t sum = 0;
-        while (sampleCount < samplesNeeded) {
-            lt = millis();
-            if (lt >= t + 5) {
-                sum += analogRead(BATTERY_PIN);
-                sampleCount++;
-                t = lt;
-            }
-            yield();
+        uint8_t samples;
+        for (samples = 1; samples <= 10; samples++) {
+            sum += analogRead(BATTERY_PIN);
+            vTaskDelay(10);
         }
-        uint32_t readMax = ((2 ^ 12) - 1) * samplesNeeded;  // 12bit adc
+        uint32_t readMax = 4095 * samples;  // 2^12 - 1 (12bit adc)
         if (sum == readMax) log_e("overflow");
-        float uncorrected =
+        pinVoltage =
             map(
                 sum,
                 0,
                 readMax,
                 0,
-                330 * samplesNeeded) /  // 3.3V
-            samplesNeeded /
-            20000.0;  // float division
-        //Serial.printf("Batt pin measured: %f\n", uncorrected);
-        if (!useCorrection)
-            return uncorrected;
-        return uncorrected * corrF;
+                330 * samples) /  // 3.3V
+            samples /
+            100.0;  // float division
+        //log_i("Batt pin measured: (%d) = %fV\n", sum / samples, pinVoltage);
+        voltage = pinVoltage * corrF;
+        return useCorrection ? voltage : pinVoltage;
     }
 
     void loadCalibration() {

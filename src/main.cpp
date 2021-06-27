@@ -53,6 +53,12 @@ void setup() {
 #ifdef FEATURE_OTA
     ota.setup();
 #endif
+
+    battery.taskStart(1);
+    strain.taskStart(80);
+#ifdef FEATURE_SERIALIO
+    sio.taskStart(10);
+#endif
 }
 
 void loop() {
@@ -63,7 +69,7 @@ void loop() {
     //     ble.revolutions = 2; // TODO
     //     ble.timestamp = (ushort)millis(); // TODO
     // }
-    strain.loop(t);
+    //strain.loop(t);
     mpu.loop(t);
 #ifdef FEATURE_WEBSERVER
     ws.strain = strain.measurement;
@@ -74,10 +80,10 @@ void loop() {
     ws.loop(t);
 #endif
 #ifdef FEATURE_SERIALIO
-    sio.loop(t);
+    //sio.loop(t);
 #endif
     ble.loop(t);
-    battery.loop(t);
+    //battery.loop(t);
     ble.batteryLevel = battery.level;
     wifi.loop(t);
 #ifdef FEATURE_OTA

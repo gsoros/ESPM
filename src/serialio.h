@@ -6,10 +6,12 @@
 #include "battery.h"
 #include "mpu.h"
 #include "strain.h"
+#include "task.h"
 #include "wificonnection.h"
 
-class SerialIO {
+class SerialIO : public Task {
    public:
+    char taskName[32] = "SerialIO Task";
     Battery *battery;
     MPU *mpu;
     Strain *strain;
@@ -41,13 +43,18 @@ class SerialIO {
     }
 
     char getChar() {
+        bool oldStatusEnabled = statusEnabled;
+        statusEnabled = false;
         while (!Serial.available()) {
-            delay(10);
+            vTaskDelay(10);
         }
+        statusEnabled = oldStatusEnabled;
         return Serial.read();
     }
 
     int getStr(char *str, int maxLength, bool echo = true) {
+        bool oldStatusEnabled = statusEnabled;
+        statusEnabled = false;
         int received = -1;
         char buffer[maxLength];
         char c;
@@ -72,6 +79,7 @@ class SerialIO {
         buffer[received] = '\0';
         strncpy(str, buffer, maxLength);
         Serial.printf("\n");
+        statusEnabled = oldStatusEnabled;
         return received;
     }
 
@@ -82,11 +90,15 @@ class SerialIO {
         if (lastOutput < t - 2000) {
             Serial.printf(
                 //"%f %f %d %d\n",
-                "%f %f %f\n",
+                "%f %f %f %f %d %d %d\n",
                 //((int)t)%100,
                 mpu->measurement,
                 strain->measurement,
-                battery->voltage
+                battery->pinVoltage,
+                battery->voltage,
+                (int)battery->taskLastLoopDelay,
+                (int)strain->taskLastLoopDelay,
+                (int)strain->lastMeasurementDelay
                 //mpu->idleCyclesMax,
                 //strain->idleCyclesMax
             );

@@ -10,9 +10,14 @@ class Task {
     uint16_t taskFreq = 10;     // desired task frequency in Hz
     uint32_t taskStack = 8192;  // task stack size in bytes
     uint8_t taskPriority = 1;
+    ulong taskLastLoop = 0;
+    ulong taskLastLoopDelay = 0;
 
     void taskStart() {
         taskStart(taskName, taskFreq, taskStack, taskPriority);
+    }
+    void taskStart(uint16_t freq) {
+        taskStart(taskName, freq, taskStack, taskPriority);
     }
     void taskStart(const char *name) {
         taskStart(name, taskFreq, taskStack, taskPriority);
@@ -41,23 +46,33 @@ class Task {
         taskHandle = NULL;
     }
 
+    void taskUpdateStats(const ulong t) {
+        taskLastLoopDelay = t - taskLastLoop;
+        taskLastLoop = t;
+    }
+
     int taskGetLowestStackLevel() {
         return NULL == taskHandle ? -1 : (int)uxTaskGetStackHighWaterMark(taskHandle);
     }
 
-    virtual void loop();
+    virtual void loop(const ulong t){};
+    Task() {}   // undefined reference to 'vtable...
+    ~Task() {}  // undefined reference to 'vtable...
 
    private:
+    TickType_t xLastWakeTime;
+    uint16_t taskDelay;
+
     static void taskLoop(void *p) {
         Task *thisPtr = (Task *)p;
+        thisPtr->xLastWakeTime = xTaskGetTickCount();
         for (;;) {
-            thisPtr->loop();
-            vTaskDelay(thisPtr->taskDelay);
-            // or vTaskDelayUntil() if precise freq is required
+            vTaskDelayUntil(&thisPtr->xLastWakeTime, thisPtr->taskDelay);
+            const ulong t = millis();
+            thisPtr->loop(t);
+            thisPtr->taskUpdateStats(t);
         }
     }
-
-    uint16_t taskDelay;
 };
 
 #endif
