@@ -24,7 +24,6 @@ class Strain : public Idle, public Task {
     HX711_ADC *device;
     const uint8_t doutPin = STRAIN_DOUT_PIN;
     const uint8_t sckPin = STRAIN_SCK_PIN;
-    char taskName[32] = "Strain Task";
     Preferences *preferences;
     const char *preferencesNS;
 

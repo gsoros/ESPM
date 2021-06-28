@@ -6,7 +6,7 @@
 class Task {
    public:
     TaskHandle_t taskHandle = NULL;
-    char taskName[32] = "Unnamed Task";
+    char taskName[32];
     uint16_t taskFreq = 10;     // desired task frequency in Hz
     uint32_t taskStack = 8192;  // task stack size in bytes
     uint8_t taskPriority = 1;
@@ -33,7 +33,8 @@ class Task {
         strncpy(taskName, name, 32);
         taskFreq = freq;
         taskDelay = 1000 / freq / portTICK_PERIOD_MS;
-        xTaskCreate(taskLoop, taskName, stack, this, priority, &taskHandle);
+        //xTaskCreate(taskLoop, taskName, stack, this, priority, &taskHandle);
+        xTaskCreatePinnedToCore(taskLoop, taskName, stack, this, priority, &taskHandle, 1);
     }
 
     bool taskRunning() {
@@ -61,14 +62,18 @@ class Task {
 
    private:
     TickType_t xLastWakeTime;
-    uint16_t taskDelay;
+    TickType_t taskDelay;
 
     static void taskLoop(void *p) {
         Task *thisPtr = (Task *)p;
         thisPtr->xLastWakeTime = xTaskGetTickCount();
         for (;;) {
-            vTaskDelayUntil(&thisPtr->xLastWakeTime, thisPtr->taskDelay);
             const ulong t = millis();
+            if (thisPtr->xLastWakeTime + thisPtr->taskDelay <= t) {
+                log_w("%s (%dHz) missed a beat", thisPtr->taskName, thisPtr->taskFreq);
+                thisPtr->xLastWakeTime = t;
+            }
+            vTaskDelayUntil(&(thisPtr->xLastWakeTime), thisPtr->taskDelay);
             thisPtr->loop(t);
             thisPtr->taskUpdateStats(t);
         }

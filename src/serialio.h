@@ -11,7 +11,6 @@
 
 class SerialIO : public Task {
    public:
-    char taskName[32] = "SerialIO Task";
     Battery *battery;
     MPU *mpu;
     Strain *strain;
@@ -25,7 +24,7 @@ class SerialIO : public Task {
         wifi = w;
         Serial.begin(115200);
         while (!Serial)
-            delay(1);
+            vTaskDelay(10);
         statusEnabled = true;
 #ifdef COMPILE_TIMESTAMP
         log_i("Compile timestamp %d\n", COMPILE_TIMESTAMP);
@@ -90,7 +89,7 @@ class SerialIO : public Task {
         if (lastOutput < t - 2000) {
             Serial.printf(
                 //"%f %f %d %d\n",
-                "%f %f %f %f %d %d %d\n",
+                "%f %f %f %f %d %d %d %d\n",
                 //((int)t)%100,
                 mpu->measurement,
                 strain->measurement,
@@ -98,7 +97,8 @@ class SerialIO : public Task {
                 battery->voltage,
                 (int)battery->taskLastLoopDelay,
                 (int)strain->taskLastLoopDelay,
-                (int)strain->lastMeasurementDelay
+                (int)strain->lastMeasurementDelay,
+                ESP.getMinFreeHeap()
                 //mpu->idleCyclesMax,
                 //strain->idleCyclesMax
             );
@@ -114,6 +114,7 @@ class SerialIO : public Task {
             [m]ag
             [b]attery
             [s]train
+            [p]rint calibration
             e[x]it
         [w]ifi
             [a]p
@@ -170,11 +171,17 @@ class SerialIO : public Task {
                             strain->printCalibration();
                             menu[1] = '\0';
                             break;
+                        case 'p':
+                            mpu->printCalibration();
+                            strain->printCalibration();
+                            battery->printCalibration();
+                            menu[1] = '\0';
+                            break;
                         case 'x':
                             strncpy(menu, " ", 2);
                             break;
                         default:
-                            printf("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train or e[x]it\n");
+                            printf("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, [p]rint calibration or e[x]it\n");
                             menu[1] = getChar();
                             menu[2] = '\0';
                     }

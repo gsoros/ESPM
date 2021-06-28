@@ -10,7 +10,6 @@
 
 class Battery : public Task {
    public:
-    char taskName[32] = "Battery Task";
     Preferences *preferences;
     const char *preferencesNS;
     float corrF = 1.0;

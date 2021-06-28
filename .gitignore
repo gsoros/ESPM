@@ -2,5 +2,6 @@
 .vscode/
 lib/NimBLE-Arduino
 lib/HX711_ADC
+lib/MPU9250
 *-cache.lib
 mklittlefs

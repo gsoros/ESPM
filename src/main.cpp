@@ -38,7 +38,8 @@ OTA ota;
 void setup() {
     //Serial.println(getXtalFrequencyMhz());
     //while(1);
-    //setCpuFrequencyMhz(160);
+    setCpuFrequencyMhz(160);
+    esp_log_level_set("*", ESP_LOG_ERROR);
 #ifdef FEATURE_SERIALIO
     sio.setup(&battery, &mpu, &strain, &wifi);
 #endif
@@ -54,10 +55,14 @@ void setup() {
     ota.setup();
 #endif
 
-    battery.taskStart(1);
-    strain.taskStart(80);
+    battery.taskStart("Battery Task", 1);
+    strain.taskStart("Strain Task", 80);  // HX711 runs at max 80Hz
+    mpu.taskStart("MPU Task", 80);        // no need to run faster than strain
 #ifdef FEATURE_SERIALIO
-    sio.taskStart(10);
+    sio.taskStart("SerialIO Task", 10);
+#endif
+#ifdef FEATURE_WEBSERVER
+    ws.taskStart("Webserver Task", 20);
 #endif
 }
 
@@ -70,14 +75,14 @@ void loop() {
     //     ble.timestamp = (ushort)millis(); // TODO
     // }
     //strain.loop(t);
-    mpu.loop(t);
+    //mpu.loop(t);
 #ifdef FEATURE_WEBSERVER
     ws.strain = strain.measurement;
     ws.qX = mpu.qX;
     ws.qY = mpu.qY;
     ws.qZ = mpu.qZ;
     ws.qW = mpu.qW;
-    ws.loop(t);
+    //ws.loop(t);
 #endif
 #ifdef FEATURE_SERIALIO
     //sio.loop(t);

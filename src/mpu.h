@@ -7,6 +7,7 @@
 #include <Wire.h>
 
 #include "idle.h"
+#include "task.h"
 
 #define MPU_ADDR 0x68
 // #define MPU_USE_INTERRUPT
@@ -19,7 +20,7 @@ void IRAM_ATTR mpuDataReadyISR() {
 }
 #endif
 
-class MPU : public Idle {
+class MPU : public Idle, public Task {
    public:
     MPU9250 *device;
     bool updateEnabled = false;
@@ -56,10 +57,12 @@ class MPU : public Idle {
         device->selectFilter(QuatFilterSel::NONE);
         //device->selectFilter(QuatFilterSel::MADGWICK);
         //device->calibrateAccelGyro();
-        device->setMagneticDeclination(5 + 19 / 60);  // 5° 19'
         //device->setMagBias(129.550766, -762.064697, 213.780151);
         //device->setMagScale(1.044610, 0.996454, 0.962329);
+        // 5° 19'
+        device->setMagneticDeclination(5 + 19 / 60);
         loadCalibration();
+        //printCalibration();
 #ifdef MPU_USE_INTERRUPT
         attachInterrupt(digitalPinToInterrupt(MPU_INT_PIN), mpuDataReadyISR, FALLING);
 #endif
@@ -89,7 +92,7 @@ class MPU : public Idle {
                 qZ = device->getQuaternionZ();
                 qW = device->getQuaternionW();
                 //Serial.printf("%f %f %f %f\n", qX, qY, qZ, qW);
-                lastMeasurementTime = millis();
+                lastMeasurementTime = t;
                 resetIdleCycles();
 #ifdef MPU_USE_INTERRUPT
                 mpuDataReady = false;
@@ -175,21 +178,21 @@ class MPU : public Idle {
             return;
         }
         device->setAccBias(
-            preferences->getFloat("abX", 0),
-            preferences->getFloat("abY", 0),
-            preferences->getFloat("abZ", 0));
+            prefGetValidFloat("abX", 0),
+            prefGetValidFloat("abY", 0),
+            prefGetValidFloat("abZ", 0));
         device->setGyroBias(
-            preferences->getFloat("gbX", 0),
-            preferences->getFloat("gbY", 0),
-            preferences->getFloat("gbZ", 0));
+            prefGetValidFloat("gbX", 0),
+            prefGetValidFloat("gbY", 0),
+            prefGetValidFloat("gbZ", 0));
         device->setMagBias(
-            preferences->getFloat("mbX", 0),
-            preferences->getFloat("mbY", 0),
-            preferences->getFloat("mbZ", 0));
+            prefGetValidFloat("mbX", 0),
+            prefGetValidFloat("mbY", 0),
+            prefGetValidFloat("mbZ", 0));
         device->setMagScale(
-            preferences->getFloat("msX", 1),
-            preferences->getFloat("msY", 1),
-            preferences->getFloat("msZ", 1));
+            prefGetValidFloat("msX", 1),
+            prefGetValidFloat("msY", 1),
+            prefGetValidFloat("msZ", 1));
         preferences->end();
         printCalibration();
     }
@@ -199,20 +202,41 @@ class MPU : public Idle {
             log_e("Preferences begin failed for '%s'.", preferencesNS);
             return;
         }
-        preferences->putFloat("abX", device->getAccBiasX());
-        preferences->putFloat("abY", device->getAccBiasY());
-        preferences->putFloat("abZ", device->getAccBiasZ());
-        preferences->putFloat("gbX", device->getGyroBiasX());
-        preferences->putFloat("gbY", device->getGyroBiasY());
-        preferences->putFloat("gbZ", device->getGyroBiasZ());
-        preferences->putFloat("mbX", device->getMagBiasX());
-        preferences->putFloat("mbY", device->getMagBiasY());
-        preferences->putFloat("mbZ", device->getMagBiasZ());
-        preferences->putFloat("msX", device->getMagScaleX());
-        preferences->putFloat("msY", device->getMagScaleY());
-        preferences->putFloat("msZ", device->getMagScaleZ());
+        prefPutValidFloat("abX", device->getAccBiasX());
+        prefPutValidFloat("abY", device->getAccBiasY());
+        prefPutValidFloat("abZ", device->getAccBiasZ());
+        prefPutValidFloat("gbX", device->getGyroBiasX());
+        prefPutValidFloat("gbY", device->getGyroBiasY());
+        prefPutValidFloat("gbZ", device->getGyroBiasZ());
+        prefPutValidFloat("mbX", device->getMagBiasX());
+        prefPutValidFloat("mbY", device->getMagBiasY());
+        prefPutValidFloat("mbZ", device->getMagBiasZ());
+        prefPutValidFloat("msX", device->getMagScaleX());
+        prefPutValidFloat("msY", device->getMagScaleY());
+        prefPutValidFloat("msZ", device->getMagScaleZ());
         preferences->putBool("calibrated", true);
         preferences->end();
+    }
+
+    float prefGetValidFloat(const char *key, const float_t defaultValue) {
+        float f = preferences->getFloat(key, defaultValue);
+        log_i("loaded %f for (%s, %f) from %s", f, key, defaultValue, preferencesNS);
+        if (isinf(f) || isnan(f)) {
+            log_e("invalid, returning default %f for %s", defaultValue, key);
+            f = defaultValue;
+        }
+        return f;
+    }
+
+    size_t prefPutValidFloat(const char *key, const float_t value) {
+        size_t written = 0;
+        if (isinf(value) || isnan(value)) {
+            log_e("invalid, not saving %f for %s", value, key);
+            return written;
+        }
+        written = preferences->putFloat(key, value);
+        log_i("saved %f for %s in %s", value, key, preferencesNS);
+        return written;
     }
 };
 
