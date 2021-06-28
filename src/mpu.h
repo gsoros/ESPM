@@ -122,152 +122,148 @@ class MPU : public Idle, public Task {
         resetIdleCycles();
     }
 
-}
+    Quaternion quaternion() {
+        Quaternion q;
+        q.x = device->getQuaternionX();
+        q.y = device->getQuaternionY();
+        q.z = device->getQuaternionZ();
+        q.w = device->getQuaternionW();
+        return q;
+    }
 
-Quaternion
-quaternion() {
-    Quaternion q;
-    q.x = device->getQuaternionX();
-    q.y = device->getQuaternionY();
-    q.z = device->getQuaternionZ();
-    q.w = device->getQuaternionW();
-    return q;
-}
+    void calibrateAccelGyro() {
+        log_i("Accel and Gyro calibration, please leave the device still.");
+        //delay(2000);
+        updateEnabled = false;
+        device->calibrateAccelGyro();
+        updateEnabled = true;
+    }
 
-void calibrateAccelGyro() {
-    log_i("Accel and Gyro calibration, please leave the device still.");
-    //delay(2000);
-    updateEnabled = false;
-    device->calibrateAccelGyro();
-    updateEnabled = true;
-}
+    void calibrateMag() {
+        log_i("Mag calibration, please wave device in a figure eight for 15 seconds.");
+        //delay(2000);
+        updateEnabled = false;
+        device->calibrateMag();
+        updateEnabled = true;
+    }
 
-void calibrateMag() {
-    log_i("Mag calibration, please wave device in a figure eight for 15 seconds.");
-    //delay(2000);
-    updateEnabled = false;
-    device->calibrateMag();
-    updateEnabled = true;
-}
+    void calibrate() {
+        device->calibrateAccelGyro();
+        device->calibrateMag();
+        printCalibration();
+        saveCalibration();
+    }
 
-void calibrate() {
-    device->calibrateAccelGyro();
-    device->calibrateMag();
-    printCalibration();
-    saveCalibration();
-}
+    void printCalibration() {
+        printAccelGyroCalibration();
+        printMagCalibration();
+    }
 
-void printCalibration() {
-    printAccelGyroCalibration();
-    printMagCalibration();
-}
-
-void printAccelGyroCalibration() {
+    void printAccelGyroCalibration() {
 #ifdef FEATURE_SERIALIO
-    Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
-    Serial.printf("Accel bias [g]:    %14f %14f %14f\n",
-                  device->getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
-                  device->getAccBiasY() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
-                  device->getAccBiasZ() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
-    Serial.printf("Gyro bias [deg/s]: %14f %14f %14f\n",
-                  device->getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
-                  device->getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
-                  device->getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
-    Serial.printf("---------------------------------------------------------------\n");
+        Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
+        Serial.printf("Accel bias [g]:    %14f %14f %14f\n",
+                      device->getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
+                      device->getAccBiasY() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
+                      device->getAccBiasZ() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
+        Serial.printf("Gyro bias [deg/s]: %14f %14f %14f\n",
+                      device->getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
+                      device->getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
+                      device->getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
+        Serial.printf("---------------------------------------------------------------\n");
 #endif
-}
+    }
 
-void printMagCalibration() {
+    void printMagCalibration() {
 #ifdef FEATURE_SERIALIO
-    Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
-    Serial.printf("Mag bias [mG]:     %14f %14f %14f\n",
-                  device->getMagBiasX(),
-                  device->getMagBiasY(),
-                  device->getMagBiasZ());
-    Serial.printf("Mag scale:         %14f %14f %14f\n",
-                  device->getMagScaleX(),
-                  device->getMagScaleY(),
-                  device->getMagScaleZ());
-    Serial.printf("---------------------------------------------------------------\n");
+        Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
+        Serial.printf("Mag bias [mG]:     %14f %14f %14f\n",
+                      device->getMagBiasX(),
+                      device->getMagBiasY(),
+                      device->getMagBiasZ());
+        Serial.printf("Mag scale:         %14f %14f %14f\n",
+                      device->getMagScaleX(),
+                      device->getMagScaleY(),
+                      device->getMagScaleZ());
+        Serial.printf("---------------------------------------------------------------\n");
 #endif
-}
+    }
 
-void loadCalibration() {
-    if (!preferences->begin(preferencesNS, true))  // try ro mode
-    {
-        if (!preferences->begin(preferencesNS, false))  // open in rw mode to create ns
+    void loadCalibration() {
+        if (!preferences->begin(preferencesNS, true))  // try ro mode
         {
-            log_e("Preferences begin failed for '%s'\n", preferencesNS);
+            if (!preferences->begin(preferencesNS, false))  // open in rw mode to create ns
+            {
+                log_e("Preferences begin failed for '%s'\n", preferencesNS);
+                return;
+            }
+        }
+        if (!preferences->getBool("calibrated", false)) {
+            preferences->end();
+            log_e("MPU has not yet been calibrated");
             return;
         }
-    }
-    if (!preferences->getBool("calibrated", false)) {
+        device->setAccBias(
+            prefGetValidFloat("abX", 0),
+            prefGetValidFloat("abY", 0),
+            prefGetValidFloat("abZ", 0));
+        device->setGyroBias(
+            prefGetValidFloat("gbX", 0),
+            prefGetValidFloat("gbY", 0),
+            prefGetValidFloat("gbZ", 0));
+        device->setMagBias(
+            prefGetValidFloat("mbX", 0),
+            prefGetValidFloat("mbY", 0),
+            prefGetValidFloat("mbZ", 0));
+        device->setMagScale(
+            prefGetValidFloat("msX", 1),
+            prefGetValidFloat("msY", 1),
+            prefGetValidFloat("msZ", 1));
         preferences->end();
-        log_e("MPU has not yet been calibrated");
-        return;
+        printCalibration();
     }
-    device->setAccBias(
-        prefGetValidFloat("abX", 0),
-        prefGetValidFloat("abY", 0),
-        prefGetValidFloat("abZ", 0));
-    device->setGyroBias(
-        prefGetValidFloat("gbX", 0),
-        prefGetValidFloat("gbY", 0),
-        prefGetValidFloat("gbZ", 0));
-    device->setMagBias(
-        prefGetValidFloat("mbX", 0),
-        prefGetValidFloat("mbY", 0),
-        prefGetValidFloat("mbZ", 0));
-    device->setMagScale(
-        prefGetValidFloat("msX", 1),
-        prefGetValidFloat("msY", 1),
-        prefGetValidFloat("msZ", 1));
-    preferences->end();
-    printCalibration();
-}
 
-void saveCalibration() {
-    if (!preferences->begin(preferencesNS, false)) {
-        log_e("Preferences begin failed for '%s'.", preferencesNS);
-        return;
+    void saveCalibration() {
+        if (!preferences->begin(preferencesNS, false)) {
+            log_e("Preferences begin failed for '%s'.", preferencesNS);
+            return;
+        }
+        prefPutValidFloat("abX", device->getAccBiasX());
+        prefPutValidFloat("abY", device->getAccBiasY());
+        prefPutValidFloat("abZ", device->getAccBiasZ());
+        prefPutValidFloat("gbX", device->getGyroBiasX());
+        prefPutValidFloat("gbY", device->getGyroBiasY());
+        prefPutValidFloat("gbZ", device->getGyroBiasZ());
+        prefPutValidFloat("mbX", device->getMagBiasX());
+        prefPutValidFloat("mbY", device->getMagBiasY());
+        prefPutValidFloat("mbZ", device->getMagBiasZ());
+        prefPutValidFloat("msX", device->getMagScaleX());
+        prefPutValidFloat("msY", device->getMagScaleY());
+        prefPutValidFloat("msZ", device->getMagScaleZ());
+        preferences->putBool("calibrated", true);
+        preferences->end();
     }
-    prefPutValidFloat("abX", device->getAccBiasX());
-    prefPutValidFloat("abY", device->getAccBiasY());
-    prefPutValidFloat("abZ", device->getAccBiasZ());
-    prefPutValidFloat("gbX", device->getGyroBiasX());
-    prefPutValidFloat("gbY", device->getGyroBiasY());
-    prefPutValidFloat("gbZ", device->getGyroBiasZ());
-    prefPutValidFloat("mbX", device->getMagBiasX());
-    prefPutValidFloat("mbY", device->getMagBiasY());
-    prefPutValidFloat("mbZ", device->getMagBiasZ());
-    prefPutValidFloat("msX", device->getMagScaleX());
-    prefPutValidFloat("msY", device->getMagScaleY());
-    prefPutValidFloat("msZ", device->getMagScaleZ());
-    preferences->putBool("calibrated", true);
-    preferences->end();
-}
 
-float prefGetValidFloat(const char *key, const float_t defaultValue) {
-    float f = preferences->getFloat(key, defaultValue);
-    log_i("loaded %f for (%s, %f) from %s", f, key, defaultValue, preferencesNS);
-    if (isinf(f) || isnan(f)) {
-        log_e("invalid, returning default %f for %s", defaultValue, key);
-        f = defaultValue;
+    float prefGetValidFloat(const char *key, const float_t defaultValue) {
+        float f = preferences->getFloat(key, defaultValue);
+        log_i("loaded %f for (%s, %f) from %s", f, key, defaultValue, preferencesNS);
+        if (isinf(f) || isnan(f)) {
+            log_e("invalid, returning default %f for %s", defaultValue, key);
+            f = defaultValue;
+        }
+        return f;
     }
-    return f;
-}
 
-size_t prefPutValidFloat(const char *key, const float_t value) {
-    size_t written = 0;
-    if (isinf(value) || isnan(value)) {
-        log_e("invalid, not saving %f for %s", value, key);
+    size_t prefPutValidFloat(const char *key, const float_t value) {
+        size_t written = 0;
+        if (isinf(value) || isnan(value)) {
+            log_e("invalid, not saving %f for %s", value, key);
+            return written;
+        }
+        written = preferences->putFloat(key, value);
+        log_i("saved %f for %s in %s", value, key, preferencesNS);
         return written;
     }
-    written = preferences->putFloat(key, value);
-    log_i("saved %f for %s in %s", value, key, preferencesNS);
-    return written;
-}
-}
-;
+};
 
 #endif
