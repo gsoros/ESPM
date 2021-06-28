@@ -86,19 +86,19 @@ class SerialIO : public Task {
         static ulong lastOutput = 0;
         if (!statusEnabled)
             return;
-        if (lastOutput < t - 2000) {
+        if (lastOutput < t - 100) {
             Serial.printf(
                 //"%f %f %d %d\n",
-                "%f %f %f %f %d %d %d %d\n",
-                //((int)t)%100,
-                mpu->measurement,
+                "%f %f %.2f %.2f %d %d %d %d %d\n",
+                mpu->rpm,
                 strain->measurement,
                 battery->pinVoltage,
                 battery->voltage,
                 (int)battery->taskLastLoopDelay,
                 (int)strain->taskLastLoopDelay,
                 (int)strain->lastMeasurementDelay,
-                ESP.getMinFreeHeap()
+                ESP.getMinFreeHeap(),
+                ((int)t) % 100000
                 //mpu->idleCyclesMax,
                 //strain->idleCyclesMax
             );

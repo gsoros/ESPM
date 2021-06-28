@@ -2,6 +2,7 @@
 #define MPU_H
 
 #include <Arduino.h>
+#include <CircularBuffer.h>
 #include <MPU9250.h>
 #include <Preferences.h>
 #include <Wire.h>
@@ -10,15 +11,7 @@
 #include "task.h"
 
 #define MPU_ADDR 0x68
-// #define MPU_USE_INTERRUPT
-// #define MPU_INT_PIN 15
-
-#ifdef MPU_USE_INTERRUPT
-volatile bool mpuDataReady;
-void IRAM_ATTR mpuDataReadyISR() {
-    mpuDataReady = true;
-}
-#endif
+#define MPU_RINGBUF_S 10  // circular buffer size
 
 class MPU : public Idle, public Task {
    public:
@@ -28,12 +21,22 @@ class MPU : public Idle, public Task {
     bool magNeedsCalibration = false;
     Preferences *preferences;
     const char *preferencesNS;
-    ulong lastMeasurementTime = 0;
-    float measurement = 0.0;
-    float qX = 0.0;
-    float qY = 0.0;
-    float qZ = 0.0;
-    float qW = 0.0;
+
+    struct Measurement {
+        ulong time;
+        float angle;
+        float rpm;
+    };
+    CircularBuffer<Measurement, MPU_RINGBUF_S> ringBuf;
+
+    float rpm = 0.0;  // average rpm of the ring buffer
+
+    struct Quaternion {
+        float x;
+        float y;
+        float z;
+        float w;
+    };
 
     void setup(uint8_t sdaPin,
                uint8_t sclPin,
@@ -63,9 +66,6 @@ class MPU : public Idle, public Task {
         device->setMagneticDeclination(5 + 19 / 60);
         loadCalibration();
         //printCalibration();
-#ifdef MPU_USE_INTERRUPT
-        attachInterrupt(digitalPinToInterrupt(MPU_INT_PIN), mpuDataReadyISR, FALLING);
-#endif
         updateEnabled = true;
     }
 
@@ -80,29 +80,51 @@ class MPU : public Idle, public Task {
         }
         if (!updateEnabled)
             return;
-#ifdef MPU_USE_INTERRUPT
-        if (mpuDataReady) {
-#endif
-            if (device->update()) {
-                measurement = device->getYaw();
-                //measurement = device->getAccY();
-                //measurement = device->getEulerZ();
-                qX = device->getQuaternionX();
-                qY = device->getQuaternionY();
-                qZ = device->getQuaternionZ();
-                qW = device->getQuaternionW();
-                //Serial.printf("%f %f %f %f\n", qX, qY, qZ, qW);
-                lastMeasurementTime = t;
-                resetIdleCycles();
-#ifdef MPU_USE_INTERRUPT
-                mpuDataReady = false;
-#endif
-                return;
+        if (device->update()) {
+            Measurement m;
+            m.time = t;
+            m.angle = device->getYaw() + 180.0;
+            //m.angle = device->getAccY();
+            //m.angle = device->getEulerZ();
+            m.rpm = 0.0;
+            if (!ringBuf.isEmpty()) {
+                Measurement pm = ringBuf.last();
+                ushort dT = m.time - pm.time;  // ms
+                if (0 < dT) {
+                    float dA = m.angle - pm.angle;  // deg
+                    // roll over zero deg, will fail when spinning faster than 180 deg/dT
+                    if (-360 < dA && dA <= -180) {
+                        dA += 360;
+                    }
+                    m.rpm = dA / dT / 0.006;  // deg/ms/.006 = rpm
+                    if (m.rpm < -200 || 200 < m.rpm) {
+                        log_d("invalid rpm %f", m.rpm);
+                        m.rpm = 0;
+                    }
+                }
             }
-#ifdef MPU_USE_INTERRUPT
+            ringBuf.push(m);
+            if (ringBuf.isFull()) {
+                float avg = 0.0;
+                using index_t = decltype(ringBuf)::index_t;
+                for (index_t i = 0; i < ringBuf.size(); i++) {
+                    avg += ringBuf[i].rpm / ringBuf.size();
+                }
+                rpm = avg;
+            }
+            resetIdleCycles();
+            return;
         }
-#endif
         increaseIdleCycles();
+    }
+
+    Quaternion quaternion() {
+        Quaternion q;
+        q.x = device->getQuaternionX();
+        q.y = device->getQuaternionY();
+        q.z = device->getQuaternionZ();
+        q.w = device->getQuaternionW();
+        return q;
     }
 
     void calibrateAccelGyro() {

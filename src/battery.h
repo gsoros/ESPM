@@ -51,7 +51,7 @@ class Battery : public Task {
                 0,
                 330 * samples) /  // 3.3V
             samples /
-            100.0;  // float division
+            100.0;  // double division
         //log_i("Batt pin measured: (%d) = %fV\n", sum / samples, pinVoltage);
         voltage = pinVoltage * corrF;
         return useCorrection ? voltage : pinVoltage;

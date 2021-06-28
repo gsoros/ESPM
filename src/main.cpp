@@ -49,7 +49,7 @@ void setup() {
     ble.setup();
     wifi.setup(&preferences);
 #ifdef FEATURE_WEBSERVER
-    ws.setup(&mpu);
+    ws.setup(&strain, &mpu);
 #endif
 #ifdef FEATURE_OTA
     ota.setup();
@@ -76,17 +76,6 @@ void loop() {
     // }
     //strain.loop(t);
     //mpu.loop(t);
-#ifdef FEATURE_WEBSERVER
-    ws.strain = strain.measurement;
-    ws.qX = mpu.qX;
-    ws.qY = mpu.qY;
-    ws.qZ = mpu.qZ;
-    ws.qW = mpu.qW;
-    //ws.loop(t);
-#endif
-#ifdef FEATURE_SERIALIO
-    //sio.loop(t);
-#endif
     ble.loop(t);
     //battery.loop(t);
     ble.batteryLevel = battery.level;

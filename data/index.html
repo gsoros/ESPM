@@ -13,6 +13,7 @@
 
     body {
       margin: 0;
+      color: #fff;
       background: #000;
     }
   </style>
@@ -75,6 +76,7 @@
           cube.quaternion.set(j.qX, -j.qY, -j.qZ, j.qW);
           cube.material.color.setRGB(.3 + j.strain / 200, .3, .3 - j.strain / 200);
           renderer.render(scene, camera);
+          document.getElementById("rpm").innerHTML = j.rpm;
         } catch (e) {}
       };
 
@@ -98,6 +100,7 @@
   <button onclick="if (confirm('Reboot ESP?')) request('/reboot'); setTimeout(window.location.reload(), 10000)">
     Reboot
   </button>
+   rpm: <span id="rpm">0</span>
 </body>
 
 </html>

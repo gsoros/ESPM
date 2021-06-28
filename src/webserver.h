@@ -9,26 +9,24 @@
 #include <WiFi.h>
 
 #include "mpu.h"
+#include "strain.h"
 #include "task.h"
 
 class WebServer : public Task {
    public:
     AsyncWebServer *ws;
+    Strain *strain;
     MPU *mpu;
 
     AsyncWebSocket *wss;
-    StaticJsonDocument<96> json;
+    StaticJsonDocument<128> json;
     int wssConnectedCount = 0;
     bool wssBroadcastEnabled = false;
     ulong wssLastBroadcast = 0;
     ulong wssLastCleanup = 0;
-    float strain = 0.0;
-    float qX = 0.0;
-    float qY = 0.0;
-    float qZ = 0.0;
-    float qW = 0.0;
 
-    void setup(MPU *m) {
+    void setup(Strain *s, MPU *m) {
+        strain = s;
         mpu = m;
         if (!LITTLEFS.begin())
             log_e("Could not mount LITTLEFS");
@@ -96,13 +94,15 @@ class WebServer : public Task {
     }
 
     void webSocketBroadcast() {
-        char output[100];
+        char output[128];
+        MPU::Quaternion q = mpu->quaternion();
         json.clear();
-        json["strain"] = strain;
-        json["qX"] = qX;
-        json["qY"] = qY;
-        json["qZ"] = qZ;
-        json["qW"] = qW;
+        json["strain"] = strain->measurement;
+        json["qX"] = q.x;
+        json["qY"] = q.y;
+        json["qZ"] = q.z;
+        json["qW"] = q.w;
+        json["rpm"] = mpu->rpm;
         serializeJson(json, output);
         wss->textAll(output);
     }
