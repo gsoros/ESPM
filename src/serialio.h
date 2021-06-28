@@ -89,12 +89,12 @@ class SerialIO : public Task {
         if (lastOutput < t - 100) {
             Serial.printf(
                 //"%f %f %d %d\n",
-                "%f %f %.2f %.2f %d %d %d %d %d\n",
+                "%f %f %.2f %.2f %d %d %d %d\n",
                 mpu->rpm,
                 strain->measurement,
                 battery->pinVoltage,
                 battery->voltage,
-                (int)battery->taskLastLoopDelay,
+                //(int)battery->taskLastLoopDelay,
                 (int)strain->taskLastLoopDelay,
                 (int)strain->lastMeasurementDelay,
                 ESP.getMinFreeHeap(),
