@@ -7,25 +7,23 @@
 #include <Preferences.h>
 #include <Wire.h>
 
+#include "haspreferences.h"
 #include "idle.h"
 #include "task.h"
 
+#ifndef MPU_RINGBUF_SIZE
 #define MPU_RINGBUF_SIZE 10  // circular buffer size
+#endif
 
-class MPU : public Idle, public Task {
+class MPU : public Idle, public Task, public HasPreferences {
    public:
     MPU9250 *device;
     bool updateEnabled = false;
     bool accelGyroNeedsCalibration = false;
     bool magNeedsCalibration = false;
-    Preferences *preferences;
-    const char *preferencesNS;
 
     struct Quaternion {
-        float x;
-        float y;
-        float z;
-        float w;
+        float x, y, z, w;
     };
 
     void setup(const uint8_t sdaPin,
@@ -38,8 +36,7 @@ class MPU : public Idle, public Task {
                Preferences *p,
                const char *preferencesNS,
                uint8_t mpuAddress) {
-        preferences = p;
-        this->preferencesNS = preferencesNS;
+        preferencesSetup(p, preferencesNS);
         Wire.begin(sdaPin, sclPin);
         vTaskDelay(100);
         device = new MPU9250();
@@ -193,16 +190,9 @@ class MPU : public Idle, public Task {
     }
 
     void loadCalibration() {
-        if (!preferences->begin(preferencesNS, true))  // try ro mode
-        {
-            if (!preferences->begin(preferencesNS, false))  // open in rw mode to create ns
-            {
-                log_e("Preferences begin failed for '%s'\n", preferencesNS);
-                return;
-            }
-        }
+        if (!preferencesStartLoad()) return;
         if (!preferences->getBool("calibrated", false)) {
-            preferences->end();
+            preferencesEnd();
             log_e("MPU has not yet been calibrated");
             return;
         }
@@ -222,15 +212,12 @@ class MPU : public Idle, public Task {
             prefGetValidFloat("msX", 1),
             prefGetValidFloat("msY", 1),
             prefGetValidFloat("msZ", 1));
-        preferences->end();
+        preferencesEnd();
         printCalibration();
     }
 
     void saveCalibration() {
-        if (!preferences->begin(preferencesNS, false)) {
-            log_e("Preferences begin failed for '%s'.", preferencesNS);
-            return;
-        }
+        if (!preferencesStartSave()) return;
         prefPutValidFloat("abX", device->getAccBiasX());
         prefPutValidFloat("abY", device->getAccBiasY());
         prefPutValidFloat("abZ", device->getAccBiasZ());
@@ -244,7 +231,7 @@ class MPU : public Idle, public Task {
         prefPutValidFloat("msY", device->getMagScaleY());
         prefPutValidFloat("msZ", device->getMagScaleZ());
         preferences->putBool("calibrated", true);
-        preferences->end();
+        preferencesEnd();
     }
 
    private:

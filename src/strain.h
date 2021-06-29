@@ -5,15 +5,13 @@
 #include <HX711_ADC.h>
 #include <Preferences.h>
 
+#include "haspreferences.h"
 #include "idle.h"
 #include "task.h"
 
-class Strain : public Idle, public Task {
+class Strain : public Idle, public Task, public HasPreferences {
    public:
     HX711_ADC *device;
-    Preferences *preferences;
-    const char *preferencesNS;
-
     ulong measurementTime = 0;
     ulong lastMeasurementDelay = 0;
 
@@ -21,8 +19,7 @@ class Strain : public Idle, public Task {
                const uint8_t sckPin,
                Preferences *p,
                const char *preferencesNS = "STRAIN") {
-        preferences = p;
-        this->preferencesNS = preferencesNS;
+        preferencesSetup(p, preferencesNS);
         device = new HX711_ADC(doutPin, sckPin);
         device->begin();
         ulong stabilizingTime = 2000;
@@ -73,31 +70,21 @@ class Strain : public Idle, public Task {
     }
 
     void loadCalibration() {
-        if (!preferences->begin(preferencesNS, true))  // try ro mode
-        {
-            if (!preferences->begin(preferencesNS, false))  // open in rw mode to create ns
-            {
-                log_e("Preferences begin failed for '%s'\n", preferencesNS);
-                return;
-            }
-        }
+        if (!preferencesStartLoad()) return;
         if (!preferences->getBool("calibrated", false)) {
-            preferences->end();
+            preferencesEnd();
             log_e("Device has not yet been calibrated");
             return;
         }
         device->setCalFactor(preferences->getFloat("calibration", 0));
-        preferences->end();
+        preferencesEnd();
     }
 
     void saveCalibration() {
-        if (!preferences->begin(preferencesNS, false)) {
-            log_e("Preferences begin failed for '%s'.", preferencesNS);
-            return;
-        }
+        if (!preferencesStartSave()) return;
         preferences->putBool("calibrated", true);
         preferences->putFloat("calibration", device->getCalFactor());
-        preferences->end();
+        preferencesEnd();
     }
 
     void tare() {

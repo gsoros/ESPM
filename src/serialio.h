@@ -118,7 +118,10 @@ class SerialIO : public Task {
             [m]ag
             [b]attery
             [s]train
-            [p]rint calibration
+            set [c]rank length
+            toggle [r]everse strain
+            toggle r[e]verse MPU
+            [p]rint calibrations
             e[x]it
         [w]ifi
             [a]p
@@ -136,6 +139,7 @@ class SerialIO : public Task {
         [r]eboot
     */
     void handleInput(const char input) {
+        char tmpStr[32];
         char menu[8];
         strncpy(menu, &input, 1);
         menu[1] = '\0';
@@ -158,9 +162,8 @@ class SerialIO : public Task {
                         case 'b':
                             battery->printCalibration();
                             Serial.printf("Enter measured battery voltage and press [Enter]: ");
-                            char voltage[32];
-                            getStr(voltage, 32);
-                            battery->calibrateTo(atof(voltage));
+                            getStr(tmpStr, sizeof tmpStr);
+                            battery->calibrateTo(atof(tmpStr));
                             battery->saveCalibration();
                             battery->printCalibration();
                             menu[1] = '\0';
@@ -168,24 +171,43 @@ class SerialIO : public Task {
                         case 's':
                             strain->printCalibration();
                             Serial.printf("Enter known mass in Kg and press [Enter]: ");
-                            char mass[32];
-                            getStr(mass, 32);
-                            strain->calibrateTo(atof(mass));
+                            getStr(tmpStr, sizeof tmpStr);
+                            strain->calibrateTo(atof(tmpStr));
                             strain->saveCalibration();
                             strain->printCalibration();
+                            menu[1] = '\0';
+                            break;
+                        case 'c':
+                            Serial.printf("Enter crank length in mm and press [Enter]: ");
+                            getStr(tmpStr, sizeof tmpStr);
+                            power->crankLength = atof(tmpStr);
+                            power->saveSettings();
+                            menu[1] = '\0';
+                            break;
+                        case 'r':
+                            power->reverseStrain = !power->reverseStrain;
+                            power->saveSettings();
+                            Serial.printf("Strain is now %sreversed\n", power->reverseStrain ? "" : "not ");
+                            menu[1] = '\0';
+                            break;
+                        case 'e':
+                            power->reverseMPU = !power->reverseMPU;
+                            power->saveSettings();
+                            Serial.printf("MPU is now %sreversed\n", power->reverseMPU ? "" : "not ");
                             menu[1] = '\0';
                             break;
                         case 'p':
                             mpu->printCalibration();
                             strain->printCalibration();
                             battery->printCalibration();
+                            power->printSettings();
                             menu[1] = '\0';
                             break;
                         case 'x':
                             strncpy(menu, " ", 2);
                             break;
                         default:
-                            printf("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, [p]rint calibration or e[x]it\n");
+                            printf("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, set [c]rank length, toggle [r]everse strain, toggle r[e]verse MPU, [p]rint calibration or e[x]it\n");
                             menu[1] = getChar();
                             menu[2] = '\0';
                     }

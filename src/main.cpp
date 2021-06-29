@@ -3,6 +3,7 @@
 
 #include "battery.h"
 #include "ble.h"
+#define MPU_RINGBUF_SIZE 10
 #include "mpu.h"
 #ifdef FEATURE_SERIALIO
 #include "serialio.h"
