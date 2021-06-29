@@ -8,30 +8,18 @@
 #include "idle.h"
 #include "task.h"
 
-#define STRAIN_DOUT_PIN 5
-#define STRAIN_SCK_PIN 18
-//#define STRAIN_USE_INTERRUPT
-
-#ifdef STRAIN_USE_INTERRUPT
-volatile bool strainDataReady;
-void IRAM_ATTR strainDataReadyISR() {
-    strainDataReady = true;
-}
-#endif
-
 class Strain : public Idle, public Task {
    public:
     HX711_ADC *device;
-    const uint8_t doutPin = STRAIN_DOUT_PIN;
-    const uint8_t sckPin = STRAIN_SCK_PIN;
     Preferences *preferences;
     const char *preferencesNS;
 
-    float measurement = 0.0;
     ulong measurementTime = 0;
     ulong lastMeasurementDelay = 0;
 
-    void setup(Preferences *p,
+    void setup(const uint8_t doutPin,
+               const uint8_t sckPin,
+               Preferences *p,
                const char *preferencesNS = "STRAIN") {
         preferences = p;
         this->preferencesNS = preferencesNS;
@@ -41,44 +29,30 @@ class Strain : public Idle, public Task {
         bool tare = true;
         device->start(stabilizingTime, tare);
         if (device->getTareTimeoutFlag()) {
-            log_e("[Error] HX711 Tare Timeout");
+            log_e("HX711 Tare Timeout");
         }
         loadCalibration();
-#ifdef STRAIN_USE_INTERRUPT
-        attachInterrupt(digitalPinToInterrupt(doutPin), strainDataReadyISR, FALLING);
-#endif
     }
 
     void loop(const ulong t) {
         if (device->update()) {
-            measurement = device->getData();
+            _measurement = device->getData();
             lastMeasurementDelay = t - measurementTime;
             measurementTime = t;
+            _dataReady = true;
             return;
         }
         increaseIdleCycles();
     }
 
-    /*
-    void loop(const ulong t) {
-#ifdef STRAIN_USE_INTERRUPT
-        if (strainDataReady) {
-#endif
-            if (device->update()) {
-                measurement = device->getData();
-                measurementTime = t;
-                resetIdleCycles();
-#ifdef STRAIN_USE_INTERRUPT
-                strainDataReady = false;
-#endif
-                return;
-            }
-#ifdef STRAIN_USE_INTERRUPT
-        }
-#endif
-        increaseIdleCycles();
+    float measurement(bool unsetDataReadyFlag = false) {
+        if (unsetDataReadyFlag) _dataReady = false;
+        return _measurement;
     }
-    */
+
+    bool dataReady() {
+        return _dataReady;
+    }
 
     void calibrateTo(float knownMass) {
         float calFactor = device->getCalFactor();
@@ -129,6 +103,10 @@ class Strain : public Idle, public Task {
     void tare() {
         device->tare();
     }
+
+   private:
+    float _measurement = 0.0;
+    bool _dataReady = false;
 };
 
 #endif

@@ -10,8 +10,7 @@
 #include "idle.h"
 #include "task.h"
 
-#define MPU_ADDR 0x68
-#define MPU_RINGBUF_S 10  // circular buffer size
+#define MPU_RINGBUF_SIZE 10  // circular buffer size
 
 class MPU : public Idle, public Task {
    public:
@@ -22,15 +21,6 @@ class MPU : public Idle, public Task {
     Preferences *preferences;
     const char *preferencesNS;
 
-    struct Measurement {
-        ulong time;
-        float angle;
-        float rpm;
-    };
-    CircularBuffer<Measurement, MPU_RINGBUF_S> ringBuf;
-
-    float rpm = 0.0;  // average rpm of the ring buffer
-
     struct Quaternion {
         float x;
         float y;
@@ -38,14 +28,20 @@ class MPU : public Idle, public Task {
         float w;
     };
 
-    void setup(uint8_t sdaPin,
-               uint8_t sclPin,
+    void setup(const uint8_t sdaPin,
+               const uint8_t sclPin,
+               Preferences *p) {
+        setup(sdaPin, sclPin, p, "MPU", 0x68);
+    }
+    void setup(const uint8_t sdaPin,
+               const uint8_t sclPin,
                Preferences *p,
-               const char *preferencesNS = "MPU") {
+               const char *preferencesNS,
+               uint8_t mpuAddress) {
         preferences = p;
         this->preferencesNS = preferencesNS;
         Wire.begin(sdaPin, sclPin);
-        delay(100);
+        vTaskDelay(100);
         device = new MPU9250();
         //device->verbose(true);
         MPU9250Setting s;
@@ -55,13 +51,10 @@ class MPU : public Idle, public Task {
         //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_10HZ;
         //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_420HZ;
         //s.mag_output_bits = MAG_OUTPUT_BITS::M14BITS;
-        device->setup(MPU_ADDR, s);
+        device->setup(mpuAddress, s);
         //device->selectFilter(QuatFilterSel::MAHONY);
         device->selectFilter(QuatFilterSel::NONE);
         //device->selectFilter(QuatFilterSel::MADGWICK);
-        //device->calibrateAccelGyro();
-        //device->setMagBias(129.550766, -762.064697, 213.780151);
-        //device->setMagScale(1.044610, 0.996454, 0.962329);
         // 5° 19'
         device->setMagneticDeclination(5 + 19 / 60);
         loadCalibration();
@@ -85,41 +78,51 @@ class MPU : public Idle, public Task {
             increaseIdleCycles();
             return;
         }
-        Measurement m;
-        m.time = t;
-        m.angle = device->getYaw() + 180.0;
-        //m.angle = device->getAccY();
-        //m.angle = device->getEulerZ();
-        m.rpm = 0.0;
-        if (!ringBuf.isEmpty()) {
-            Measurement pm = ringBuf.last();
-            ushort dT = m.time - pm.time;  // ms
+        static ulong previousTime = 0;
+        static float previousAngle = 0.0;
+        float angle = device->getYaw() + 180.0;  // 0...360
+        //float angle = device->getAccY();
+        //float angle = device->getEulerZ();
+        float newRpm = 0.0;
+        if (0 < previousTime && !_rpmBuf.isEmpty()) {
+            ushort dT = t - previousTime;  // ms
             if (0 < dT) {
-                float dA = m.angle - pm.angle;  // deg
+                float dA = angle - previousAngle;  // deg
                 // roll over zero deg, will fail when spinning faster than 180 deg/dT
                 if (-360 < dA && dA <= -180) {
                     dA += 360;
                 }
-                m.rpm = dA / dT / 0.006;            // 1 deg/ms / .006 = 1 rpm
-                if (m.rpm < -200 || 200 < m.rpm) {  // remove value > 200 rpm
-                    log_d("invalid rpm %f", m.rpm);
-                    m.rpm = 0.0;
+                newRpm = dA / dT / 0.006;             // 1 deg/ms / .006 = 1 rpm
+                if (newRpm < -200 || 200 < newRpm) {  // remove value > 200 rpm
+                    log_d("invalid rpm %f", newRpm);
+                    newRpm = 0.0;
                 }
-                if (-1 < m.rpm && m.rpm < 1) {  // remove noise at rest
-                    m.rpm = 0.0;
+                if (-1 < newRpm && newRpm < 1) {  // remove noise from yaw drift at rest
+                    newRpm = 0.0;
                 }
             }
         }
-        ringBuf.push(m);
-        if (ringBuf.isFull()) {
+        _rpmBuf.push(newRpm);
+        if (_rpmBuf.isFull()) {
             float avg = 0.0;
-            using index_t = decltype(ringBuf)::index_t;
-            for (index_t i = 0; i < ringBuf.size(); i++) {
-                avg += ringBuf[i].rpm / ringBuf.size();
+            for (decltype(_rpmBuf)::index_t i = 0; i < _rpmBuf.size(); i++) {
+                avg += _rpmBuf[i] / _rpmBuf.size();
             }
-            rpm = avg;
+            _rpm = avg;
+            _dataReady = true;
         }
+        previousTime = t;
+        previousAngle = angle;
         resetIdleCycles();
+    }
+
+    float rpm(bool unsetDataReadyFlag = false) {
+        if (unsetDataReadyFlag) _dataReady = false;
+        return _rpm;
+    }
+
+    bool dataReady() {
+        return _dataReady;
     }
 
     Quaternion quaternion() {
@@ -243,6 +246,11 @@ class MPU : public Idle, public Task {
         preferences->putBool("calibrated", true);
         preferences->end();
     }
+
+   private:
+    CircularBuffer<float, MPU_RINGBUF_SIZE> _rpmBuf;
+    float _rpm = 0.0;  // average rpm of the ring buffer
+    bool _dataReady = false;
 
     float prefGetValidFloat(const char *key, const float_t defaultValue) {
         float f = preferences->getFloat(key, defaultValue);

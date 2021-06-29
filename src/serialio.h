@@ -5,6 +5,7 @@
 
 #include "battery.h"
 #include "mpu.h"
+#include "power.h"
 #include "strain.h"
 #include "task.h"
 #include "wificonnection.h"
@@ -14,13 +15,15 @@ class SerialIO : public Task {
     Battery *battery;
     MPU *mpu;
     Strain *strain;
+    Power *power;
     WifiConnection *wifi;
     bool statusEnabled = false;
 
-    void setup(Battery *b, MPU *m, Strain *s, WifiConnection *w) {
+    void setup(Battery *b, MPU *m, Strain *s, Power *p, WifiConnection *w) {
         battery = b;
         mpu = m;
         strain = s;
+        power = p;
         wifi = w;
         Serial.begin(115200);
         while (!Serial)
@@ -89,9 +92,10 @@ class SerialIO : public Task {
         if (lastOutput < t - 100) {
             Serial.printf(
                 //"%f %f %d %d\n",
-                "%f %f %.2f %.2f %d %d %d %d\n",
-                mpu->rpm,
-                strain->measurement,
+                "%f %f %f %.2f %.2f %d %d %d %d\n",
+                mpu->rpm(),
+                strain->measurement(),
+                power->power,
                 battery->pinVoltage,
                 battery->voltage,
                 //(int)battery->taskLastLoopDelay,
@@ -163,7 +167,7 @@ class SerialIO : public Task {
                             break;
                         case 's':
                             strain->printCalibration();
-                            Serial.printf("Enter known mass and press [Enter]: ");
+                            Serial.printf("Enter known mass in Kg and press [Enter]: ");
                             char mass[32];
                             getStr(mass, 32);
                             strain->calibrateTo(atof(mass));
