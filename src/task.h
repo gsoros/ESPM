@@ -70,7 +70,7 @@ class Task {
         for (;;) {
             const ulong t = millis();
             if (thisPtr->xLastWakeTime + thisPtr->taskDelay <= t) {
-                log_w("%s (%dHz) missed a beat", thisPtr->taskName, thisPtr->taskFreq);
+                //log_w("%s (%dHz) missed a beat", thisPtr->taskName, thisPtr->taskFreq);
                 thisPtr->xLastWakeTime = t;
             }
             vTaskDelayUntil(&(thisPtr->xLastWakeTime), thisPtr->taskDelay);

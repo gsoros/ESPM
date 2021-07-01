@@ -1,6 +1,10 @@
 #ifndef BLE_CONSTANTS_H
 #define BLE_CONSTANTS_H
 
+/*
+    Based on https://github.com/ihaque/pelomon/blob/main/pelomon/ble_constants.h
+*/
+
 #define CYCLING_POWER_SERVICE_UUID ((uint16_t)0x1818)
 #define CYCLING_SPEED_CADENCE_SERVICE_UUID ((uint16_t)0x1816)
 

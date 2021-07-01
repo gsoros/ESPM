@@ -22,7 +22,7 @@ class Strain : public Idle, public Task, public HasPreferences {
         preferencesSetup(p, preferencesNS);
         device = new HX711_ADC(doutPin, sckPin);
         device->begin();
-        ulong stabilizingTime = 2000;
+        ulong stabilizingTime = 1000 / 80;
         bool tare = true;
         device->start(stabilizingTime, tare);
         if (device->getTareTimeoutFlag()) {

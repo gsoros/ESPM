@@ -5,6 +5,8 @@
 #include <Preferences.h>
 #include <WiFi.h>
 
+#include "haspreferences.h"
+
 typedef struct
 {
     bool apEnable;
@@ -15,15 +17,12 @@ typedef struct
     char staPassword[32];
 } WifiConnectionSettings;
 
-class WifiConnection {
+class WifiConnection : public HasPreferences {
    public:
     WifiConnectionSettings settings;
-    Preferences *preferences;
-    const char *preferencesNS;
 
     void setup(Preferences *p, const char *preferencesNS = "WiFi") {
-        preferences = p;
-        this->preferencesNS = preferencesNS;
+        preferencesSetup(p, preferencesNS);
         if (!loadSettings())
             loadDefaultSettings();
         applySettings();
@@ -33,12 +32,7 @@ class WifiConnection {
     }
 
     bool loadSettings() {
-        if (!preferences->begin(preferencesNS, true)) {       // try ro mode
-            if (!preferences->begin(preferencesNS, false)) {  // open in rw mode to create ns
-                log_e("Preferences begin failed for '%s'.", preferencesNS);
-                return false;
-            }
-        }
+        if (!preferencesStartLoad()) return false;
         settings.apEnable = preferences->getBool("apEnable", false);
         //preferences->getBytes("apSSID", settings.apSSID, 32);
         //preferences->getBytes("apPassword", settings.apPassword, 32);
@@ -49,7 +43,7 @@ class WifiConnection {
         //preferences->getBytes("staPassword", settings.staPassword, 32);
         strncpy(settings.staSSID, preferences->getString("staSSID").c_str(), 32);
         strncpy(settings.staPassword, preferences->getString("staPassword").c_str(), 32);
-        preferences->end();
+        preferencesEnd();
         if (!settings.staEnable && !settings.apEnable)
             return false;
         return true;
@@ -65,36 +59,39 @@ class WifiConnection {
     }
 
     void saveSettings() {
-        log_i("Saving settings to %s", preferencesNS);
-        if (!preferences->begin(preferencesNS, false)) {
-            log_e("Preferences begin failed for '%s'.", preferencesNS);
-            return;
-        }
+        if (!preferencesStartSave()) return;
         preferences->putBool("apEnable", settings.apEnable);
         preferences->putString("apSSID", settings.apSSID);
         preferences->putString("apPassword", settings.apPassword);
         preferences->putBool("staEnable", settings.staEnable);
         preferences->putString("staSSID", settings.staSSID);
         preferences->putString("staPassword", settings.staPassword);
-        preferences->end();
-        log_i("Settings saved");
+        preferencesEnd();
     }
 
     void printSettings() {
-        log_i("WiFi AP %s '%s' '%s'\n",
-              settings.apEnable ? "Enabled" : "Disabled",
-              settings.apSSID,
-              "***"  //settings.apPassword
+        printAPSettings();
+        printSTASettings();
+    }
+
+    void printAPSettings() {
+        Serial.printf("WiFi AP %s '%s' '%s'\n",
+                      settings.apEnable ? "Enabled" : "Disabled",
+                      settings.apSSID,
+                      "***"  //settings.apPassword
         );
         if (settings.apEnable)
-            log_i("AP online, IP: %s\n", WiFi.softAPIP().toString().c_str());
-        log_i("WiFi STA %s '%s' '%s'\n",
-              settings.staEnable ? "Enabled" : "Disabled",
-              settings.staSSID,
-              "***"  //settings.staPassword
+            Serial.printf("AP online, IP: %s\n", WiFi.softAPIP().toString().c_str());
+    }
+
+    void printSTASettings() {
+        Serial.printf("WiFi STA %s '%s' '%s'\n",
+                      settings.staEnable ? "Enabled" : "Disabled",
+                      settings.staSSID,
+                      "***"  //settings.staPassword
         );
         if (WiFi.isConnected())
-            log_i("STA connected, local IP: %s\n", WiFi.localIP().toString().c_str());
+            Serial.printf("STA connected, local IP: %s\n", WiFi.localIP().toString().c_str());
     }
 
     void applySettings() {

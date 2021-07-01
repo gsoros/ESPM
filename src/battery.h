@@ -4,14 +4,13 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
+#include "haspreferences.h"
 #include "task.h"
 
 #define BATTERY_PIN 35
 
-class Battery : public Task {
+class Battery : public Task, public HasPreferences {
    public:
-    Preferences *preferences;
-    const char *preferencesNS;
     float corrF = 1.0;
     float voltage = 0.0;
     float pinVoltage = 0.0;
@@ -19,8 +18,7 @@ class Battery : public Task {
 
     void setup(Preferences *p,
                const char *preferencesNS = "Battery") {
-        preferences = p;
-        this->preferencesNS = preferencesNS;
+        preferencesSetup(p, preferencesNS);
         this->loadCalibration();
     }
 
@@ -58,21 +56,14 @@ class Battery : public Task {
     }
 
     void loadCalibration() {
-        if (!preferences->begin(preferencesNS, true))  // try ro mode
-        {
-            if (!preferences->begin(preferencesNS, false))  // open in rw mode to create ns
-            {
-                log_e("Preferences begin failed for '%s'\n", preferencesNS);
-                return;
-            }
-        }
+        if (!preferencesStartLoad()) return;
         if (!preferences->getBool("calibrated", false)) {
             log_e("Not calibrated");
-            preferences->end();
+            preferencesEnd();
             return;
         }
         corrF = preferences->getFloat("corrF", 1.0);
-        preferences->end();
+        preferencesEnd();
     }
 
     void calibrateTo(float realVoltage) {
@@ -83,13 +74,10 @@ class Battery : public Task {
     }
 
     void saveCalibration() {
-        if (!preferences->begin(preferencesNS, false)) {
-            log_e("Preferences begin failed for '%s'\n", preferencesNS);
-            return;
-        }
+        if (!preferencesStartSave()) return;
         preferences->putFloat("corrF", corrF);
         preferences->putBool("calibrated", true);
-        preferences->end();
+        preferencesEnd();
     }
 
     void printCalibration() {

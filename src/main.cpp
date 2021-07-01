@@ -3,7 +3,7 @@
 
 #include "battery.h"
 #include "ble.h"
-#define MPU_RINGBUF_SIZE 10
+#define MPU_RINGBUF_SIZE 16
 #include "mpu.h"
 #ifdef FEATURE_SERIALIO
 #include "serialio.h"
@@ -17,6 +17,7 @@
 #include "ota.h"
 #endif
 #include "power.h"
+#include "wifiserial.h"
 
 //#define LED_PIN 22
 
@@ -42,21 +43,26 @@ WebServer ws;
 #ifdef FEATURE_OTA
 OTA ota;
 #endif
+WifiSerial wifiSerial;
 
 void setup() {
     //Serial.println(getXtalFrequencyMhz());
     //while(1);
     setCpuFrequencyMhz(160);
-    esp_log_level_set("*", ESP_LOG_ERROR);
+    esp_log_level_set("*", ESP_LOG_DEBUG);
+    Serial.begin(115200);
+    wifi.setup(&preferences);
+    while (!Serial)
+        vTaskDelay(10);
+    wifiSerial.setup();
 #ifdef FEATURE_SERIALIO
-    sio.setup(&battery, &mpu, &strain, &power, &wifi);
+    sio.setup(&Serial, &wifiSerial, &battery, &mpu, &strain, &power, &wifi, true, true);
 #endif
     battery.setup(&preferences);
     strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, &preferences);
     mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
     power.setup(&mpu, &strain, &preferences);
     ble.setup();
-    wifi.setup(&preferences);
 #ifdef FEATURE_WEBSERVER
     ws.setup(&strain, &mpu, &power);
 #endif
@@ -65,9 +71,10 @@ void setup() {
 #endif
 
     battery.taskStart("Battery Task", 1);
-    strain.taskStart("Strain Task", 80);  // HX711 runs at max 80Hz
-    mpu.taskStart("MPU Task", 80);        // no need to run faster than strain
+    strain.taskStart("Strain Task", 125);
+    mpu.taskStart("MPU Task", 125);
     power.taskStart("Power Task", 80);
+    wifiSerial.taskStart("WifiSerial Task", 100);
 #ifdef FEATURE_SERIALIO
     sio.taskStart("SerialIO Task", 10);
 #endif

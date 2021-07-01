@@ -12,7 +12,7 @@
 #include "task.h"
 
 #ifndef MPU_RINGBUF_SIZE
-#define MPU_RINGBUF_SIZE 10  // circular buffer size
+#define MPU_RINGBUF_SIZE 16  // circular buffer size
 #endif
 
 class MPU : public Idle, public Task, public HasPreferences {
