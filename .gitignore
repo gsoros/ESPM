@@ -1,7 +1,9 @@
 .pio
 .vscode/
-lib/NimBLE-Arduino
-lib/HX711_ADC
-lib/MPU9250
+lib/NimBLE-Arduino/
+lib/HX711_ADC/
+lib/MPU9250/
+lib/AsyncTCP/
+lib/ESPAsyncWebServer/
 *-cache.lib
 mklittlefs

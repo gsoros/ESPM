@@ -66,7 +66,7 @@ class WebServer : public Task {
     }
 
     void loop(const ulong t) {
-        if (wssLastCleanup < t - 1000) {
+        if (wssLastCleanup < t - 300) {
             wss->cleanupClients();
             wssLastCleanup = t;
         }
@@ -106,7 +106,8 @@ class WebServer : public Task {
         json["qZ"] = q.z;
         json["qW"] = q.w;
         json["rpm"] = mpu->rpm();
-        json["power"] = power->power;
+        json["strain"] = strain->measurement();
+        json["power"] = power->power();
         serializeJson(json, output);
         wss->textAll(output);
     }

@@ -7,12 +7,12 @@
 
 class OTA {
    public:
-    void setup() {
+    void setup(const char *hostName = "ESPM", uint16_t port = 3232) {
         // Port defaults to 3232
-        // ArduinoOTA.setPort(3232);
+        ArduinoOTA.setPort(port);
 
         // Hostname defaults to esp3232-[MAC]
-        ArduinoOTA.setHostname("ESPM");
+        ArduinoOTA.setHostname(hostName);
 
         // No authentication by default
         // ArduinoOTA.setPassword("admin");

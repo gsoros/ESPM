@@ -77,6 +77,7 @@
           cube.material.color.setRGB(.3 + j.strain / 200, .3, .3 - j.strain / 200);
           renderer.render(scene, camera);
           document.getElementById("rpm").innerHTML = j.rpm;
+          document.getElementById("strain").innerHTML = j.strain;
           document.getElementById("power").innerHTML = j.power;
         } catch (e) {}
       };
@@ -101,7 +102,7 @@
   <button onclick="if (confirm('Reboot ESP?')) request('/reboot'); setTimeout(window.location.reload(), 10000)">
     Reboot
   </button>
-  <p>RPM: <span id="rpm">0</span> Power: <span id="power">0</span></p>
+  <p>RPM: <span id="rpm">0</span> Strain: <span id="strain">0</span> Power: <span id="power">0</span></p>
 </body>
 
 </html>

@@ -160,7 +160,6 @@ class MPU : public Idle, public Task, public HasPreferences {
     }
 
     void printAccelGyroCalibration() {
-#ifdef FEATURE_SERIALIO
         Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
         Serial.printf("Accel bias [g]:    %14f %14f %14f\n",
                       device->getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
@@ -171,11 +170,9 @@ class MPU : public Idle, public Task, public HasPreferences {
                       device->getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
                       device->getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
         Serial.printf("---------------------------------------------------------------\n");
-#endif
     }
 
     void printMagCalibration() {
-#ifdef FEATURE_SERIALIO
         Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
         Serial.printf("Mag bias [mG]:     %14f %14f %14f\n",
                       device->getMagBiasX(),
@@ -186,7 +183,6 @@ class MPU : public Idle, public Task, public HasPreferences {
                       device->getMagScaleY(),
                       device->getMagScaleZ());
         Serial.printf("---------------------------------------------------------------\n");
-#endif
     }
 
     void loadCalibration() {

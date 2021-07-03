@@ -1,8 +1,7 @@
-#ifndef SERIALIO_H
-#define SERIALIO_H
+#ifndef STATUS_H
+#define STATUS_H
 
 #include <Arduino.h>
-#include <Stream.h>
 
 #include "battery.h"
 #include "mpu.h"
@@ -11,33 +10,22 @@
 #include "task.h"
 #include "wificonnection.h"
 
-class SerialIO : public Task {
+class Status : public Task {
    public:
-    Stream *s0;
-    bool s0_enabled;
-    Stream *s1;
-    bool s1_enabled;
     Battery *battery;
     MPU *mpu;
     Strain *strain;
     Power *power;
     WifiConnection *wifi;
     bool statusEnabled = false;
+    uint32_t statusDelay = 1000;  // ms
 
     void setup(
-        Stream *stream0,
-        Stream *stream1,
         Battery *b,
         MPU *m,
         Strain *s,
         Power *p,
-        WifiConnection *w,
-        bool stream0_enabled = true,
-        bool stream1_enabled = false) {
-        s0 = stream0;
-        s0_enabled = stream0_enabled;
-        s1 = stream1;
-        s1_enabled = stream1_enabled;
+        WifiConnection *w) {
         battery = b;
         mpu = m;
         strain = s;
@@ -53,61 +41,20 @@ class SerialIO : public Task {
     }
 
     void loop(const ulong t) {
-        if (0 < available()) {
+        if (0 < Serial.available()) {
             handleInput(getChar());
         }
         printStatus(t);
     }
 
-    int available() {
-        return (s0_enabled ? 0 < s0->available() : 0) + (s1_enabled ? 0 < s1->available() : 0);
-    }
-
-    int read() {
-        return s0_enabled && s0->available()   ? s0->read()
-               : s1_enabled && s1->available() ? s1->read()
-                                               : -1;
-    }
-
     char getChar() {
         bool oldStatusEnabled = statusEnabled;
         statusEnabled = false;
-        while (!available()) {
+        while (!Serial.available()) {
             vTaskDelay(10);
         }
         statusEnabled = oldStatusEnabled;
-        return read();
-    }
-
-    size_t print(const char c) {
-        int len0 = 0, len1 = 0;
-        if (s0_enabled) len0 = s0->print(c);
-        if (s1_enabled) len1 = s1->print(c);
-        return max(len0, len1);
-    }
-    size_t print(const char *str) {
-        int len0 = 0, len1 = 0;
-        if (s0_enabled) len0 = s0->print(str);
-        if (s1_enabled) len1 = s1->print(str);
-        return max(len0, len1);
-    }
-
-    size_t printf(const char *format, ...) {
-        va_list args;
-        size_t ret;
-        va_start(args, format);
-        ret = vprintf(format, args);
-        va_end(args);
-        return ret;
-    }
-
-    size_t vprintf(const char *format, va_list arg) {
-        char buf[64];
-        vsnprintf(buf, sizeof(buf), format, arg);
-        int len0 = 0, len1 = 0;
-        if (s0_enabled) len0 = s0->print(buf);
-        if (s1_enabled) len1 = s1->printf(buf);
-        return max(len0, len1);
+        return Serial.read();
     }
 
     int getStr(char *str, int maxLength, bool echo = true) {
@@ -130,28 +77,37 @@ class SerialIO : public Task {
                 break;
             }
             if (echo) {
-                print(c);
+                Serial.print(c);
             }
             buffer[received] = c;
         }
         buffer[received] = '\0';
         strncpy(str, buffer, maxLength);
-        printf("\n");
+        Serial.print("\n");
         statusEnabled = oldStatusEnabled;
         return received;
+    }
+
+    void setStatusFreq(float freq) {
+        if (freq < 0.1 || (float)taskFreq < freq) {
+            Serial.printf("Frequency %.2f out of range\n", freq);
+            return;
+        }
+        statusDelay = (uint32_t)(1000.0 / freq);
+        Serial.printf("Status freq is %.2fHz (%dms delay)\n", freq, statusDelay);
     }
 
     void printStatus(const ulong t) {
         static ulong lastOutput = 0;
         if (!statusEnabled)
             return;
-        if (lastOutput < t - 100) {
-            printf(
+        if (lastOutput < t - statusDelay) {
+            Serial.printf(
                 //"%f %f %d %d\n",
                 "%f %f %f %.2f %.2f %d %d %d %d\n",
                 mpu->rpm(),
                 strain->measurement(),
-                power->power,
+                power->power(),
                 battery->pinVoltage,
                 battery->voltage,
                 //(int)battery->taskLastLoopDelay,
@@ -162,9 +118,6 @@ class SerialIO : public Task {
                 //mpu->idleCyclesMax,
                 //strain->idleCyclesMax
             );
-            //s1->printf("%f\n", mpu->rpm());
-            //mpu->idleCyclesMax = 0;
-            //strain->idleCyclesMax = 0;
             lastOutput = t;
         }
     }
@@ -193,6 +146,8 @@ class SerialIO : public Task {
                 e[x]it
             [p]rint config
             e[x]it
+        c[o]nfig
+            status [f]requency
         [r]eboot
     */
     void handleInput(const char input) {
@@ -202,7 +157,7 @@ class SerialIO : public Task {
         menu[1] = '\0';
         while (1) {
             switch (menu[0]) {
-                case 'c':
+                case 'c':  // calibrate
                     switch (menu[1]) {
                         case 'a':
                             mpu->calibrateAccelGyro();
@@ -218,7 +173,7 @@ class SerialIO : public Task {
                             break;
                         case 'b':
                             battery->printCalibration();
-                            print("Enter measured battery voltage and press [Enter]: ");
+                            Serial.print("Enter measured battery voltage and press [Enter]: ");
                             getStr(tmpStr, sizeof tmpStr);
                             battery->calibrateTo(atof(tmpStr));
                             battery->saveCalibration();
@@ -227,7 +182,7 @@ class SerialIO : public Task {
                             break;
                         case 's':
                             strain->printCalibration();
-                            print("Enter known mass in Kg and press [Enter]: ");
+                            Serial.print("Enter known mass in Kg and press [Enter]: ");
                             getStr(tmpStr, sizeof tmpStr);
                             strain->calibrateTo(atof(tmpStr));
                             strain->saveCalibration();
@@ -235,7 +190,7 @@ class SerialIO : public Task {
                             menu[1] = '\0';
                             break;
                         case 'c':
-                            print("Enter crank length in mm and press [Enter]: ");
+                            Serial.print("Enter crank length in mm and press [Enter]: ");
                             getStr(tmpStr, sizeof tmpStr);
                             power->crankLength = atof(tmpStr);
                             power->saveSettings();
@@ -244,13 +199,13 @@ class SerialIO : public Task {
                         case 'r':
                             power->reverseStrain = !power->reverseStrain;
                             power->saveSettings();
-                            printf("Strain is now %sreversed\n", power->reverseStrain ? "" : "not ");
+                            Serial.printf("Strain is now %sreversed\n", power->reverseStrain ? "" : "not ");
                             menu[1] = '\0';
                             break;
                         case 'e':
                             power->reverseMPU = !power->reverseMPU;
                             power->saveSettings();
-                            printf("MPU is now %sreversed\n", power->reverseMPU ? "" : "not ");
+                            Serial.printf("MPU is now %sreversed\n", power->reverseMPU ? "" : "not ");
                             menu[1] = '\0';
                             break;
                         case 'p':
@@ -264,12 +219,12 @@ class SerialIO : public Task {
                             strncpy(menu, " ", 2);
                             break;
                         default:
-                            print("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, set [c]rank length, toggle [r]everse strain, toggle r[e]verse MPU, [p]rint calibration or e[x]it\n");
+                            Serial.print("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, set [c]rank length, toggle [r]everse strain, toggle r[e]verse MPU, [p]rint calibration or e[x]it\n");
                             menu[1] = getChar();
                             menu[2] = '\0';
                     }
                     break;
-                case 'w':
+                case 'w':  // wifi
                     switch (menu[1]) {
                         case 'a':
                             switch (menu[2]) {
@@ -280,14 +235,14 @@ class SerialIO : public Task {
                                     menu[2] = '\0';
                                     break;
                                 case 's':
-                                    print("Enter AP SSID (max 31 chars) and press [Enter]: ");
+                                    Serial.print("Enter AP SSID (max 31 chars) and press [Enter]: ");
                                     getStr(wifi->settings.apSSID, 32);
                                     wifi->applySettings();
                                     wifi->saveSettings();
                                     menu[2] = '\0';
                                     break;
                                 case 'p':
-                                    print("Enter AP password (max 31 chars) and press [Enter]: ");
+                                    Serial.print("Enter AP password (max 31 chars) and press [Enter]: ");
                                     getStr(wifi->settings.apPassword, 32, false);
                                     wifi->applySettings();
                                     wifi->saveSettings();
@@ -298,7 +253,7 @@ class SerialIO : public Task {
                                     break;
                                 default:
                                     wifi->printSettings();
-                                    print("AP setup: [e]nable, [s]SID, [p]assword or e[x]it\n");
+                                    Serial.print("AP setup: [e]nable, [s]SID, [p]assword or e[x]it\n");
                                     menu[2] = getChar();
                                     menu[3] = '\0';
                             }
@@ -312,14 +267,14 @@ class SerialIO : public Task {
                                     menu[2] = '\0';
                                     break;
                                 case 's':
-                                    print("Enter STA SSID (max 31 chars) and press [Enter]: ");
+                                    Serial.print("Enter STA SSID (max 31 chars) and press [Enter]: ");
                                     getStr(wifi->settings.staSSID, 32);
                                     wifi->applySettings();
                                     wifi->saveSettings();
                                     menu[2] = '\0';
                                     break;
                                 case 'p':
-                                    print("Enter STA password (max 31 chars) and press [Enter]: ");
+                                    Serial.print("Enter STA password (max 31 chars) and press [Enter]: ");
                                     getStr(wifi->settings.staPassword, 32, false);
                                     wifi->applySettings();
                                     wifi->saveSettings();
@@ -330,7 +285,7 @@ class SerialIO : public Task {
                                     break;
                                 default:
                                     wifi->printSettings();
-                                    print("STA setup: [e]nable, [s]SID, [p]assword or e[x]it\n");
+                                    Serial.print("STA setup: [e]nable, [s]SID, [p]assword or e[x]it\n");
                                     menu[2] = getChar();
                                     menu[3] = '\0';
                             }
@@ -343,7 +298,25 @@ class SerialIO : public Task {
                             strncpy(menu, " ", 2);
                             break;
                         default:
-                            print("WiFi setup: [a]P, [s]TA, [p]rint config or e[x]it\n");
+                            Serial.print("WiFi setup: [a]P, [s]TA, [p]rint config or e[x]it\n");
+                            menu[1] = getChar();
+                            menu[2] = '\0';
+                    }
+                    break;
+                case 'o':  // config
+                    switch (menu[1]) {
+                        case 'f':
+                            Serial.printf("Enter status output frequency in Hz (0.1...%d) and press [Enter]: ", taskFreq);
+                            getStr(tmpStr, 32);
+                            setStatusFreq((float)atof(tmpStr));
+                            // TODO save settings
+                            menu[1] = '\0';
+                            break;
+                        case 'x':
+                            strncpy(menu, " ", 2);
+                            break;
+                        default:
+                            Serial.print("Config: status [f]requency or e[x]it\n");
                             menu[1] = getChar();
                             menu[2] = '\0';
                     }
@@ -352,14 +325,13 @@ class SerialIO : public Task {
                     ESP.restart();
                     return;
                 case NULL:
-                    print("NULL received\n");
+                    Serial.print("NULL received\n");
                     return;
                 case 4:
-                    print("Ctrl-D received\n");
-                    // TODO disconnect client
+                    Serial.print("Ctrl-D received\n");
                     return;
                 default:
-                    print("[c]alibrate, [w]iFi or [r]eboot\n");
+                    Serial.print("[c]alibrate, [w]iFi, c[o]nfig or [r]eboot\n");
                     return;
             }
         }

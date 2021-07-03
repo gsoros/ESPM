@@ -32,7 +32,7 @@ class Task {
         if (taskRunning()) taskStop();
         strncpy(taskName, name, 32);
         taskFreq = freq;
-        taskDelay = 1000 / freq / portTICK_PERIOD_MS;
+        taskSetDelayFromFreq();
         //xTaskCreate(taskLoop, taskName, stack, this, priority, &taskHandle);
         xTaskCreatePinnedToCore(taskLoop, taskName, stack, this, priority, &taskHandle, 1);
     }
@@ -45,6 +45,11 @@ class Task {
         if (NULL != taskHandle)
             vTaskDelete(taskHandle);
         taskHandle = NULL;
+    }
+
+    void taskSetFreq(const uint16_t freq) {
+        taskFreq = freq;
+        taskSetDelayFromFreq();
     }
 
     void taskUpdateStats(const ulong t) {
@@ -77,6 +82,10 @@ class Task {
             thisPtr->loop(t);
             thisPtr->taskUpdateStats(t);
         }
+    }
+
+    void taskSetDelayFromFreq() {
+        taskDelay = 1000 / taskFreq / portTICK_PERIOD_MS;
     }
 };
 

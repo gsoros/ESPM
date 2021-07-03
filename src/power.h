@@ -15,7 +15,6 @@ class Power : public Task, public HasPreferences {
     float crankLength;
     bool reverseMPU;
     bool reverseStrain;
-    double power;
 
     void setup(MPU *m,
                Strain *s,
@@ -45,16 +44,14 @@ class Power : public Task, public HasPreferences {
         power = work / deltaT;                                                             // P(W)   = W(J) / t(s)
                                                                                            // P = F d RPM / 60 / t
         */
-        power = filterNegative(strain->measurement(true), reverseStrain) * 9.80665 *
-                2.0 * crankLength * PI / 1000.0 *
-                filterNegative(mpu->rpm(), reverseMPU) / 60.0 /
-                (t - previousT) / 1000.0;
+        _power = filterNegative(strain->measurement(true), reverseStrain) * 9.80665 *
+                 2.0 * crankLength * PI / 1000.0 *
+                 filterNegative(mpu->rpm(), reverseMPU) / 60.0 /
+                 (t - previousT) / 1000.0;
     }
 
-    float filterNegative(float value, bool reverse = false) {
-        if (reverse)
-            return 0.0 < value ? 0.0 : value;
-        return 0.0 > value ? 0.0 : value;
+    double power() {
+        return _power;
     }
 
     void loadSettings() {
@@ -79,6 +76,13 @@ class Power : public Task, public HasPreferences {
     }
 
    private:
+    double _power = 0.0;
+
+    float filterNegative(float value, bool reverse = false) {
+        if (reverse)
+            return 0.0 < value ? 0.0 : value;
+        return 0.0 > value ? 0.0 : value;
+    }
 };
 
 #endif

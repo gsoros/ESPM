@@ -2,10 +2,10 @@
 #define WIFISERIAL_H
 
 #include <Arduino.h>
+#include <Stream.h>
 #include <WiFi.h>
 
 #include "CircularBuffer.h"
-#include "Stream.h"
 #include "task.h"
 
 class WifiSerial : public Task, public Stream {
@@ -23,7 +23,7 @@ class WifiSerial : public Task, public Stream {
             if (!_client) return;
             _connected = true;
             log_d("Client connected");
-            _client.printf("Welcome.\n");
+            _client.print("Welcome.\n");
         } else if (!_client.connected()) {
             _client.stop();
             _connected = false;
@@ -50,7 +50,7 @@ class WifiSerial : public Task, public Stream {
     }
 
     size_t write(const uint8_t *buf, size_t size) {
-        // todo mutex
+        // TODO mutex
         size_t written = size;
         while (size) {
             _tx_buf.push(*buf++);
@@ -65,19 +65,35 @@ class WifiSerial : public Task, public Stream {
 
     int read() {
         if (available()) {
-            return _rx_buf.shift();
+            char c = _rx_buf.shift();
+            switch (c) {
+                case 4:
+                    print("Control-D received\nBye.\n");
+                    flush();
+                    vTaskDelay(100);
+                    _client.stop();
+                    _connected = false;
+                    Serial.print("WiFiSerial client logged off\n");
+                    return -1;
+            }
+            return c;
         }
         return -1;
     };
 
-    int peek() { return 0; };
-    void flush(){};
+    int peek() {
+        return _rx_buf.first();
+    };
+
+    void flush() {
+        _client.flush();
+    }
 
    private:
     WiFiServer _server;
     WiFiClient _client;
-    CircularBuffer<char, 256> _rx_buf;
-    CircularBuffer<char, 256> _tx_buf;
+    CircularBuffer<char, WIFISERIAL_RINGBUF_RX_SIZE> _rx_buf;
+    CircularBuffer<char, WIFISERIAL_RINGBUF_TX_SIZE> _tx_buf;
     bool _connected = false;
 };
 #endif

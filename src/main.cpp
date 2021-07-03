@@ -1,13 +1,14 @@
-#include <Arduino.h>
+#define NO_GLOBAL_SERIAL  // silence intellisense
+#include "serialsplitter.h"
+
 #include <Preferences.h>
 
 #include "battery.h"
 #include "ble.h"
+
 #define MPU_RINGBUF_SIZE 16
 #include "mpu.h"
-#ifdef FEATURE_SERIALIO
-#include "serialio.h"
-#endif
+#include "status.h"
 #include "strain.h"
 #include "wificonnection.h"
 #ifdef FEATURE_WEBSERVER
@@ -17,8 +18,12 @@
 #include "ota.h"
 #endif
 #include "power.h"
+#include "status.h"
+#define WIFISERIAL_RINGBUF_RX_SIZE 256
+#define WIFISERIAL_RINGBUF_TX_SIZE 1024
 #include "wifiserial.h"
 
+#define HOSTNAME "ESPM"
 //#define LED_PIN 22
 
 #define MPU_SDA_PIN 23
@@ -27,10 +32,11 @@
 #define STRAIN_DOUT_PIN 5
 #define STRAIN_SCK_PIN 18
 
-#ifdef FEATURE_SERIALIO
-SerialIO sio;
-#endif
+HardwareSerial hwSerial(0);
+WifiSerial wifiSerial;
+
 Preferences preferences;
+Status status;
 Strain strain;
 MPU mpu;
 Power power;
@@ -43,21 +49,19 @@ WebServer ws;
 #ifdef FEATURE_OTA
 OTA ota;
 #endif
-WifiSerial wifiSerial;
 
 void setup() {
     //Serial.println(getXtalFrequencyMhz());
     //while(1);
     setCpuFrequencyMhz(160);
     esp_log_level_set("*", ESP_LOG_DEBUG);
-    Serial.begin(115200);
+    hwSerial.begin(115200);
     wifi.setup(&preferences);
-    while (!Serial)
+    while (!hwSerial)
         vTaskDelay(10);
     wifiSerial.setup();
-#ifdef FEATURE_SERIALIO
-    sio.setup(&Serial, &wifiSerial, &battery, &mpu, &strain, &power, &wifi, true, true);
-#endif
+    Serial.setup(&hwSerial, &wifiSerial, true, true);
+    status.setup(&battery, &mpu, &strain, &power, &wifi);
     battery.setup(&preferences);
     strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, &preferences);
     mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
@@ -67,7 +71,7 @@ void setup() {
     ws.setup(&strain, &mpu, &power);
 #endif
 #ifdef FEATURE_OTA
-    ota.setup();
+    ota.setup(HOSTNAME);
 #endif
 
     battery.taskStart("Battery Task", 1);
@@ -75,9 +79,7 @@ void setup() {
     mpu.taskStart("MPU Task", 125);
     power.taskStart("Power Task", 80);
     wifiSerial.taskStart("WifiSerial Task", 100);
-#ifdef FEATURE_SERIALIO
-    sio.taskStart("SerialIO Task", 10);
-#endif
+    status.taskStart("Status Task", 10);
 #ifdef FEATURE_WEBSERVER
     ws.taskStart("Webserver Task", 20);
 #endif
