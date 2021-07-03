@@ -8,6 +8,13 @@
 #include "CircularBuffer.h"
 #include "task.h"
 
+#ifndef WIFISERIAL_RINGBUF_RX_SIZE
+#define WIFISERIAL_RINGBUF_RX_SIZE 64
+#endif
+#ifndef WIFISERIAL_RINGBUF_TX_SIZE
+#define WIFISERIAL_RINGBUF_TX_SIZE 128
+#endif
+
 class WifiSerial : public Task, public Stream {
    public:
     void setup(uint16_t port = 23) {
@@ -61,7 +68,7 @@ class WifiSerial : public Task, public Stream {
 
     int available() {
         return _rx_buf.size();
-    };
+    }
 
     int read() {
         if (available()) {
@@ -70,8 +77,9 @@ class WifiSerial : public Task, public Stream {
                 case 4:
                     print("Control-D received\nBye.\n");
                     flush();
-                    vTaskDelay(100);
+                    //vTaskDelay(100);
                     _client.stop();
+                    //vTaskDelay(100);
                     _connected = false;
                     Serial.print("WiFiSerial client logged off\n");
                     return -1;
@@ -79,11 +87,11 @@ class WifiSerial : public Task, public Stream {
             return c;
         }
         return -1;
-    };
+    }
 
     int peek() {
         return _rx_buf.first();
-    };
+    }
 
     void flush() {
         _client.flush();

@@ -77,8 +77,8 @@ void setup() {
     battery.taskStart("Battery Task", 1);
     strain.taskStart("Strain Task", 125);
     mpu.taskStart("MPU Task", 125);
-    power.taskStart("Power Task", 80);
-    wifiSerial.taskStart("WifiSerial Task", 100);
+    power.taskStart("Power Task", 90);
+    wifiSerial.taskStart("WifiSerial Task", 125);
     status.taskStart("Status Task", 10);
 #ifdef FEATURE_WEBSERVER
     ws.taskStart("Webserver Task", 20);
