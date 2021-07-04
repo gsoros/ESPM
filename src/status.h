@@ -322,6 +322,8 @@ class Status : public Task {
                     }
                     break;
                 case 'r':
+                    Serial.print("Rebooting...\n");
+                    Serial.flush();
                     ESP.restart();
                     return;
                 case NULL:

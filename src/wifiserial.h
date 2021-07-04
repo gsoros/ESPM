@@ -77,9 +77,7 @@ class WifiSerial : public Task, public Stream {
                 case 4:
                     print("Control-D received\nBye.\n");
                     flush();
-                    //vTaskDelay(100);
                     _client.stop();
-                    //vTaskDelay(100);
                     _connected = false;
                     Serial.print("WiFiSerial client logged off\n");
                     return -1;
