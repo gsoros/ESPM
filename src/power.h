@@ -34,7 +34,7 @@ class Power : public Task, public HasPreferences {
             return;
         }
         /*
-        double deltaT = (t - previousT) / 1000.0;  // t(s)
+        double deltaT = (t - previousT) / 1000.0;                                          // t(s)
         float rpm = filterNegative(mpu->rpm(), reverseMPU);
         float force = filterNegative(strain->measurement(true), reverseStrain) * 9.80665;  // F(N)   = m(Kg) * G(m/s/s)
         float diameter = 2.0 * crankLength * PI / 1000.0;                                  // d(m)   = 2 * r(mm) * π / 1000
@@ -48,6 +48,7 @@ class Power : public Task, public HasPreferences {
                  2.0 * crankLength * PI / 1000.0 *
                  filterNegative(mpu->rpm(), reverseMPU) / 60.0 /
                  (t - previousT) / 1000.0;
+        previousT = t;
     }
 
     double power() {
