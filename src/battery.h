@@ -6,6 +6,7 @@
 
 #include "haspreferences.h"
 #include "task.h"
+#include "ble.h"
 
 #define BATTERY_PIN 35
 
@@ -15,9 +16,11 @@ class Battery : public Task, public HasPreferences {
     float voltage = 0.0;
     float pinVoltage = 0.0;
     uint8_t level = 0;
+    BLE *ble;
 
-    void setup(Preferences *p,
+    void setup(BLE *b, Preferences *p,
                const char *preferencesNS = "Battery") {
+        ble = b;
         preferencesSetup(p, preferencesNS);
         this->loadCalibration();
     }
@@ -25,6 +28,7 @@ class Battery : public Task, public HasPreferences {
     void loop(const ulong t) {
         measureVoltage();
         calculateLevel();
+        ble->batteryLevel = level;
     }
 
     int calculateLevel() {

@@ -103,21 +103,12 @@ class Status : public Task {
             return;
         if (lastOutput < t - statusDelay) {
             Serial.printf(
-                //"%f %f %d %d\n",
-                "%f %f %f %.2f %.2f %d %d %d %d\n",
-                mpu->rpm(),
-                strain->measurement(),
-                power->power(),
+                "%d %d %d %.2f %.2f\n",
+                (int)mpu->rpm(),
+                (int)strain->measurement(),
+                (int)power->power(),
                 battery->pinVoltage,
-                battery->voltage,
-                //(int)battery->taskLastLoopDelay,
-                (int)strain->taskLastLoopDelay,
-                (int)strain->lastMeasurementDelay,
-                ESP.getMinFreeHeap(),
-                ((int)t) % 100000
-                //mpu->idleCyclesMax,
-                //strain->idleCyclesMax
-            );
+                battery->voltage);
             lastOutput = t;
         }
     }

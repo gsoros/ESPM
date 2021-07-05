@@ -7,6 +7,11 @@
 #include "mpu.h"
 #include "strain.h"
 #include "task.h"
+#include "CircularBuffer.h"
+
+#ifndef POWER_RINGBUF_SIZE
+#define POWER_RINGBUF_SIZE 96  // circular buffer size
+#endif
 
 class Power : public Task, public HasPreferences {
    public:
@@ -41,14 +46,16 @@ class Power : public Task, public HasPreferences {
         double distance = diameter * rpm / 60.0 * deltaT;                                  // s(m)   = d(m) * rev/s * t(s)
         double velocity = distance / deltaT;                                               // v(m/s) = s(m) / t(s)
         double work = force * velocity;                                                    // W(J)   = F(N) * v(m)
-        _power = work / deltaT;                                                            // P(W)   = W(J) / t(s)
+        double power = work / deltaT;                                                      // P(W)   = W(J) / t(s)
                                                                                            // P      = F d RPM / 60 / t
+
         /*
         _power = filterNegative(strain->measurement(true), reverseStrain) * 9.80665 *
                  2.0 * crankLength * PI / 1000.0 *
                  filterNegative(mpu->rpm(), reverseMPU) / 60.0 /
                  (t - previousT) / 1000.0;
         */
+
         /*
         _power = filterNegative(strain->measurement(true), reverseStrain) *
                  filterNegative(mpu->rpm(), reverseMPU) *
@@ -56,11 +63,24 @@ class Power : public Task, public HasPreferences {
                  (t - previousT) *
                  0.000001026949987;
         */
+
+        //if (_powerBuf.isFull()) log_e("power buffer is full");
+        _powerBuf.push((float)power);
         previousT = t;
     }
 
-    double power() {
-        return _power;
+    // Returns the average power since the previous call, emptying the buffer by default.
+    // Measurements are added to the buffer at the speed of taskFreq.
+    // To avoid data loss, POWER_RINGBUF_SIZE should be large enough to hold the
+    // measurements between calls
+    float power(bool clearBuffer = true) {
+        float power = 0;
+        if (_powerBuf.isEmpty()) return power;
+        for (decltype(_powerBuf)::index_t i = 0; i < _powerBuf.size(); i++) {
+            power += _powerBuf[i] / _powerBuf.size();
+        }
+        if (clearBuffer) _powerBuf.clear();
+        return power;
     }
 
     void loadSettings() {
@@ -85,7 +105,7 @@ class Power : public Task, public HasPreferences {
     }
 
    private:
-    double _power = 0.0;
+    CircularBuffer<float, POWER_RINGBUF_SIZE> _powerBuf;
 
     float filterNegative(float value, bool reverse = false) {
         if (reverse) value *= -1;

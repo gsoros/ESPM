@@ -5,8 +5,9 @@
 #include <NimBLEDevice.h>
 
 #include "ble_constants.h"
+#include "task.h"
 
-class BLE : public BLEServerCallbacks {
+class BLE : public BLEServerCallbacks, public Task {
    public:
     BLEServer *server;
     BLECharacteristic *cpmChar;  // cycling power measurement char
@@ -118,7 +119,7 @@ class BLE : public BLEServerCallbacks {
         }
         // disconnecting
         if (!connected && oldConnected) {
-            delay(500);
+            vTaskDelay(500);
             server->startAdvertising();
             log_i("start advertising");
             oldConnected = connected;

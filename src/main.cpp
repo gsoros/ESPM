@@ -1,5 +1,6 @@
 #define NO_GLOBAL_SERIAL  // silence intellisense
 #define MPU_RINGBUF_SIZE 16
+#define POWER_RINGBUF_SIZE 96
 #define WIFISERIAL_RINGBUF_RX_SIZE 256
 #define WIFISERIAL_RINGBUF_TX_SIZE 1024
 #define HOSTNAME "ESPM"
@@ -51,13 +52,12 @@ void setup() {
     //setCpuFrequencyMhz(160);
     esp_log_level_set("*", ESP_LOG_DEBUG);
     hwSerial.begin(115200);
+    while (!hwSerial) vTaskDelay(10);
     wifi.setup(&preferences);
-    while (!hwSerial)
-        vTaskDelay(10);
     wifiSerial.setup();
     Serial.setup(&hwSerial, &wifiSerial, true, true);
     status.setup(&battery, &mpu, &strain, &power, &wifi);
-    battery.setup(&preferences);
+    battery.setup(&ble, &preferences);
     strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, &preferences);
     mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
     power.setup(&mpu, &strain, &preferences);
@@ -73,19 +73,18 @@ void setup() {
     strain.taskStart("Strain Task", 90);
     mpu.taskStart("MPU Task", 125);
     power.taskStart("Power Task", 90);
+    wifi.taskStart("Wifi Task", 1);
     wifiSerial.taskStart("WifiSerial Task", 10);
     status.taskStart("Status Task", 10);
+    ble.taskStart("BLE Task", 10);
 #ifdef FEATURE_WEBSERVER
     ws.taskStart("Webserver Task", 20);
+#endif
+#ifdef FEATURE_OTA
+    ota.taskStart("OTA Task", 10);
 #endif
 }
 
 void loop() {
-    const ulong t = millis();
-    ble.loop(t);
-    ble.batteryLevel = battery.level;
-    wifi.loop(t);
-#ifdef FEATURE_OTA
-    ota.loop(t);
-#endif
+    vTaskDelete(NULL);
 }

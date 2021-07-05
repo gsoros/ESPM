@@ -6,20 +6,21 @@
 #include <WiFi.h>
 
 #include "haspreferences.h"
+#include "task.h"
 
-typedef struct
-{
-    bool apEnable;
-    char apSSID[32];
-    char apPassword[32];
-    bool staEnable;
-    char staSSID[32];
-    char staPassword[32];
-} WifiConnectionSettings;
-
-class WifiConnection : public HasPreferences {
+class WifiConnection : public HasPreferences, public Task {
    public:
-    WifiConnectionSettings settings;
+    typedef struct
+    {
+        bool apEnable;
+        char apSSID[32];
+        char apPassword[32];
+        bool staEnable;
+        char staSSID[32];
+        char staPassword[32];
+    } ConnectionSettings;
+
+    ConnectionSettings settings;
 
     void setup(Preferences *p, const char *preferencesNS = "WiFi") {
         preferencesSetup(p, preferencesNS);
@@ -28,8 +29,7 @@ class WifiConnection : public HasPreferences {
         applySettings();
     }
 
-    void loop(const ulong t) {
-    }
+    void loop(const ulong t) {}
 
     bool loadSettings() {
         if (!preferencesStartLoad()) return false;
@@ -136,8 +136,7 @@ class WifiConnection : public HasPreferences {
     }
 
     bool connected() {
-        //return WiFi.softAPgetStationNum() > 0;
-        return WiFi.isConnected();
+        return WiFi.isConnected() || WiFi.softAPgetStationNum() > 0;
     }
 };
 

@@ -5,7 +5,9 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-class OTA {
+#include "task.h"
+
+class OTA : public Task {
    public:
     void setup(const char *hostName = "ESPM", uint16_t port = 3232) {
         // Port defaults to 3232
