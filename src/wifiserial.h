@@ -29,27 +29,29 @@ class WifiSerial : public Task, public Stream {
             _client = _server.available();
             if (!_client) return;
             _connected = true;
-            log_d("Client connected");
+            Serial.print("WifiSerial client connected\n");
             _client.print("Welcome.\n");
         } else if (!_client.connected()) {
-            _client.stop();
-            _connected = false;
-            log_d("Client disconnected");
+            disconnect();
             return;
         }
         while (0 < _client.available()) {
-            char c = _client.read();
-            _rx_buf.push(c);
+            _rx_buf.push(_client.read());
         }
         while (0 < _tx_buf.size()) {
             _client.write(_tx_buf.shift());
+        }
+        if (_disconnect) {
+            flush();
+            _disconnect = false;
+            disconnect();
         }
     }
 
     void disconnect() {
         _client.stop();
         _connected = false;
-        log_d("Client disconnected");
+        Serial.print("WifiSerial client disconnected\n");
     }
 
     size_t write(uint8_t c) {
@@ -76,11 +78,8 @@ class WifiSerial : public Task, public Stream {
             switch (c) {
                 case 4:
                     print("Control-D received\nBye.\n");
-                    flush();
-                    _client.stop();
-                    _connected = false;
-                    Serial.print("WiFiSerial client logged off\n");
-                    return -1;
+                    _disconnect = true;
+                    //return -1;
             }
             return c;
         }
@@ -101,5 +100,6 @@ class WifiSerial : public Task, public Stream {
     CircularBuffer<char, WIFISERIAL_RINGBUF_RX_SIZE> _rx_buf;
     CircularBuffer<char, WIFISERIAL_RINGBUF_TX_SIZE> _tx_buf;
     bool _connected = false;
+    bool _disconnect = false;
 };
 #endif

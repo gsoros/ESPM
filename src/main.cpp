@@ -1,9 +1,20 @@
 #define NO_GLOBAL_SERIAL  // silence intellisense
-#include "serialsplitter.h"
+#define MPU_RINGBUF_SIZE 16
+#define WIFISERIAL_RINGBUF_RX_SIZE 256
+#define WIFISERIAL_RINGBUF_TX_SIZE 1024
+#define HOSTNAME "ESPM"
+//#define LED_PIN 22
+#define MPU_SDA_PIN 23
+#define MPU_SCL_PIN 19
+#define STRAIN_DOUT_PIN 5
+#define STRAIN_SCK_PIN 18
+
+#include <Arduino.h>
 #include <Preferences.h>
+
+#include "serialsplitter.h"
 #include "battery.h"
 #include "ble.h"
-#define MPU_RINGBUF_SIZE 16
 #include "mpu.h"
 #include "status.h"
 #include "strain.h"
@@ -16,22 +27,10 @@
 #endif
 #include "power.h"
 #include "status.h"
-#define WIFISERIAL_RINGBUF_RX_SIZE 256
-#define WIFISERIAL_RINGBUF_TX_SIZE 1024
 #include "wifiserial.h"
-
-#define HOSTNAME "ESPM"
-//#define LED_PIN 22
-
-#define MPU_SDA_PIN 23
-#define MPU_SCL_PIN 19
-
-#define STRAIN_DOUT_PIN 5
-#define STRAIN_SCK_PIN 18
 
 HardwareSerial hwSerial(0);
 WifiSerial wifiSerial;
-
 Preferences preferences;
 Status status;
 Strain strain;
@@ -48,9 +47,8 @@ OTA ota;
 #endif
 
 void setup() {
-    //Serial.println(getXtalFrequencyMhz());
-    //while(1);
-    setCpuFrequencyMhz(160);
+    //Serial.println(getXtalFrequencyMhz()); while(1);
+    //setCpuFrequencyMhz(160);
     esp_log_level_set("*", ESP_LOG_DEBUG);
     hwSerial.begin(115200);
     wifi.setup(&preferences);
@@ -72,10 +70,10 @@ void setup() {
 #endif
 
     battery.taskStart("Battery Task", 1);
-    strain.taskStart("Strain Task", 125);
+    strain.taskStart("Strain Task", 90);
     mpu.taskStart("MPU Task", 125);
     power.taskStart("Power Task", 90);
-    wifiSerial.taskStart("WifiSerial Task", 125);
+    wifiSerial.taskStart("WifiSerial Task", 10);
     status.taskStart("Status Task", 10);
 #ifdef FEATURE_WEBSERVER
     ws.taskStart("Webserver Task", 20);

@@ -330,7 +330,7 @@ class Status : public Task {
                     Serial.print("NULL received\n");
                     return;
                 case 4:
-                    Serial.print("Ctrl-D received\n");
+                    //Serial.print("Ctrl-D received\n");
                     return;
                 default:
                     Serial.print("[c]alibrate, [w]iFi, c[o]nfig or [r]eboot\n");

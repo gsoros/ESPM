@@ -33,21 +33,29 @@ class Power : public Task, public HasPreferences {
             //log_e("strain not ready, skipping loop at %d, SPS=%f", t, strain->device->getSPS());
             return;
         }
-        /*
+
         double deltaT = (t - previousT) / 1000.0;                                          // t(s)
-        float rpm = filterNegative(mpu->rpm(), reverseMPU);
+        float rpm = filterNegative(mpu->rpm(), reverseMPU);                                //
         float force = filterNegative(strain->measurement(true), reverseStrain) * 9.80665;  // F(N)   = m(Kg) * G(m/s/s)
         float diameter = 2.0 * crankLength * PI / 1000.0;                                  // d(m)   = 2 * r(mm) * π / 1000
         double distance = diameter * rpm / 60.0 * deltaT;                                  // s(m)   = d(m) * rev/s * t(s)
         double velocity = distance / deltaT;                                               // v(m/s) = s(m) / t(s)
         double work = force * velocity;                                                    // W(J)   = F(N) * v(m)
-        power = work / deltaT;                                                             // P(W)   = W(J) / t(s)
-                                                                                           // P = F d RPM / 60 / t
-        */
+        _power = work / deltaT;                                                            // P(W)   = W(J) / t(s)
+                                                                                           // P      = F d RPM / 60 / t
+        /*
         _power = filterNegative(strain->measurement(true), reverseStrain) * 9.80665 *
                  2.0 * crankLength * PI / 1000.0 *
                  filterNegative(mpu->rpm(), reverseMPU) / 60.0 /
                  (t - previousT) / 1000.0;
+        */
+        /*
+        _power = filterNegative(strain->measurement(true), reverseStrain) *
+                 filterNegative(mpu->rpm(), reverseMPU) *
+                 crankLength / 
+                 (t - previousT) *
+                 0.000001026949987;
+        */
         previousT = t;
     }
 
@@ -80,9 +88,11 @@ class Power : public Task, public HasPreferences {
     double _power = 0.0;
 
     float filterNegative(float value, bool reverse = false) {
-        if (reverse)
-            return 0.0 < value ? 0.0 : value;
-        return 0.0 > value ? 0.0 : value;
+        if (reverse) value *= -1;
+        if (value < 0.0)
+            return 0.0;
+        else
+            return value;
     }
 };
 
