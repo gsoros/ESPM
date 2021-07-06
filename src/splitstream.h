@@ -1,10 +1,11 @@
-#ifndef SERIALSPLITTER_H
-#define SERIALSPLITTER_H
+#ifndef SPLITSTREAM_H
+#define SPLITSTREAM_H
 
 #include <Arduino.h>
 #include <Stream.h>
 
-class SerialSplitter : public Stream {
+// Splits one stream into two
+class SplitStream : public Stream {
    public:
     Stream *s0;
     bool s0_enabled;
@@ -18,18 +19,14 @@ class SerialSplitter : public Stream {
         bool stream1_enabled);
 
     int available();
-
     int read();
-
     size_t write(uint8_t c);
-
     size_t write(const uint8_t *buffer, size_t size);
-
     int peek(void);
-
     void flush(void);
+    operator bool() const;
 };
 
-extern SerialSplitter Serial;
+extern SplitStream Serial;
 
 #endif
