@@ -21,6 +21,7 @@ class MPU : public Idle, public Task, public HasPreferences {
     bool updateEnabled = false;
     bool accelGyroNeedsCalibration = false;
     bool magNeedsCalibration = false;
+    ulong lastMovement = 0;
 
     struct Quaternion {
         float x, y, z, w;
@@ -57,6 +58,7 @@ class MPU : public Idle, public Task, public HasPreferences {
         loadCalibration();
         //printCalibration();
         updateEnabled = true;
+        lastMovement = millis();
     }
 
     void loop(const ulong t) {
@@ -106,6 +108,9 @@ class MPU : public Idle, public Task, public HasPreferences {
                 avg += _rpmBuf[i] / _rpmBuf.size();
             }
             _rpm = avg;
+            if (avg < -1 || 1 < avg) {
+                lastMovement = t;
+            }
             _dataReady = true;
         }
         previousTime = t;
@@ -131,17 +136,21 @@ class MPU : public Idle, public Task, public HasPreferences {
         return q;
     }
 
+    void enableWomSleep(void) {
+        Serial.println("Enabling MPU W-O-M sleep");
+        updateEnabled = false;
+        device->enableWomSleep();
+    }
+
     void calibrateAccelGyro() {
-        log_i("Accel and Gyro calibration, please leave the device still.");
-        //delay(2000);
+        Serial.println("Accel and Gyro calibration, please leave the device still.");
         updateEnabled = false;
         device->calibrateAccelGyro();
         updateEnabled = true;
     }
 
     void calibrateMag() {
-        log_i("Mag calibration, please wave device in a figure eight for 15 seconds.");
-        //delay(2000);
+        Serial.println("Mag calibration, please wave device in a figure eight for 15 seconds.");
         updateEnabled = false;
         device->calibrateMag();
         updateEnabled = true;

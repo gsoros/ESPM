@@ -5,10 +5,11 @@
 #define WIFISERIAL_RINGBUF_TX_SIZE 1024
 #define HOSTNAME "ESPM"
 //#define LED_PIN 22
-#define MPU_SDA_PIN 23
-#define MPU_SCL_PIN 19
-#define STRAIN_DOUT_PIN 5
-#define STRAIN_SCK_PIN 18
+#define MPU_SDA_PIN GPIO_NUM_23
+#define MPU_SCL_PIN GPIO_NUM_19
+#define STRAIN_DOUT_PIN GPIO_NUM_5
+#define STRAIN_SCK_PIN GPIO_NUM_13
+#define MPU_WOM_INT_PIN GPIO_NUM_4  // interrupt pin for WOM
 
 #include <Arduino.h>
 #include <Preferences.h>
@@ -29,7 +30,9 @@
 #include "power.h"
 #include "status.h"
 #include "wifiserial.h"
+#include "main.h"
 
+Main main;
 HardwareSerial hwSerial(0);
 WifiSerial wifiSerial;
 Preferences preferences;
@@ -51,6 +54,7 @@ void setup() {
     //Serial.println(getXtalFrequencyMhz()); while(1);
     //setCpuFrequencyMhz(160);
     esp_log_level_set("*", ESP_LOG_DEBUG);
+    main.setup();
     hwSerial.begin(115200);
     while (!hwSerial) vTaskDelay(10);
     wifi.setup(&preferences);
@@ -69,6 +73,7 @@ void setup() {
     ota.setup(HOSTNAME);
 #endif
 
+    main.taskStart("Main Task", 10);
     battery.taskStart("Battery Task", 1);
     strain.taskStart("Strain Task", 90);
     mpu.taskStart("MPU Task", 125);

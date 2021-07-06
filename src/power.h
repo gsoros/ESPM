@@ -2,6 +2,7 @@
 #define POWER_H
 
 #include <Arduino.h>
+//#include <driver/rtc_io.h>
 
 #include "haspreferences.h"
 #include "mpu.h"
@@ -81,6 +82,27 @@ class Power : public Task, public HasPreferences {
         }
         if (clearBuffer) _powerBuf.clear();
         return power;
+    }
+
+    // Put ESP into deep sleep // TODO move this
+    void deepSleep() {
+        Serial.println("Preparing for deep sleep");
+        /*
+        rtc_gpio_init(MPU_WOM_INT_PIN);
+        rtc_gpio_set_direction(MPU_WOM_INT_PIN, RTC_GPIO_MODE_INPUT_ONLY);
+        rtc_gpio_hold_dis(MPU_WOM_INT_PIN);
+        rtc_gpio_set_level(MPU_WOM_INT_PIN, LOW);
+        rtc_gpio_pulldown_en(MPU_WOM_INT_PIN);
+        rtc_gpio_hold_en(MPU_WOM_INT_PIN);
+        */
+        strain->sleep();
+        mpu->enableWomSleep();
+        //pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
+        Serial.println("Entering deep sleep");
+        Serial.flush();
+        delay(1000);
+        esp_sleep_enable_ext0_wakeup(MPU_WOM_INT_PIN, HIGH);
+        esp_deep_sleep_start();
     }
 
     void loadSettings() {

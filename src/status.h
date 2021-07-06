@@ -45,6 +45,15 @@ class Status : public Task {
             handleInput(getChar());
         }
         printStatus(t);
+        if (0 < mpu->lastMovement && mpu->lastMovement < t - 50000) {
+            Serial.printf("Going to deep sleep in %ds\n", (int)((mpu->lastMovement + 60000 - t) / 1000));
+            delay(1000);
+        }
+        if (0 < mpu->lastMovement && mpu->lastMovement < t - 60000) {
+            //power->deepSleep();
+            Serial.printf("Going to deep sleep now\n");
+            mpu->lastMovement = t;
+        }
     }
 
     char getChar() {
@@ -122,7 +131,7 @@ class Status : public Task {
             set [c]rank length
             toggle [r]everse strain
             toggle r[e]verse MPU
-            [p]rint calibrations
+            [p]rint calibration
             e[x]it
         [w]ifi
             [a]p
@@ -140,6 +149,7 @@ class Status : public Task {
         c[o]nfig
             status [f]requency
         [r]eboot
+        [d]eep sleep
     */
     void handleInput(const char input) {
         char tmpStr[32];
@@ -317,6 +327,9 @@ class Status : public Task {
                     Serial.flush();
                     ESP.restart();
                     return;
+                case 'd':
+                    power->deepSleep();
+                    return;
                 case NULL:
                     Serial.print("NULL received\n");
                     return;
@@ -324,7 +337,7 @@ class Status : public Task {
                     //Serial.print("Ctrl-D received\n");
                     return;
                 default:
-                    Serial.print("[c]alibrate, [w]iFi, c[o]nfig or [r]eboot\n");
+                    Serial.print("[c]alibrate, [w]iFi, c[o]nfig, [r]eboot or [d]eep sleep\n");
                     return;
             }
         }

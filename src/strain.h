@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <HX711_ADC.h>
 #include <Preferences.h>
+#include <driver/rtc_io.h>
 
 #include "haspreferences.h"
 #include "idle.h"
@@ -14,12 +15,18 @@ class Strain : public Idle, public Task, public HasPreferences {
     HX711_ADC *device;
     ulong measurementTime = 0;
     ulong lastMeasurementDelay = 0;
+    gpio_num_t doutPin;
+    gpio_num_t sckPin;
 
-    void setup(const uint8_t doutPin,
-               const uint8_t sckPin,
-               Preferences *p,
-               const char *preferencesNS = "STRAIN") {
+    void
+    setup(const gpio_num_t doutPin,
+          const gpio_num_t sckPin,
+          Preferences *p,
+          const char *preferencesNS = "STRAIN") {
+        this->doutPin = doutPin;
+        this->sckPin = sckPin;
         preferencesSetup(p, preferencesNS);
+        rtc_gpio_hold_dis(sckPin);
         device = new HX711_ADC(doutPin, sckPin);
         device->begin();
         ulong stabilizingTime = 1000 / 80;
@@ -49,6 +56,11 @@ class Strain : public Idle, public Task, public HasPreferences {
 
     bool dataReady() {
         return _dataReady;
+    }
+
+    void sleep() {
+        device->powerDown();
+        rtc_gpio_hold_en(sckPin);
     }
 
     void calibrateTo(float knownMass) {
