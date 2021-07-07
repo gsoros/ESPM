@@ -4,7 +4,6 @@
 #include "power.h"
 #include "strain.h"
 
-
 void WebServer::setup() {
     if (!LITTLEFS.begin())
         log_e("Could not mount LITTLEFS");
