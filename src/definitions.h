@@ -19,5 +19,6 @@
 
 #define STRAIN_DOUT_PIN GPIO_NUM_5
 #define STRAIN_SCK_PIN GPIO_NUM_13
+#define HX711_SCK_DELAY 1
 
 #endif
