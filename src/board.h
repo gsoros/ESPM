@@ -46,7 +46,7 @@ class Board : public Task {
         Serial.setup(&hwSerial, &wifiSerial, true, true);
         while (!Serial) vTaskDelay(10);
         //Serial.println(getXtalFrequencyMhz()); while(1);
-        ble.setup();
+        ble.setup(HOSTNAME);
         battery.setup(&preferences);
         mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
         strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, &preferences);

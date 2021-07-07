@@ -16,26 +16,26 @@ void Power::loop(const ulong t) {
         return;
     }
 
-    double deltaT = (t - previousT) / 1000.0;                                               // t(s)
-    float rpm = filterNegative(board.mpu.rpm(), reverseMPU);                                //
-    float force = filterNegative(board.strain.measurement(true), reverseStrain) * 9.80665;  // F(N)   = m(Kg) * G(m/s/s)
-    float diameter = 2.0 * crankLength * PI / 1000.0;                                       // d(m)   = 2 * r(mm) * π / 1000
-    double distance = diameter * rpm / 60.0 * deltaT;                                       // s(m)   = d(m) * rev/s * t(s)
-    double velocity = distance / deltaT;                                                    // v(m/s) = s(m) / t(s)
-    double work = force * velocity;                                                         // W(J)   = F(N) * v(m)
-    double power = work / deltaT;                                                           // P(W)   = W(J) / t(s)
-                                                                                            // P      = F d RPM / 60 / t
+    double deltaT = (t - previousT) / 1000.0;                                      // t(s)
+    float rpm = filterNegative(board.getRpm(), reverseMPU);                        //
+    float force = filterNegative(board.getStrain(true), reverseStrain) * 9.80665;  // F(N)   = m(Kg) * G(m/s/s)
+    float diameter = 2.0 * crankLength * PI / 1000.0;                              // d(m)   = 2 * r(mm) * π / 1000
+    double distance = diameter * rpm / 60.0 * deltaT;                              // s(m)   = d(m) * rev/s * t(s)
+    double velocity = distance / deltaT;                                           // v(m/s) = s(m) / t(s)
+    double work = force * velocity;                                                // W(J)   = F(N) * v(m)
+    double power = work / deltaT;                                                  // P(W)   = W(J) / t(s)
+                                                                                   // P      = F d RPM / 60 / t
 
     /*
-        _power = filterNegative(board.strain.measurement(true), reverseStrain) * 9.80665 *
+        _power = filterNegative(board.getStrain(true), reverseStrain) * 9.80665 *
                  2.0 * crankLength * PI / 1000.0 *
-                 filterNegative(board.mpu.rpm(), reverseMPU) / 60.0 /
+                 filterNegative(board.getRpm(), reverseMPU) / 60.0 /
                  (t - previousT) / 1000.0;
         */
 
     /*
-        _power = filterNegative(board.strain.measurement(true), reverseStrain) *
-                 filterNegative(board.mpu.rpm(), reverseMPU) *
+        _power = filterNegative(board.getStrain(true), reverseStrain) *
+                 filterNegative(board.getRpm(), reverseMPU) *
                  crankLength / 
                  (t - previousT) *
                  0.000001026949987;
