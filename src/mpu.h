@@ -8,14 +8,13 @@
 #include <Wire.h>
 
 #include "haspreferences.h"
-#include "idle.h"
 #include "task.h"
 
 #ifndef MPU_RINGBUF_SIZE
 #define MPU_RINGBUF_SIZE 16  // circular buffer size
 #endif
 
-class MPU : public Idle, public Task, public HasPreferences {
+class MPU : public Task, public HasPreferences {
    public:
     MPU9250 *device;
     bool updateEnabled = false;
@@ -74,7 +73,6 @@ class MPU : public Idle, public Task, public HasPreferences {
             return;
         }
         if (!device->update()) {
-            increaseIdleCycles();
             return;
         }
         static ulong previousTime = 0;
@@ -115,7 +113,6 @@ class MPU : public Idle, public Task, public HasPreferences {
         }
         previousTime = t;
         previousAngle = angle;
-        resetIdleCycles();
     }
 
     float rpm(bool unsetDataReadyFlag = false) {

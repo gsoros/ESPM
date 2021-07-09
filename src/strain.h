@@ -7,10 +7,9 @@
 #include <driver/rtc_io.h>
 
 #include "haspreferences.h"
-#include "idle.h"
 #include "task.h"
 
-class Strain : public Idle, public Task, public HasPreferences {
+class Strain : public Task, public HasPreferences {
    public:
     HX711_ADC *device;
     ulong measurementTime = 0;
@@ -39,14 +38,13 @@ class Strain : public Idle, public Task, public HasPreferences {
     }
 
     void loop(const ulong t) {
-        if (device->update()) {
-            _measurement = device->getData();
-            lastMeasurementDelay = t - measurementTime;
-            measurementTime = t;
-            _dataReady = true;
+        if (!device->update()) {
             return;
         }
-        increaseIdleCycles();
+        _measurement = device->getData();
+        lastMeasurementDelay = t - measurementTime;
+        measurementTime = t;
+        _dataReady = true;
     }
 
     float measurement(bool unsetDataReadyFlag = false) {

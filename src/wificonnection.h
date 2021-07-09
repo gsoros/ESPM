@@ -75,7 +75,7 @@ class WifiConnection : public HasPreferences, public Task {
     }
 
     void printAPSettings() {
-        Serial.printf("WiFi AP %s '%s' '%s'\n",
+        Serial.printf("AP %s '%s' '%s'\n",
                       settings.apEnable ? "Enabled" : "Disabled",
                       settings.apSSID,
                       "***"  //settings.apPassword
@@ -85,7 +85,7 @@ class WifiConnection : public HasPreferences, public Task {
     }
 
     void printSTASettings() {
-        Serial.printf("WiFi STA %s '%s' '%s'\n",
+        Serial.printf("STA %s '%s' '%s'\n",
                       settings.staEnable ? "Enabled" : "Disabled",
                       settings.staSSID,
                       "***"  //settings.staPassword

@@ -7,3 +7,4 @@ lib/AsyncTCP/
 lib/ESPAsyncWebServer/
 *-cache.lib
 mklittlefs
+*.code-workspace

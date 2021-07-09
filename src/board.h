@@ -16,6 +16,7 @@
 #include "wifiserial.h"
 #include "ota.h"
 #include "status.h"
+#include "led.h"
 #ifdef FEATURE_WEBSERVER
 #include "webserver.h"
 #endif
@@ -34,6 +35,7 @@ class Board : public Task {
     Power power;
     OTA ota;
     Status status;
+    Led led;
 #ifdef FEATURE_WEBSERVER
     WebServer webserver;
 #endif
@@ -53,6 +55,7 @@ class Board : public Task {
         power.setup(&preferences);
         ota.setup(HOSTNAME);
         status.setup();
+        led.setup();
 #ifdef FEATURE_WEBSERVER
         webserver.setup();
 #endif
@@ -68,6 +71,7 @@ class Board : public Task {
         power.taskStart("Power Task", 90);
         ota.taskStart("OTA Task", 10);
         status.taskStart("Status Task", 10);
+        led.taskStart("Led Task", 10);
         taskStart("Board Task", 1);
 #ifdef FEATURE_WEBSERVER
         webserver.taskStart("Webserver Task", 20, 16384);
@@ -75,8 +79,8 @@ class Board : public Task {
     }
 
     void loop(const ulong t) {
-        const ulong sleepDelay = 10UL * 60UL * 1000UL;                 // 10m
-        const ulong sleepCountdownAfter = sleepDelay - 30UL * 1000UL;  // 9m 30s
+        const ulong sleepDelay = 5UL * 60UL * 1000UL;                  // 5m
+        const ulong sleepCountdownAfter = sleepDelay - 30UL * 1000UL;  // 4m 30s
         /*
         Serial.printf("T=%li Last movement was %lims (%lis) ago\n",
                       t / 1000,
@@ -111,6 +115,8 @@ class Board : public Task {
         //pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
         Serial.println("Entering deep sleep");
         Serial.flush();
+        delay(1000);
+        wifiSerial.disconnect();
         delay(1000);
         esp_sleep_enable_ext0_wakeup(MPU_WOM_INT_PIN, HIGH);
         esp_deep_sleep_start();

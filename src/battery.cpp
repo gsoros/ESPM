@@ -25,7 +25,7 @@ float Battery::measureVoltage(bool useCorrection) {
     uint8_t samples;
     for (samples = 1; samples <= 10; samples++) {
         sum += analogRead(BATTERY_PIN);
-        vTaskDelay(10);
+        delay(1);
     }
     uint32_t readMax = 4095 * samples;  // 2^12 - 1 (12bit adc)
     if (sum == readMax) log_e("overflow");

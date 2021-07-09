@@ -4,11 +4,12 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
+#include "definitions.h"
 #include "haspreferences.h"
 #include "task.h"
 
 #ifndef BATTERY_PIN
-#define BATTERY_PIN 35
+#define BATTERY_PIN GPIO_NUM_35
 #endif
 
 class Battery : public Task, public HasPreferences {
