@@ -49,7 +49,7 @@
         1000
       );
       camera.position.z = 200;
-      var geometry = new THREE.BoxGeometry(18, 150, 2);
+      var geometry = new THREE.BoxGeometry(10, 150, 2);
       var material = new THREE.MeshPhongMaterial({ color: 0x000000 });
       cube = new THREE.Mesh(geometry, material);
       scene.add(cube);
@@ -75,11 +75,12 @@
           var j = JSON.parse(evt.data);
           cube.quaternion.set(j.qX, -j.qY, -j.qZ, j.qW);
           cube.material.color.setRGB(.3 + j.strain / 200, .3, .3 - j.strain / 200);
+          cube.scale.x = 1 + j.power / 100;
           renderer.render(scene, camera);
           document.getElementById("rpm").innerHTML = j.rpm;
           document.getElementById("strain").innerHTML = j.strain;
           document.getElementById("power").innerHTML = j.power;
-        } catch (e) {}
+        } catch (e) { }
       };
 
       ws.onclose = function () {

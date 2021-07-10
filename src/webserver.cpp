@@ -78,9 +78,9 @@ void WebServer::webSocketBroadcast() {
     json["qY"] = q.y;
     json["qZ"] = q.z;
     json["qW"] = q.w;
-    json["rpm"] = board.getRpm();
-    json["strain"] = board.getStrain();
-    json["power"] = board.getPower();
+    json["rpm"] = (int)board.getRpm();
+    json["strain"] = (int)board.getStrain();
+    json["power"] = (int)board.getPower();
     serializeJson(json, output);
     wss->textAll(output);
 }

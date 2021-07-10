@@ -13,6 +13,7 @@ class Led : public Task {
    public:
     void setup() {
         pinMode(LED_PIN, OUTPUT);
+        set();
         defaultMode();
     }
 
@@ -55,7 +56,7 @@ class Led : public Task {
     }
 
    private:
-    bool state = false;
+    bool state = true;  // on at boot
     int8_t count;
     uint16_t onTime;
     uint16_t offTime;

@@ -42,13 +42,15 @@ class MPU : public Task, public HasPreferences {
         device = new MPU9250();
         //device->verbose(true);
         MPU9250Setting s;
+        s.skip_mag = true;
         s.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_125HZ;
         //s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_10HZ;
         //s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_3600HZ;
         //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_10HZ;
         //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_420HZ;
         //s.mag_output_bits = MAG_OUTPUT_BITS::M14BITS;
-        device->setup(mpuAddress, s);
+        if (!device->setup(mpuAddress, s))
+            Serial.println("[E] MPU Setup error");
         //device->selectFilter(QuatFilterSel::MAHONY);
         device->selectFilter(QuatFilterSel::NONE);
         //device->selectFilter(QuatFilterSel::MADGWICK);
@@ -136,6 +138,7 @@ class MPU : public Task, public HasPreferences {
     void enableWomSleep(void) {
         Serial.println("Enabling MPU W-O-M sleep");
         updateEnabled = false;
+        delay(20);
         device->enableWomSleep();
     }
 

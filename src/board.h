@@ -39,9 +39,11 @@ class Board : public Task {
 #ifdef FEATURE_WEBSERVER
     WebServer webserver;
 #endif
+    bool sleepEnabled = true;
 
     void setup() {
         //setCpuFrequencyMhz(160);
+        led.setup();
         hwSerial.begin(115200);
         wifi.setup(&preferences);
         wifiSerial.setup();
@@ -55,7 +57,6 @@ class Board : public Task {
         power.setup(&preferences);
         ota.setup(HOSTNAME);
         status.setup();
-        led.setup();
 #ifdef FEATURE_WEBSERVER
         webserver.setup();
 #endif
@@ -92,6 +93,7 @@ class Board : public Task {
 
     // Returns time in ms until entering deep sleep, or -1 in case of no such plans.
     long timeUntilDeepSleep(ulong t = 0) {
+        if (!sleepEnabled) return -1;
         if (0 == t) t = millis();
         if (0 == mpu.lastMovement || t <= mpu.lastMovement) return -1;
         const long tSleep = mpu.lastMovement + _sleepDelay - t;
@@ -99,6 +101,7 @@ class Board : public Task {
     }
 
     void deepSleep() {
+        if (!sleepEnabled) return;
         Serial.println("Preparing for deep sleep");
         /*
         rtc_gpio_init(MPU_WOM_INT_PIN);

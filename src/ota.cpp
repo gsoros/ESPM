@@ -26,6 +26,8 @@ void OTA::setup(const char *hostName, uint16_t port) {
             Serial.println("[OTA] Stopping webserver task");
             board.webserver.taskStop();
 #endif
+            Serial.println("[OTA] Disabling sleep");
+            board.sleepEnabled = false;
             if (ArduinoOTA.getCommand() == U_FLASH)
                 Serial.println("[OTA] Flash");
             else {  // U_SPIFFS
@@ -37,6 +39,8 @@ void OTA::setup(const char *hostName, uint16_t port) {
             }
         })
         .onEnd([]() {
+            Serial.println("[OTA] Enabling sleep");
+            board.sleepEnabled = true;
             Serial.println("[OTA] End");
         })
         .onProgress([](unsigned int progress, unsigned int total) {
@@ -54,6 +58,8 @@ void OTA::setup(const char *hostName, uint16_t port) {
                 Serial.println("Receive Failed");
             else if (error == OTA_END_ERROR)
                 Serial.println("End Failed");
+            Serial.println("[OTA] Enabling sleep");
+            board.sleepEnabled = true;
         });
 
     ArduinoOTA.begin();
