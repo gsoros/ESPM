@@ -43,8 +43,12 @@ void OTA::setup(const char *hostName, uint16_t port) {
             board.sleepEnabled = true;
             Serial.println("[OTA] End");
         })
-        .onProgress([](unsigned int progress, unsigned int total) {
-            Serial.printf("[OTA] Progress: %d/%d\n", progress, total);
+        .onProgress([this](uint progress, uint total) {
+            uint8_t progressPercent = (uint8_t)((float)progress / (float)total * 100.0);
+            if (progressPercent > this->lastProgressPercent) {
+                Serial.printf("[OTA] %d%%\n", progressPercent);
+                this->lastProgressPercent = progressPercent;
+            }
         })
         .onError([](ota_error_t error) {
             Serial.printf("[OTA] Error[%u]: ", error);

@@ -16,7 +16,7 @@ void WifiSerial::loop(const ulong t) {
         _connected = true;
         Serial.print("WifiSerial client connected\n");
         board.led.blink(5);
-        _client.print("Welcome.\n");
+        _client.printf("Welcome to %s.\n", board.hostName);
     } else if (!_client.connected()) {
         disconnect();
         return;
@@ -69,7 +69,7 @@ int WifiSerial::read() {
         char c = _rx_buf.shift();
         switch (c) {
             case 4:
-                print("Control-D received\nBye.\n");
+                print("Ctrl-D received\nBye.\n");
                 _disconnect = true;
                 //return -1;
         }

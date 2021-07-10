@@ -112,6 +112,7 @@ void Status::printStatus(const ulong t) {
             [p]rint config
             e[x]it
         c[o]nfig
+            [h]ostname
             status [f]requency
         [r]eboot
         [d]eep sleep
@@ -271,18 +272,26 @@ void Status::handleInput(const char input) {
                 break;
             case 'o':  // config
                 switch (menu[1]) {
+                    case 'h':
+                        Serial.print("Enter hostname (no spaces, no special chars, max 31) and press [Enter]: ");
+                        getStr(tmpStr, 32);
+                        if (1 < strlen(tmpStr))
+                            strncpy(board.hostName, tmpStr, 32);
+                        board.saveSettings();
+                        menu[1] = '\0';
+                        break;
                     case 'f':
                         Serial.printf("Enter status output frequency in Hz (0.1...%d) and press [Enter]: ", taskFreq);
                         getStr(tmpStr, 32);
                         setStatusFreq((float)atof(tmpStr));
-                        // TODO save settings
+                        // status freq is not saved
                         menu[1] = '\0';
                         break;
                     case 'x':
                         strncpy(menu, " ", 2);
                         break;
                     default:
-                        Serial.print("Config: status [f]requency or e[x]it\n");
+                        Serial.print("Config: [h]ostname, status [f]requency or e[x]it\n");
                         menu[1] = getChar();
                         menu[2] = '\0';
                 }

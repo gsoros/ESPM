@@ -95,6 +95,9 @@ class WifiConnection : public HasPreferences, public Task {
     }
 
     void applySettings() {
+        Serial.println("[WiFi] Applying settings, connection might need to be reset");
+        Serial.flush();
+        delay(1000);
         if (settings.apEnable || settings.staEnable) {
             if (settings.apEnable && settings.staEnable)
                 WiFi.mode(WIFI_MODE_APSTA);

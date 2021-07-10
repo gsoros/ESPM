@@ -6,6 +6,7 @@
 
 #include "definitions.h"
 #include "splitstream.h"
+#include "haspreferences.h"
 #include "task.h"
 #include "mpu.h"
 #include "strain.h"
@@ -22,9 +23,9 @@
 #endif
 
 // The one in charge
-class Board : public Task {
+class Board : public HasPreferences, public Task {
    public:
-    Preferences preferences;
+    Preferences boardPreferences = Preferences();
     HardwareSerial hwSerial = HardwareSerial(0);
     WifiSerial wifiSerial;
     WifiConnection wifi;
@@ -40,21 +41,24 @@ class Board : public Task {
     WebServer webserver;
 #endif
     bool sleepEnabled = true;
+    char hostName[32] = HOSTNAME;
 
     void setup() {
-        //setCpuFrequencyMhz(160);
+        setCpuFrequencyMhz(80);
+        preferencesSetup(&boardPreferences, "BOARD");
+        loadSettings();
         led.setup();
         hwSerial.begin(115200);
-        wifi.setup(&preferences);
+        wifi.setup(preferences);
         wifiSerial.setup();
         Serial.setup(&hwSerial, &wifiSerial, true, true);
         while (!Serial) vTaskDelay(10);
         //Serial.println(getXtalFrequencyMhz()); while(1);
         ble.setup(HOSTNAME);
-        battery.setup(&preferences);
-        mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, &preferences);
-        strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, &preferences);
-        power.setup(&preferences);
+        battery.setup(preferences);
+        mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
+        strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
+        power.setup(preferences);
         ota.setup(HOSTNAME);
         status.setup();
 #ifdef FEATURE_WEBSERVER
@@ -89,6 +93,23 @@ class Board : public Task {
             Serial.printf("Going to deep sleep in %lis\n", tSleep / 1000UL);
             _lastCountdown = t;
         }
+    }
+
+    bool loadSettings() {
+        if (!preferencesStartLoad()) return false;
+        char tmpHostName[32];
+        strncpy(tmpHostName, preferences->getString("hostName", hostName).c_str(), 32);
+        if (1 < strlen(tmpHostName)) {
+            strncpy(hostName, tmpHostName, 32);
+        }
+        preferencesEnd();
+        return true;
+    }
+
+    void saveSettings() {
+        if (!preferencesStartSave()) return;
+        preferences->putString("hostName", hostName);
+        preferencesEnd();
     }
 
     // Returns time in ms until entering deep sleep, or -1 in case of no such plans.
