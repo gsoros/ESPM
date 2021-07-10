@@ -69,35 +69,33 @@ class Board : public Task {
         mpu.taskStart("MPU Task", 125);
         strain.taskStart("Strain Task", 90);
         power.taskStart("Power Task", 90);
-        ota.taskStart("OTA Task", 10);
+        ota.taskStart("OTA Task", 10, 8192);
         status.taskStart("Status Task", 10);
         led.taskStart("Led Task", 10);
         taskStart("Board Task", 1);
 #ifdef FEATURE_WEBSERVER
-        webserver.taskStart("Webserver Task", 20, 16384);
+        webserver.taskStart("Webserver Task", 20, 8192);
 #endif
     }
 
     void loop(const ulong t) {
-        const ulong sleepDelay = 5UL * 60UL * 1000UL;                  // 5m
-        const ulong sleepCountdownAfter = sleepDelay - 30UL * 1000UL;  // 4m 30s
-        /*
-        Serial.printf("T=%li Last movement was %lims (%lis) ago\n",
-                      t / 1000,
-                      t - mpu.lastMovement,
-                      ((long)t - (long)mpu.lastMovement) / 1000L);
-        */
-        if (0 < mpu.lastMovement && mpu.lastMovement < t) {
-            if (sleepDelay <= t - mpu.lastMovement) {
-                Serial.printf("******** Going to deep sleep now ********\n");
-                mpu.lastMovement = t;
-                deepSleep();
-            }
-            if (sleepCountdownAfter <= t - mpu.lastMovement) {
-                Serial.printf("Going to deep sleep in %lis\n",
-                              (mpu.lastMovement + sleepDelay - t) / 1000UL);
-            }
+        const long tSleep = timeUntilDeepSleep(t);
+        if (0 == tSleep) {
+            Serial.printf("Going to deep sleep now ...zzzZZZ\n");
+            deepSleep();
         }
+        if (tSleep <= _sleepCountdownAfter && _lastCountdown + _countdownEvery <= t) {
+            Serial.printf("Going to deep sleep in %lis\n", tSleep / 1000UL);
+            _lastCountdown = t;
+        }
+    }
+
+    // Returns time in ms until entering deep sleep, or -1 in case of no such plans.
+    long timeUntilDeepSleep(ulong t = 0) {
+        if (0 == t) t = millis();
+        if (0 == mpu.lastMovement || t <= mpu.lastMovement) return -1;
+        const long tSleep = mpu.lastMovement + _sleepDelay - t;
+        return tSleep > 0 ? tSleep : 0;  // return 0 if it's past our bedtime
     }
 
     void deepSleep() {
@@ -125,6 +123,12 @@ class Board : public Task {
     float getRpm(bool unsetDataReadyFlag = false) { return mpu.rpm(unsetDataReadyFlag); }
     float getStrain(bool unsetDataReadyFlag = false) { return strain.measurement(unsetDataReadyFlag); }
     float getPower(bool clearBuffer = false) { return power.power(clearBuffer); }
+
+   private:
+    const ulong _sleepDelay = 5 * 60 * 1000;       // 5m
+    const ulong _sleepCountdownAfter = 30 * 1000;  // 30s
+    const ulong _countdownEvery = 2000;            // 2s
+    ulong _lastCountdown = 0;
 };
 
 extern Board board;

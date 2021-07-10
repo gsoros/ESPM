@@ -2,13 +2,14 @@
 #define TASK_H
 
 #include <Arduino.h>
+#include "splitstream.h"
 
 class Task {
    public:
     TaskHandle_t taskHandle = NULL;
     char taskName[32];
     uint16_t taskFreq = 10;     // desired task frequency in Hz
-    uint32_t taskStack = 8192;  // task stack size in bytes
+    uint32_t taskStack = 4096;  // task stack size in bytes
     uint8_t taskPriority = 1;
     ulong taskLastLoop = 0;
     ulong taskLastLoopDelay = 0;
@@ -34,7 +35,9 @@ class Task {
         taskFreq = freq;
         taskSetDelayFromFreq();
         //xTaskCreate(taskLoop, taskName, stack, this, priority, &taskHandle);
-        xTaskCreatePinnedToCore(taskLoop, taskName, stack, this, priority, &taskHandle, 1);
+        BaseType_t err = xTaskCreatePinnedToCore(taskLoop, taskName, stack, this, priority, &taskHandle, 1);
+        if (pdPASS != err)
+            log_e("Failed to start task %s, error %d", taskName, err);
     }
 
     bool taskRunning() {
