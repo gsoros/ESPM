@@ -54,12 +54,12 @@ class Board : public HasPreferences, public Task {
         Serial.setup(&hwSerial, &wifiSerial, true, true);
         while (!Serial) vTaskDelay(10);
         //Serial.println(getXtalFrequencyMhz()); while(1);
-        ble.setup(HOSTNAME);
+        ble.setup(hostName);
         battery.setup(preferences);
         mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
         strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
         power.setup(preferences);
-        ota.setup(HOSTNAME);
+        ota.setup(hostName);
         status.setup();
 #ifdef FEATURE_WEBSERVER
         webserver.setup();
@@ -89,9 +89,9 @@ class Board : public HasPreferences, public Task {
             Serial.printf("Going to deep sleep now ...zzzZZZ\n");
             deepSleep();
         }
-        if (tSleep <= _sleepCountdownAfter && _lastCountdown + _countdownEvery <= t) {
+        if (tSleep <= _sleepCountdownAfter && _lastSleepCountdown + _sleepCountdownEvery <= t) {
             Serial.printf("Going to deep sleep in %lis\n", tSleep / 1000UL);
-            _lastCountdown = t;
+            _lastSleepCountdown = t;
         }
     }
 
@@ -151,8 +151,8 @@ class Board : public HasPreferences, public Task {
    private:
     const ulong _sleepDelay = 5 * 60 * 1000;       // 5m
     const ulong _sleepCountdownAfter = 30 * 1000;  // 30s
-    const ulong _countdownEvery = 2000;            // 2s
-    ulong _lastCountdown = 0;
+    const ulong _sleepCountdownEvery = 2000;       // 2s
+    ulong _lastSleepCountdown = 0;
 };
 
 extern Board board;
