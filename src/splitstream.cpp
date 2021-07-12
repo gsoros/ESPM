@@ -1,6 +1,10 @@
 #include "splitstream.h"
 
+#ifdef FEATURE_SERIAL
+
+#if !defined(NO_GLOBAL_SPLITSTREAM) && !defined(NO_GLOBAL_INSTANCES)
 SplitStream Serial;
+#endif
 
 void SplitStream::setup(
     Stream *stream0,
@@ -56,3 +60,5 @@ SplitStream::operator bool() const {
     if (s1_enabled) r1 = s1 ? true : false;
     return r0 || r1;
 }
+
+#endif

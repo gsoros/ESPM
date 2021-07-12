@@ -51,7 +51,7 @@ class WifiConnection : public HasPreferences, public Task {
 
     void loadDefaultSettings() {
         settings.apEnable = true;
-        strncpy(settings.apSSID, "ESPM", 32);
+        strncpy(settings.apSSID, "ESP32", 32);
         strncpy(settings.apPassword, "", 32);
         settings.staEnable = false;
         strncpy(settings.staSSID, "", 32);

@@ -5,7 +5,13 @@
 #include <Preferences.h>
 
 #include "definitions.h"
+
+#ifdef FEATURE_SERIAL
 #include "splitstream.h"
+#include "wifiserial.h"
+#else
+#include "nullserial.h"
+#endif
 #include "haspreferences.h"
 #include "task.h"
 #include "mpu.h"
@@ -14,7 +20,6 @@
 #include "ble.h"
 #include "battery.h"
 #include "wificonnection.h"
-#include "wifiserial.h"
 #include "ota.h"
 #include "status.h"
 #include "led.h"
@@ -26,8 +31,10 @@
 class Board : public HasPreferences, public Task {
    public:
     Preferences boardPreferences = Preferences();
+#ifdef FEATURE_SERIAL
     HardwareSerial hwSerial = HardwareSerial(0);
     WifiSerial wifiSerial;
+#endif
     WifiConnection wifi;
     BLE ble;
     Battery battery;
@@ -45,15 +52,18 @@ class Board : public HasPreferences, public Task {
 
     void setup() {
         setCpuFrequencyMhz(80);
+#ifdef FEATURE_SERIAL
+        hwSerial.begin(115200);
+#endif
         preferencesSetup(&boardPreferences, "BOARD");
         loadSettings();
         led.setup();
-        hwSerial.begin(115200);
         wifi.setup(preferences);
+#ifdef FEATURE_SERIAL
         wifiSerial.setup();
         Serial.setup(&hwSerial, &wifiSerial, true, true);
-        while (!Serial) vTaskDelay(10);
-        //Serial.println(getXtalFrequencyMhz()); while(1);
+        while (!hwSerial) vTaskDelay(10);
+#endif
         ble.setup(hostName);
         battery.setup(preferences);
         mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
@@ -67,7 +77,9 @@ class Board : public HasPreferences, public Task {
     }
 
     void startTasks() {
+#ifdef FEATURE_SERIAL
         wifiSerial.taskStart("WifiSerial Task", 10);
+#endif
         wifi.taskStart("Wifi Task", 1);
         ble.taskStart("BLE Task", 10);
         battery.taskStart("Battery Task", 1);
@@ -135,10 +147,12 @@ class Board : public HasPreferences, public Task {
         strain.sleep();
         mpu.enableWomSleep();
         //pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
+#ifdef FEATURE_SERIAL
         Serial.println("Entering deep sleep");
         Serial.flush();
         delay(1000);
         wifiSerial.disconnect();
+#endif
         delay(1000);
         esp_sleep_enable_ext0_wakeup(MPU_WOM_INT_PIN, HIGH);
         esp_deep_sleep_start();

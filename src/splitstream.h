@@ -1,4 +1,4 @@
-#ifndef SPLITSTREAM_H
+#if !defined(SPLITSTREAM_H) && defined(FEATURE_SERIAL)
 #define SPLITSTREAM_H
 
 #include <Arduino.h>
@@ -27,6 +27,8 @@ class SplitStream : public Stream {
     operator bool() const;
 };
 
+#if !defined(NO_GLOBAL_SPLITSTREAM) && !defined(NO_GLOBAL_INSTANCES)
 extern SplitStream Serial;
+#endif
 
 #endif

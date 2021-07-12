@@ -1,6 +1,12 @@
 #include "status.h"
 #include "board.h"
 
+#include "battery.h"
+#include "mpu.h"
+#include "power.h"
+#include "strain.h"
+#include "wificonnection.h"
+
 void Status::setup() {
     statusEnabled = true;
 #ifdef COMPILE_TIMESTAMP

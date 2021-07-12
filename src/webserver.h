@@ -1,4 +1,4 @@
-#ifndef WEBSERVER_H____
+#if !defined(WEBSERVER_H____) && defined(FEATURE_WEBSERVER)
 #define WEBSERVER_H____
 
 #include <Arduino.h>

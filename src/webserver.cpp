@@ -1,3 +1,5 @@
+#ifdef FEATURE_WEBSERVER
+
 #include "webserver.h"
 #include "board.h"
 #include "mpu.h"
@@ -118,3 +120,5 @@ time_t WebServer::getLastModified() {
     log_i("From FS: %d\n", t);
     return t;
 }
+
+#endif

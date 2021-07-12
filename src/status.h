@@ -2,14 +2,7 @@
 #define STATUS_H
 
 #include <Arduino.h>
-
-#include "splitstream.h"
-#include "battery.h"
-#include "mpu.h"
-#include "power.h"
-#include "strain.h"
 #include "task.h"
-#include "wificonnection.h"
 
 class Status : public Task {
    public:
