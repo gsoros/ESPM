@@ -10,12 +10,12 @@ class Status : public Task {
     uint32_t statusDelay = 1000;  // ms
 
     void setup();
-    void loop(const ulong t);
+    void loop();
     char getChar();
     int getStr(char *str, int maxLength);
     int getStr(char *str, int maxLength, bool echo);
     void setStatusFreq(float freq);
-    void printStatus(const ulong t);
+    void printStatus();
     void handleInput(const char input);
 };
 

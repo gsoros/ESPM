@@ -11,8 +11,6 @@ class Task {
     uint16_t taskFreq = 10;     // desired task frequency in Hz
     uint32_t taskStack = 4096;  // task stack size in bytes
     uint8_t taskPriority = 1;
-    ulong taskLastLoop = 0;
-    ulong taskLastLoopDelay = 0;
 
     void taskStart() {
         taskStart(taskName, taskFreq, taskStack, taskPriority);
@@ -55,40 +53,34 @@ class Task {
         taskSetDelayFromFreq();
     }
 
-    void taskUpdateStats(const ulong t) {
-        taskLastLoopDelay = t - taskLastLoop;
-        taskLastLoop = t;
-    }
-
     int taskGetLowestStackLevel() {
         return NULL == taskHandle ? -1 : (int)uxTaskGetStackHighWaterMark(taskHandle);
     }
 
-    virtual void loop(const ulong t){};
+    virtual void loop(){};
     Task() {}   // undefined reference to 'vtable...
     ~Task() {}  // undefined reference to 'vtable...
 
    private:
-    TickType_t xLastWakeTime;
-    TickType_t taskDelay;
+    TickType_t _xLastWakeTime;
+    TickType_t _taskDelay;
 
     static void taskLoop(void *p) {
         Task *thisPtr = (Task *)p;
-        thisPtr->xLastWakeTime = xTaskGetTickCount();
+        thisPtr->_xLastWakeTime = xTaskGetTickCount();
         for (;;) {
             const ulong t = millis();
-            if (thisPtr->xLastWakeTime + thisPtr->taskDelay <= t) {
+            if (thisPtr->_xLastWakeTime + thisPtr->_taskDelay <= t) {
                 //log_w("%s (%dHz) missed a beat", thisPtr->taskName, thisPtr->taskFreq);
-                thisPtr->xLastWakeTime = t;
+                thisPtr->_xLastWakeTime = t;
             }
-            vTaskDelayUntil(&(thisPtr->xLastWakeTime), thisPtr->taskDelay);
-            thisPtr->loop(t);
-            thisPtr->taskUpdateStats(t);
+            vTaskDelayUntil(&(thisPtr->_xLastWakeTime), thisPtr->_taskDelay);
+            thisPtr->loop();
         }
     }
 
     void taskSetDelayFromFreq() {
-        taskDelay = 1000 / taskFreq / portTICK_PERIOD_MS;
+        _taskDelay = 1000 / taskFreq / portTICK_PERIOD_MS;
     }
 };
 

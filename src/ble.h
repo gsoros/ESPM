@@ -29,7 +29,7 @@ class BLE : public BLEServerCallbacks, public Task {
     unsigned char bufFeature[4];
 
     void setup(const char *deviceName);
-    void loop(const ulong t);
+    void loop();
 
     void onConnect(BLEServer *pServer, ble_gap_conn_desc *desc);
     void onDisconnect(BLEServer *pServer);

@@ -7,7 +7,7 @@ void WifiSerial::setup(uint16_t port) {
     _server.begin();
 }
 
-void WifiSerial::loop(const ulong t) {
+void WifiSerial::loop() {
     if (!WiFi.isConnected() && WiFi.softAPgetStationNum() < 1) return;
     if (!_connected) {
         if (!_server.hasClient()) return;

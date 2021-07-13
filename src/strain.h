@@ -37,10 +37,11 @@ class Strain : public Task, public HasPreferences {
         loadCalibration();
     }
 
-    void loop(const ulong t) {
+    void loop() {
         if (!device->update()) {
             return;
         }
+        const ulong t = millis();
         _measurement = device->getData();
         lastMeasurementDelay = t - measurementTime;
         measurementTime = t;

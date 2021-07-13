@@ -17,7 +17,8 @@ class Led : public Task {
         defaultMode();
     }
 
-    void loop(const ulong t) {
+    void loop() {
+        const ulong t = millis();
         if (!state) {                      // led is off
             if (lastSet <= t - offTime) {  //
                 set(true, t);              // turn on

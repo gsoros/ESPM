@@ -8,7 +8,8 @@ void Power::setup(Preferences *p) {
     loadSettings();
 }
 
-void Power::loop(const ulong t) {
+void Power::loop() {
+    const ulong t = millis();
     static ulong previousT = t;
     if (t == previousT) return;
     if (!board.strain.dataReady()) {
@@ -16,30 +17,22 @@ void Power::loop(const ulong t) {
         return;
     }
 
-    double deltaT = (t - previousT) / 1000.0;                                      // t(s)
-    float rpm = filterNegative(board.getRpm(), reverseMPU);                        //
-    float force = filterNegative(board.getStrain(true), reverseStrain) * 9.80665;  // F(N)   = m(Kg) * G(m/s/s)
-    float diameter = 2.0 * crankLength * PI / 1000.0;                              // d(m)   = 2 * r(mm) * π / 1000
-    double distance = diameter * rpm / 60.0 * deltaT;                              // s(m)   = d(m) * rev/s * t(s)
-    double velocity = distance / deltaT;                                           // v(m/s) = s(m) / t(s)
-    double work = force * velocity;                                                // W(J)   = F(N) * v(m)
-    double power = work / deltaT;                                                  // P(W)   = W(J) / t(s)
-                                                                                   // P      = F d RPM / 60 / t
-
-    /*
-        _power = filterNegative(board.getStrain(true), reverseStrain) * 9.80665 *
-                 2.0 * crankLength * PI / 1000.0 *
-                 filterNegative(board.getRpm(), reverseMPU) / 60.0 /
-                 (t - previousT) / 1000.0;
-        */
-
-    /*
-        _power = filterNegative(board.getStrain(true), reverseStrain) *
-                 filterNegative(board.getRpm(), reverseMPU) *
-                 crankLength / 
-                 (t - previousT) *
-                 0.000001026949987;
-        */
+    double deltaT = (t - previousT) / 1000.0;                       // t(s)
+    float rps = filterNegative(board.getRpm(), reverseMPU) / 60;    // revs per sec
+    float mass = filterNegative(board.getStrain(), reverseStrain);  // m(kg)
+    float force = mass * 9.80665;                                   // F(N)   = m(kg) * G(m/s/s)
+    float radius = crankLength / 1000.0;                            // r(m)
+    float circumference = 2.0 * radius * PI;                        // C(m)   = 2 * r(m) * π
+    double distance = circumference * rps * deltaT;                 // s(m)   = C(m) * rps * t(s)
+    double velocity = distance / deltaT;                            // v(m/s) = s(m) / t(s)
+    double work = force * velocity;                                 // W(J)   = F(N) * v(m/s)
+    double power = work / deltaT;                                   // P(W)   = W(J) / t(s)
+                                                                    // P      = F * v / t
+                                                                    // P      = m * G * s / t / t
+                                                                    // P      = m * G * C * rps * t / t / t
+                                                                    // P      = m * G * 2 * r * π * rps / t
+                                                                    // P      = m * rps * r / t * G * π * 2
+                                                                    // P      = strain * rps * cranklength / t * 61.616999192652692
 
     //if (_powerBuf.isFull()) log_e("power buffer is full");
     _powerBuf.push((float)power);

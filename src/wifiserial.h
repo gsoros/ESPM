@@ -20,7 +20,7 @@ class WifiSerial : public Task, public Stream {
    public:
     void setup();
     void setup(uint16_t port);
-    void loop(const ulong t);
+    void loop();
     void disconnect();
     size_t write(uint8_t c);
     size_t write(const uint8_t *buf, size_t size);

@@ -35,7 +35,7 @@ class MPU : public Task, public HasPreferences {
                const char *preferencesNS,
                uint8_t mpuAddress);
 
-    void loop(const ulong t);
+    void loop();
 
     float rpm(bool unsetDataReadyFlag = false);
     bool dataReady();

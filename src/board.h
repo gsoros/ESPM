@@ -95,7 +95,8 @@ class Board : public HasPreferences, public Task {
 #endif
     }
 
-    void loop(const ulong t) {
+    void loop() {
+        const ulong t = millis();
         const long tSleep = timeUntilDeepSleep(t);
         if (0 == tSleep) {
             Serial.printf("Going to deep sleep now ...zzzZZZ\n");

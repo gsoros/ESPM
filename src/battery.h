@@ -20,7 +20,7 @@ class Battery : public Task, public HasPreferences {
     uint8_t level = 0;
 
     void setup(Preferences *p);
-    void loop(const ulong t);
+    void loop();
     int calculateLevel();
     float measureVoltage();
     float measureVoltage(bool useCorrection);

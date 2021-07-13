@@ -69,6 +69,6 @@ void OTA::setup(const char *hostName, uint16_t port) {
     ArduinoOTA.begin();
 }
 
-void OTA::loop(const ulong t) {
+void OTA::loop() {
     ArduinoOTA.handle();
 }

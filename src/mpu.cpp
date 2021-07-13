@@ -29,15 +29,14 @@ void MPU::setup(const uint8_t sdaPin,
     //device->selectFilter(QuatFilterSel::MAHONY);
     device->selectFilter(QuatFilterSel::NONE);
     //device->selectFilter(QuatFilterSel::MADGWICK);
-    // 5° 19'
-    device->setMagneticDeclination(5 + 19 / 60);
+    //device->setMagneticDeclination(5 + 19 / 60);  // 5° 19'
     loadCalibration();
     //printCalibration();
     updateEnabled = true;
     lastMovement = millis();
 }
 
-void MPU::loop(const ulong t) {
+void MPU::loop() {
     if (accelGyroNeedsCalibration) {
         calibrateAccelGyro();
         accelGyroNeedsCalibration = false;
@@ -52,6 +51,7 @@ void MPU::loop(const ulong t) {
     if (!device->update()) {
         return;
     }
+    const ulong t = millis();
     static ulong previousTime = 0;
     static float previousAngle = 0.0;
     float angle = device->getYaw() + 180.0;  // 0...360
@@ -63,6 +63,7 @@ void MPU::loop(const ulong t) {
             // roll over zero deg, will fail when spinning faster than 180 deg/dT
             if (-360 < dA && dA <= -180) {
                 dA += 360;
+                // TODO increment revolution counter for cadence gatt here
             }
             newRpm = dA / dT / 0.006;             // 1 deg/ms / .006 = 1 rpm
             if (newRpm < -200 || 200 < newRpm) {  // remove value > 200 rpm
@@ -75,7 +76,7 @@ void MPU::loop(const ulong t) {
         }
     }
     _rpmBuf.push(newRpm);
-    if (_rpmBuf.isFull()) {
+    if (_rpmBuf.size()) {
         float avg = 0.0;
         for (decltype(_rpmBuf)::index_t i = 0; i < _rpmBuf.size(); i++) {
             avg += _rpmBuf[i] / _rpmBuf.size();

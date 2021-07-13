@@ -67,11 +67,12 @@ void BLE::setup(const char *deviceName) {
     BLEDevice::startAdvertising();
 }
 
-void BLE::loop(const ulong t) {
+void BLE::loop() {
+    const ulong t = millis();
     // notify changed value
     if (connected) {
         if (lastNotificationSent < t - 1000) {
-            power = (short)board.getPower(true);
+            power = (short)board.getPower();
             Serial.printf("[BLE] power = %d\n", power);
             bufMeasurent[0] = flags & 0xff;
             bufMeasurent[1] = (flags >> 8) & 0xff;

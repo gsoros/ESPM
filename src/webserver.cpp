@@ -41,7 +41,8 @@ void WebServer::setup() {
     wssBroadcastEnabled = true;
 }
 
-void WebServer::loop(const ulong t) {
+void WebServer::loop() {
+    const ulong t = millis();
     if (wssLastCleanup < t - 300) {
         wss->cleanupClients();
         wssLastCleanup = t;

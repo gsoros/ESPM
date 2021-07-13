@@ -4,7 +4,7 @@
 //#define NO_GLOBAL_SERIAL // defined in compile flags
 
 #define MPU_RINGBUF_SIZE 16
-#define POWER_RINGBUF_SIZE 96
+#define POWER_RINGBUF_SIZE 256
 #define WIFISERIAL_RINGBUF_RX_SIZE 256
 #define WIFISERIAL_RINGBUF_TX_SIZE 1024  // largest string to be printed should fit
 

@@ -20,7 +20,7 @@ class WebServer : public Task {
     ulong wssLastCleanup = 0;
 
     void setup();
-    void loop(const ulong t);
+    void loop();
 
     void handleCalibrateAccelGyro(AsyncWebServerRequest *request);
     void handleCalibrateMag(AsyncWebServerRequest *request);

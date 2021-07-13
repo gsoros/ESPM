@@ -29,7 +29,7 @@ class WifiConnection : public HasPreferences, public Task {
         applySettings();
     }
 
-    void loop(const ulong t) {}
+    void loop() {}
 
     bool loadSettings() {
         if (!preferencesStartLoad()) return false;

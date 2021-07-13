@@ -7,6 +7,7 @@
 #include "haspreferences.h"
 #include "task.h"
 #include "CircularBuffer.h"
+#include "definitions.h"
 
 #ifndef POWER_RINGBUF_SIZE
 #define POWER_RINGBUF_SIZE 96  // circular buffer size
@@ -19,7 +20,7 @@ class Power : public Task, public HasPreferences {
     bool reverseStrain;
 
     void setup(Preferences *p);
-    void loop(const ulong t);
+    void loop();
     float power();
     float power(bool clearBuffer);
     void loadSettings();

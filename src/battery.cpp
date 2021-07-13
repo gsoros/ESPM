@@ -6,7 +6,7 @@ void Battery::setup(Preferences *p) {
     this->loadCalibration();
 }
 
-void Battery::loop(const ulong t) {
+void Battery::loop() {
     measureVoltage();
     calculateLevel();
     board.ble.batteryLevel = level;

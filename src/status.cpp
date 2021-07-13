@@ -17,11 +17,11 @@ void Status::setup() {
 #endif
 }
 
-void Status::loop(const ulong t) {
+void Status::loop() {
     if (0 < Serial.available()) {
         handleInput(getChar());
     }
-    printStatus(t);
+    printStatus();
 }
 
 char Status::getChar() {
@@ -75,7 +75,8 @@ void Status::setStatusFreq(float freq) {
     Serial.printf("Status freq is %.2fHz (%dms delay)\n", freq, statusDelay);
 }
 
-void Status::printStatus(const ulong t) {
+void Status::printStatus() {
+    const ulong t = millis();
     static ulong lastOutput = 0;
     if (!statusEnabled)
         return;
