@@ -62,18 +62,23 @@ class Strain : public Task, public HasPreferences {
         rtc_gpio_hold_en(sckPin);
     }
 
-    void calibrateTo(float knownMass) {
+    // calibrate to a known mass in kg
+    int calibrateTo(float knownMass) {
         float calFactor = device->getCalFactor();
         if (isnan(calFactor) ||
             isinf(calFactor) ||
-            (-0.000000001 < calFactor && calFactor < 0.000000001) ||
-            isnan(knownMass) ||
+            (-0.000000001 < calFactor && calFactor < 0.000000001)) {
+            device->setCalFactor(1.0);
+            delay(10);
+        }
+        if (isnan(knownMass) ||
             isinf(knownMass) ||
             (-0.000000001 < knownMass && knownMass < 0.000000001)) {
-            device->setCalFactor(1.0);
-            return;
+            Serial.println("Error setting calibraton factor.");
+            return -1;
         }
         device->getNewCalibration(knownMass);
+        return 0;
     }
 
     void printCalibration() {

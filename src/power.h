@@ -15,7 +15,7 @@
 
 class Power : public Task, public HasPreferences {
    public:
-    float crankLength;
+    float crankLength;  // crank length in mm
     bool reverseMPU;
     bool reverseStrain;
 

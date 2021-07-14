@@ -125,7 +125,8 @@ void Status::printStatus() {
         [d]eep sleep
     */
 void Status::handleInput(const char input) {
-    char tmpStr[32];
+    char tmpStr[32] = "";
+    float tmpF = 0;
     char menu[8];
     strncpy(menu, &input, 1);
     menu[1] = '\0';
@@ -158,16 +159,24 @@ void Status::handleInput(const char input) {
                         board.strain.printCalibration();
                         Serial.print("Enter known mass in Kg and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
-                        board.strain.calibrateTo(atof(tmpStr));
-                        board.strain.saveCalibration();
+                        tmpF = atof(tmpStr);
+                        if (1 < tmpF && tmpF < 1000) {
+                            board.strain.calibrateTo(tmpF);
+                            board.strain.saveCalibration();
+                        } else
+                            Serial.println("Invalid value.");
                         board.strain.printCalibration();
                         menu[1] = '\0';
                         break;
                     case 'c':
                         Serial.print("Enter crank length in mm and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
-                        board.power.crankLength = atof(tmpStr);
-                        board.power.saveSettings();
+                        tmpF = atof(tmpStr);
+                        if (10 < tmpF && tmpF < 1000) {
+                            board.power.crankLength = tmpF;
+                            board.power.saveSettings();
+                        } else
+                            Serial.println("Invalid value.");
                         menu[1] = '\0';
                         break;
                     case 'r':
