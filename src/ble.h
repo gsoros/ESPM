@@ -10,8 +10,9 @@
 class BLE : public BLEServerCallbacks, public Task {
    public:
     BLEServer *server;
-    BLECharacteristic *cpmChar;  // cycling power measurement char
-    BLECharacteristic *blChar;   // battery level char
+    BLECharacteristic *cpmChar;   // cycling power measurement characteristic
+    BLECharacteristic *cscmChar;  // cycling speed and cadence measurement characteristic
+    BLECharacteristic *blChar;    // battery level characteristic
     uint8_t batteryLevel = 0;
     uint8_t oldBatteryLevel = 0;
     bool connected = false;
@@ -19,14 +20,16 @@ class BLE : public BLEServerCallbacks, public Task {
     unsigned long lastNotificationSent = 0;
 
     short power = 0;
-    unsigned short revolutions = 0;
-    unsigned short timestamp = 0;
-    const unsigned short flags = 0x20;  // TODO
+    uint16_t lastCrankEventTime = 0;  // unit: 1/1024s, rolls over
+    const uint16_t powerFlags = 0x00;
+    const uint8_t speedCadenceFlags = 0b00000010;  // Wheel rev data present = 0, Crank rev data present = 1
 
-    unsigned char bufMeasurent[8];
+    unsigned char bufPower[4];
+    unsigned char bufCadence[5];
     unsigned char bufSensorLocation[1];
     unsigned char bufControlPoint[1];
-    unsigned char bufFeature[4];
+    unsigned char bufPowerFeature[4];
+    unsigned char bufSpeedCadenceFeature[2];
 
     void setup(const char *deviceName);
     void loop();

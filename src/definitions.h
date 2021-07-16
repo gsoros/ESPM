@@ -4,7 +4,7 @@
 //#define NO_GLOBAL_SERIAL // defined in compile flags
 
 #define MPU_RINGBUF_SIZE 16
-#define POWER_RINGBUF_SIZE 256
+#define POWER_RINGBUF_SIZE 1024
 #define WIFISERIAL_RINGBUF_RX_SIZE 256
 #define WIFISERIAL_RINGBUF_TX_SIZE 1024  // largest string to be printed should fit
 
@@ -20,7 +20,7 @@
 #define STRAIN_DOUT_PIN GPIO_NUM_5
 #define STRAIN_SCK_PIN GPIO_NUM_13
 
-#define HX711_SAMPLES 16         // number of samples in moving average dataset, value must be 1, 2, 4, 8, 16, 32, 64 or 128.
+#define HX711_SAMPLES 64         // number of samples in moving average dataset, value must be 1, 2, 4, 8, 16, 32, 64 or 128.
 #define HX711_IGN_HIGH_SAMPLE 1  // adds extra sample(s) to the dataset and ignore peak high/low sample, value must be 0 or 1.
 #define HX711_IGN_LOW_SAMPLE 1   //
 #define HX711_SCK_DELAY 1        // microsecond delay after writing sck pin high or low. This delay could be required for faster mcu's.

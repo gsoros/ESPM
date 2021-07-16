@@ -87,7 +87,7 @@ class Board : public HasPreferences, public Task {
         strain.taskStart("Strain Task", 90);
         power.taskStart("Power Task", 90);
         ota.taskStart("OTA Task", 10, 8192);
-        status.taskStart("Status Task", 10);
+        status.taskStart("Status Task", 20);
         led.taskStart("Led Task", 10);
         taskStart("Board Task", 1);
 #ifdef FEATURE_WEBSERVER
@@ -162,9 +162,10 @@ class Board : public HasPreferences, public Task {
     float getRpm(bool unsetDataReadyFlag = false) { return mpu.rpm(unsetDataReadyFlag); }
     float getStrain(bool unsetDataReadyFlag = false) { return strain.measurement(unsetDataReadyFlag); }
     float getPower(bool clearBuffer = false) { return power.power(clearBuffer); }
+    void setSleepDelay(const ulong delay) { _sleepDelay = delay; }
 
    private:
-    const ulong _sleepDelay = 5 * 60 * 1000;       // 5m
+    ulong _sleepDelay = 5 * 60 * 1000;             // 5m
     const ulong _sleepCountdownAfter = 30 * 1000;  // 30s
     const ulong _sleepCountdownEvery = 2000;       // 2s
     ulong _lastSleepCountdown = 0;

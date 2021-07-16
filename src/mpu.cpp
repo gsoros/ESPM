@@ -63,7 +63,6 @@ void MPU::loop() {
             // roll over zero deg, will fail when spinning faster than 180 deg/dT
             if (-360 < dA && dA <= -180) {
                 dA += 360;
-                // TODO increment revolution counter for cadence gatt here
             }
             newRpm = dA / dT / 0.006;             // 1 deg/ms / .006 = 1 rpm
             if (newRpm < -200 || 200 < newRpm) {  // remove value > 200 rpm
@@ -87,12 +86,22 @@ void MPU::loop() {
         }
         _dataReady = true;
     }
+    if ((previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= previousAngle)) {
+        revolutions++;
+        if (0 < prevCrankEventTime) {
+            lastCrankEventTimeDiff = t - prevCrankEventTime;
+            crankEventReady = true;
+            Serial.println("CE");
+        }
+        prevCrankEventTime = t;
+    }
     previousTime = t;
     previousAngle = angle;
 }
 
 float MPU::rpm(bool unsetDataReadyFlag) {
     if (unsetDataReadyFlag) _dataReady = false;
+    //return 60.0;
     return _rpm;
 }
 

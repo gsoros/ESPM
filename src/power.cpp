@@ -25,16 +25,16 @@ void Power::loop() {
     float circumference = 2.0 * radius * PI;                        // C(m)   = 2 * r(m) * π
     double distance = circumference * rps * deltaT;                 // s(m)   = C(m) * rps * t(s)
     double velocity = distance / deltaT;                            // v(m/s) = s(m) / t(s)
-    double work = force * velocity;                                 // W(J)   = F(N) * v(m/s)
-    double power = work / deltaT;                                   // P(W)   = W(J) / t(s)
-                                                                    // P      = F * v / t
-                                                                    // P      = m * G * s / t / t
-                                                                    // P      = m * G * C * rps * t / t / t
-                                                                    // P      = m * G * 2 * r * π * rps / t
-                                                                    // P      = m * rps * r / t * G * π * 2
-                                                                    // P      = strain * rps * cranklength / t * 61.616999192652692
-
-    //if (_powerBuf.isFull()) log_e("power buffer is full");
+    double power = force * velocity;                                // P(W)   = F(N) * v(m/s)
+    // P      = F * v
+    // P      = m * G * s / t
+    // P      = m * G * C * rps * t / t
+    // P      = m * G * 2 * r * π * rps
+    // P      = m * rps * r * G * π * 2
+    if (power < 0.0)
+        power = 0.0;
+    else if (10000.0 < power)
+        power = 10000.0;
     _powerBuf.push((float)power);
     previousT = t;
 }

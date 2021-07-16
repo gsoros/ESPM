@@ -9,37 +9,23 @@ void BLE::setup(const char *deviceName) {
     server = BLEDevice::createServer();
     server->setCallbacks(this);
 
+    // Cycling Power Service
     BLEUUID cpsUUID = BLEUUID(CYCLING_POWER_SERVICE_UUID);
     BLEService *cps = server->createService(cpsUUID);
 
+    // Cycling Power Feature
     BLECharacteristic *cpfChar = cps->createCharacteristic(
         BLEUUID(CYCLING_POWER_FEATURE_CHAR_UUID),
         NIMBLE_PROPERTY::READ
         //| NIMBLE_PROPERTY::READ_ENC
     );
-    bufFeature[0] = 0xff;
-    bufFeature[1] = 0xff;
-    bufFeature[2] = 0xff;
-    bufFeature[3] = 0xff;  // TODO
-    cpfChar->setValue((uint8_t *)&bufFeature, 4);
+    bufPowerFeature[0] = 0x00;
+    bufPowerFeature[1] = 0x00;
+    bufPowerFeature[2] = 0x00;
+    bufPowerFeature[3] = 0x00;  // TODO
+    cpfChar->setValue((uint8_t *)&bufPowerFeature, 4);
 
-    BLECharacteristic *slChar = cps->createCharacteristic(
-        BLEUUID(SENSOR_LOCATION_CHAR_UUID),
-        NIMBLE_PROPERTY::READ
-        //| NIMBLE_PROPERTY::READ_ENC
-    );
-    bufSensorLocation[0] = SENSOR_LOCATION_RIGHT_CRANK & 0xff;
-    slChar->setValue((uint8_t *)&bufSensorLocation, 1);
-
-    /*
-        BLECharacteristic *cpChar = cps->createCharacteristic(
-            BLEUUID(SC_CONTROL_POINT_CHAR_UUID), 
-            NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE
-        );
-        bufControlPoint[0] = SC_CONTROL_POINT_OP_SET_CUMULATIVE_VALUE;
-        cpChar->setValue((uint8_t *)&bufControlPoint, 1);
-        */
-
+    // Cycling Power Mmeasurement
     cpmChar = cps->createCharacteristic(
         BLEUUID(CYCLING_POWER_MEASUREMENT_CHAR_UUID),
         NIMBLE_PROPERTY::READ
@@ -49,9 +35,52 @@ void BLE::setup(const char *deviceName) {
 
     cps->start();
 
+    /*
+    BLECharacteristic *cpChar = cps->createCharacteristic(
+        BLEUUID(SC_CONTROL_POINT_CHAR_UUID), 
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE
+    );
+    bufControlPoint[0] = SC_CONTROL_POINT_OP_SET_CUMULATIVE_VALUE;
+    cpChar->setValue((uint8_t *)&bufControlPoint, 1);
+    */
+
+    // CPS Sensor Location
+    BLECharacteristic *slChar = cps->createCharacteristic(
+        BLEUUID(SENSOR_LOCATION_CHAR_UUID),
+        NIMBLE_PROPERTY::READ
+        //| NIMBLE_PROPERTY::READ_ENC
+    );
+    bufSensorLocation[0] = SENSOR_LOCATION_RIGHT_CRANK & 0xff;
+    slChar->setValue((uint8_t *)&bufSensorLocation, 1);
+
+    // Cycling Speed and Cadence
+    BLEUUID cscUUID = BLEUUID(CYCLING_SPEED_CADENCE_SERVICE_UUID);
+    BLEService *csc = server->createService(cscUUID);
+
+    // Cycling Speed and Cadence Feature
+    BLECharacteristic *cscfChar = csc->createCharacteristic(
+        BLEUUID(CSC_FEATURE_CHAR_UUID),
+        NIMBLE_PROPERTY::READ
+        //| NIMBLE_PROPERTY::READ_ENC
+    );
+    bufSpeedCadenceFeature[0] = 0x00;
+    //bufSpeedCadenceFeature[1] = 0b00000010;
+    bufSpeedCadenceFeature[1] = CSCF_CRANK_REVOLUTION_DATA_SUPPORTED && 0xff;
+    cscfChar->setValue((uint8_t *)&bufSpeedCadenceFeature, 2);
+
+    // Cycling Speed and Cadence Measurement
+    cscmChar = csc->createCharacteristic(
+        BLEUUID(CSC_MEASUREMENT_CHAR_UUID),
+        NIMBLE_PROPERTY::READ
+            //| NIMBLE_PROPERTY::READ_ENC
+            //| NIMBLE_PROPERTY::WRITE
+            | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::INDICATE);
+
+    csc->start();
+
+    // Battery Service
     BLEUUID bsUUID = BLEUUID(BATTERY_SERVICE_UUID);
     BLEService *bs = server->createService(bsUUID);
-
     blChar = bs->createCharacteristic(
         BLEUUID(BATTERY_LEVEL_CHAR_UUID),
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
@@ -61,6 +90,7 @@ void BLE::setup(const char *deviceName) {
 
     BLEAdvertising *advertising = BLEDevice::getAdvertising();
     advertising->addServiceUUID(cpsUUID);
+    advertising->addServiceUUID(cscUUID);
     advertising->addServiceUUID(bsUUID);
     //advertising->setScanResponse(false);
     //advertising->setMinPreferred(0x0);
@@ -69,21 +99,29 @@ void BLE::setup(const char *deviceName) {
 
 void BLE::loop() {
     const ulong t = millis();
-    // notify changed value
-    if (connected) {
-        if (lastNotificationSent < t - 1000) {
-            power = (short)board.getPower();
-            Serial.printf("[BLE] power = %d\n", power);
-            bufMeasurent[0] = flags & 0xff;
-            bufMeasurent[1] = (flags >> 8) & 0xff;
-            bufMeasurent[2] = power & 0xff;
-            bufMeasurent[3] = (power >> 8) & 0xff;
-            bufMeasurent[4] = revolutions & 0xff;
-            bufMeasurent[5] = (revolutions >> 8) & 0xff;
-            bufMeasurent[6] = timestamp & 0xff;
-            bufMeasurent[7] = (timestamp >> 8) & 0xff;
-            cpmChar->setValue((uint8_t *)&bufMeasurent, 8);
+    if (lastNotificationSent < t - 1000) {
+        power = (short)board.getPower();
+        // notify changed values
+        if (connected) {
+            bufPower[0] = powerFlags & 0xff;
+            bufPower[1] = (powerFlags >> 8) & 0xff;
+            bufPower[2] = power & 0xff;
+            bufPower[3] = (power >> 8) & 0xff;
+            cpmChar->setValue((uint8_t *)&bufPower, 4);
             cpmChar->notify();
+
+            if (board.mpu.crankEventReady) {
+                board.mpu.crankEventReady = false;
+                uint16_t revolutions = board.mpu.revolutions;
+                lastCrankEventTime += (uint16_t)(board.mpu.lastCrankEventTimeDiff * 1.024);
+                bufCadence[0] = speedCadenceFlags & 0xff;
+                bufCadence[1] = revolutions & 0xff;
+                bufCadence[2] = (revolutions >> 8) & 0xff;
+                bufCadence[3] = lastCrankEventTime & 0xff;
+                bufCadence[4] = (lastCrankEventTime >> 8) & 0xff;
+                cscmChar->setValue((uint8_t *)&bufCadence, 5);
+                cscmChar->notify();
+            }
 
             if (batteryLevel != oldBatteryLevel) {
                 blChar->setValue(&batteryLevel, 1);

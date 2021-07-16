@@ -82,7 +82,7 @@ void Status::printStatus() {
         return;
     if (lastOutput < t - statusDelay) {
         Serial.printf(
-            "%d %d %d %d %.2f %.2f\n",
+            "S|%d|%d|%d|%d|%.2f|%.2f\n",
             (int)board.getRpm(),
             (int)board.getStrain(),
             (int)board.getPower(),  // not emptying the buffer
@@ -121,12 +121,13 @@ void Status::printStatus() {
         c[o]nfig
             [h]ostname
             status [f]requency
+            sleep [d]elay
         [r]eboot
         [d]eep sleep
     */
 void Status::handleInput(const char input) {
     char tmpStr[32] = "";
-    float tmpF = 0;
+    float tmpF = 0.0;
     char menu[8];
     strncpy(menu, &input, 1);
     menu[1] = '\0';
@@ -303,11 +304,18 @@ void Status::handleInput(const char input) {
                         // status freq is not saved
                         menu[1] = '\0';
                         break;
+                    case 'd':
+                        Serial.print("Enter deep sleep delay in minutes and press [Enter]: ");
+                        getStr(tmpStr, 32);
+                        board.setSleepDelay(atof(tmpStr) * 60 * 1000);
+                        // sleep delay is not saved
+                        menu[1] = '\0';
+                        break;
                     case 'x':
                         strncpy(menu, " ", 2);
                         break;
                     default:
-                        Serial.print("Config: [h]ostname, status [f]requency or e[x]it\n");
+                        Serial.print("Config: [h]ostname, status [f]requency, sleep [d]elay or e[x]it\n");
                         menu[1] = getChar();
                         menu[2] = '\0';
                 }
