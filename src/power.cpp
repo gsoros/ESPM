@@ -9,14 +9,15 @@ void Power::setup(Preferences *p) {
 }
 
 void Power::loop() {
-    const ulong t = millis();
-    static ulong previousT = t;
-    if (t == previousT) return;
     if (!board.strain.dataReady()) {
         //log_e("strain not ready, skipping loop at %d, SPS=%f", t, board.strain.device->getSPS());
         return;
     }
-
+    /*
+    const ulong t = millis();
+    static ulong previousT = t;
+    if (t == previousT) return;
+    previousT = t;
     double deltaT = (t - previousT) / 1000.0;                       // t(s)
     float rps = filterNegative(board.getRpm(), reverseMPU) / 60;    // revs per sec
     float mass = filterNegative(board.getStrain(), reverseStrain);  // m(kg)
@@ -31,12 +32,17 @@ void Power::loop() {
     // P      = m * G * C * rps * t / t
     // P      = m * G * 2 * r * π * rps
     // P      = m * rps * r * G * π * 2
+    */
+    float power = filterNegative(board.getStrain(), reverseStrain) *
+                  filterNegative(board.getRpm(), reverseMPU) *
+                  crankLength *
+                  0.001026949986544;
+    if (reportDouble) power *= 2;
     if (power < 0.0)
         power = 0.0;
     else if (10000.0 < power)
         power = 10000.0;
-    _powerBuf.push((float)power);
-    previousT = t;
+    _powerBuf.push(power);
 }
 
 // Returns the average of the buffered power values, not emptying the buffer by default.
@@ -59,6 +65,7 @@ void Power::loadSettings() {
     crankLength = preferences->getFloat("crankLength", 172.5);
     reverseMPU = preferences->getBool("reverseMPU", false);
     reverseStrain = preferences->getBool("reverseStrain", false);
+    reportDouble = preferences->getBool("reportDouble", true);
     preferencesEnd();
 }
 
@@ -67,12 +74,16 @@ void Power::saveSettings() {
     preferences->putFloat("crankLength", crankLength);
     preferences->putBool("reverseMPU", reverseMPU);
     preferences->putBool("reverseStrain", reverseStrain);
+    preferences->putBool("reportDouble", reportDouble);
     preferencesEnd();
 }
 
 void Power::printSettings() {
-    Serial.printf("[Power] Crank length: %.2fmm\nStrain is %sreversed\nMPU is %sreversed\n",
-                  crankLength, reverseStrain ? "" : "not ", reverseMPU ? "" : "not ");
+    Serial.printf(
+        "[Power] Settings\nCrank length: %.2fmm\nStrain is %sreversed\nMPU is %sreversed\nValue is %sdoubled\n",
+        crankLength, reverseStrain ? "" : "not ",
+        reverseMPU ? "" : "not ",
+        reportDouble ? "" : "not ");
 }
 
 float Power::filterNegative(float value) { return filterNegative(value, false); }

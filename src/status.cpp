@@ -101,6 +101,7 @@ void Status::printStatus() {
             set [c]rank length
             toggle [r]everse strain
             toggle r[e]verse MPU
+            toggle [d]ouble power
             [p]rint calibration
             e[x]it
         [w]ifi
@@ -190,6 +191,12 @@ void Status::handleInput(const char input) {
                         Serial.printf("MPU is now %sreversed\n", board.power.reverseMPU ? "" : "not ");
                         menu[1] = '\0';
                         break;
+                    case 'd':
+                        board.power.reportDouble = !board.power.reportDouble;
+                        board.power.saveSettings();
+                        Serial.printf("Power is now %sdoubled\n", board.power.reportDouble ? "" : "not ");
+                        menu[1] = '\0';
+                        break;
                     case 'p':
                         board.mpu.printCalibration();
                         board.strain.printCalibration();
@@ -201,7 +208,7 @@ void Status::handleInput(const char input) {
                         strncpy(menu, " ", 2);
                         break;
                     default:
-                        Serial.print("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, set [c]rank length, toggle [r]everse strain, toggle r[e]verse MPU, [p]rint calibration or e[x]it\n");
+                        Serial.print("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, set [c]rank length, toggle [r]everse strain, toggle r[e]verse MPU, toggle [d]ouble power, [p]rint calibration or e[x]it\n");
                         menu[1] = getChar();
                         menu[2] = '\0';
                 }
