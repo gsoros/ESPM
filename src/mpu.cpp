@@ -86,14 +86,18 @@ void MPU::loop() {
         }
         _dataReady = true;
     }
+    static bool secondCrankEvent = false;
     if ((previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= previousAngle)) {
-        revolutions++;
-        if (0 < prevCrankEventTime) {
-            lastCrankEventTimeDiff = t - prevCrankEventTime;
-            crankEventReady = true;
-            Serial.println("CE");
+        if (!secondCrankEvent) {
+            revolutions++;
+            if (0 < prevCrankEventTime) {
+                lastCrankEventTimeDiff = t - prevCrankEventTime;
+                crankEventReady = true;
+                Serial.println("CE");
+            }
+            prevCrankEventTime = t;
         }
-        prevCrankEventTime = t;
+        secondCrankEvent = !secondCrankEvent;
     }
     previousTime = t;
     previousAngle = angle;

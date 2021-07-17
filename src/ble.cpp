@@ -19,10 +19,11 @@ void BLE::setup(const char *deviceName) {
         NIMBLE_PROPERTY::READ
         //| NIMBLE_PROPERTY::READ_ENC
     );
+    cpfChar->setCallbacks(this);
     bufPowerFeature[0] = 0x00;
     bufPowerFeature[1] = 0x00;
     bufPowerFeature[2] = 0x00;
-    bufPowerFeature[3] = 0x00;  // TODO
+    bufPowerFeature[3] = 0x00;
     cpfChar->setValue((uint8_t *)&bufPowerFeature, 4);
 
     // Cycling Power Mmeasurement
@@ -32,7 +33,7 @@ void BLE::setup(const char *deviceName) {
             //| NIMBLE_PROPERTY::READ_ENC
             //| NIMBLE_PROPERTY::WRITE
             | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::INDICATE);
-
+    cpmChar->setCallbacks(this);
     cps->start();
 
     /*
@@ -50,6 +51,7 @@ void BLE::setup(const char *deviceName) {
         NIMBLE_PROPERTY::READ
         //| NIMBLE_PROPERTY::READ_ENC
     );
+    slChar->setCallbacks(this);
     bufSensorLocation[0] = SENSOR_LOCATION_RIGHT_CRANK & 0xff;
     slChar->setValue((uint8_t *)&bufSensorLocation, 1);
 
@@ -63,6 +65,7 @@ void BLE::setup(const char *deviceName) {
         NIMBLE_PROPERTY::READ
         //| NIMBLE_PROPERTY::READ_ENC
     );
+    cscfChar->setCallbacks(this);
     bufSpeedCadenceFeature[0] = 0x00;
     //bufSpeedCadenceFeature[1] = 0b00000010;
     bufSpeedCadenceFeature[1] = CSCF_CRANK_REVOLUTION_DATA_SUPPORTED && 0xff;
@@ -75,7 +78,7 @@ void BLE::setup(const char *deviceName) {
             //| NIMBLE_PROPERTY::READ_ENC
             //| NIMBLE_PROPERTY::WRITE
             | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::INDICATE);
-
+    cscmChar->setCallbacks(this);
     csc->start();
 
     // Battery Service
@@ -84,17 +87,20 @@ void BLE::setup(const char *deviceName) {
     blChar = bs->createCharacteristic(
         BLEUUID(BATTERY_LEVEL_CHAR_UUID),
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+    blChar->setCallbacks(this);
     BLEDescriptor *blDesc = blChar->createDescriptor(BLEUUID(BATTERY_LEVEL_DESC_UUID));
     blDesc->setValue("Percentage");
     bs->start();
 
-    BLEAdvertising *advertising = BLEDevice::getAdvertising();
+    BLEAdvertising *advertising = server->getAdvertising();
+    advertising->setAppearance(1156);
+    advertising->setManufacturerData("G");
     advertising->addServiceUUID(cpsUUID);
     advertising->addServiceUUID(cscUUID);
     advertising->addServiceUUID(bsUUID);
     //advertising->setScanResponse(false);
     //advertising->setMinPreferred(0x0);
-    BLEDevice::startAdvertising();
+    server->start();
 }
 
 void BLE::loop() {
@@ -132,31 +138,65 @@ void BLE::loop() {
             lastNotificationSent = t;
         }
     }
-    // disconnecting
     if (!connected && oldConnected) {
-        log_d("Client disconnecting");
-        delay(500);
-        server->startAdvertising();
-        log_d("Start advertising");
+        Serial.println("[BLE] Client disconnecting");
         oldConnected = connected;
     }
-    // connecting
     if (connected && !oldConnected) {
-        log_d("Client connecting");
+        Serial.println("[BLE] Client connecting");
         oldConnected = connected;
     }
+    if (!server->getAdvertising()->isAdvertising())
+        startAdvertising();
 }
 
 void BLE::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
     connected = true;
-    log_d("Server onConnect");
+    Serial.println("[BLE] Server onConnect");
     //NimBLEDevice::startSecurity(desc->conn_handle);
 }
 
 void BLE::onDisconnect(BLEServer *pServer) {
     connected = false;
-    log_d("Server onDisconnect");
+    Serial.println("[BLE] Server onDisconnect");
 }
+
+void BLE::startAdvertising() {
+    delay(300);
+    Serial.println("[BLE] Start advertising");
+    server->startAdvertising();
+}
+
+void BLE::onRead(BLECharacteristic *pCharacteristic) {
+    Serial.print(pCharacteristic->getUUID().toString().c_str());
+    Serial.print(": onRead(), value: ");
+    Serial.println(pCharacteristic->getValue().c_str());
+};
+
+void BLE::onWrite(BLECharacteristic *pCharacteristic) {
+    Serial.print(pCharacteristic->getUUID().toString().c_str());
+    Serial.print(": onWrite(), value: ");
+    Serial.println(pCharacteristic->getValue().c_str());
+};
+
+void BLE::onNotify(BLECharacteristic *pCharacteristic){
+    //Serial.printf("Sending notification: %s\n", pCharacteristic->getValue().c_str());
+};
+
+void BLE::onSubscribe(BLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
+    Serial.printf("[BLE] Client ID: %d Address: %s ",
+                  desc->conn_handle,
+                  BLEAddress(desc->peer_ota_addr).toString().c_str());
+    if (subValue == 0)
+        Serial.print("unsubscribed from ");
+    else if (subValue == 1)
+        Serial.print("subscribed to notfications for ");
+    else if (subValue == 2)
+        Serial.print("Subscribed to indications for ");
+    else if (subValue == 3)
+        Serial.print("subscribed to notifications and indications for ");
+    Serial.println(pCharacteristic->getUUID().toString().c_str());
+};
 
 //bool BLE::onConfirmPIN(uint32_t pin) { Serial.println("onConfirmPIN"); return true; }
 //uint32_t BLE::onPassKeyRequest() {Serial.println("onPassKeyRequest");  return 0; }

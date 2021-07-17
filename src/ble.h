@@ -7,7 +7,9 @@
 #include "ble_constants.h"
 #include "task.h"
 
-class BLE : public BLEServerCallbacks, public Task {
+class BLE : public Task,
+            public BLEServerCallbacks,
+            public BLECharacteristicCallbacks {
    public:
     BLEServer *server;
     BLECharacteristic *cpmChar;   // cycling power measurement characteristic
@@ -36,6 +38,12 @@ class BLE : public BLEServerCallbacks, public Task {
 
     void onConnect(BLEServer *pServer, ble_gap_conn_desc *desc);
     void onDisconnect(BLEServer *pServer);
+    void startAdvertising();
+
+    void onRead(BLECharacteristic *pCharacteristic);
+    void onWrite(BLECharacteristic *pCharacteristic);
+    void onNotify(BLECharacteristic *pCharacteristic);
+    void onSubscribe(BLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue);
 
     //bool onConfirmPIN(uint32_t pin);
     //uint32_t onPassKeyRequest();
