@@ -75,27 +75,27 @@ class WifiConnection : public HasPreferences, public Task {
     }
 
     void printAPSettings() {
-        Serial.printf("AP %s '%s' '%s'\n",
+        Serial.printf("[Wifi] AP %s '%s' '%s'\n",
                       settings.apEnable ? "Enabled" : "Disabled",
                       settings.apSSID,
                       "***"  //settings.apPassword
         );
         if (settings.apEnable)
-            Serial.printf("AP online, IP: %s\n", WiFi.softAPIP().toString().c_str());
+            Serial.printf("[Wifi] AP online, IP: %s\n", WiFi.softAPIP().toString().c_str());
     }
 
     void printSTASettings() {
-        Serial.printf("STA %s '%s' '%s'\n",
+        Serial.printf("[Wifi] STA %s '%s' '%s'\n",
                       settings.staEnable ? "Enabled" : "Disabled",
                       settings.staSSID,
                       "***"  //settings.staPassword
         );
         if (WiFi.isConnected())
-            Serial.printf("STA connected, local IP: %s\n", WiFi.localIP().toString().c_str());
+            Serial.printf("[Wifi] STA connected, local IP: %s\n", WiFi.localIP().toString().c_str());
     }
 
     void applySettings() {
-        Serial.println("[WiFi] Applying settings, connection might need to be reset");
+        Serial.println("[Wifi] Applying settings, connection might need to be reset");
         Serial.flush();
         delay(1000);
         if (settings.apEnable || settings.staEnable) {

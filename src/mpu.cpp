@@ -25,7 +25,7 @@ void MPU::setup(const uint8_t sdaPin,
     //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_420HZ;
     //s.mag_output_bits = MAG_OUTPUT_BITS::M14BITS;
     if (!device->setup(mpuAddress, s))
-        Serial.println("[E] MPU Setup error");
+        Serial.println("[MPU] Setup error");
     //device->selectFilter(QuatFilterSel::MAHONY);
     device->selectFilter(QuatFilterSel::NONE);
     //device->selectFilter(QuatFilterSel::MADGWICK);
@@ -127,21 +127,21 @@ MPU::Quaternion MPU::quaternion() {
 }
 
 void MPU::enableWomSleep(void) {
-    Serial.println("Enabling MPU W-O-M sleep");
+    Serial.println("[MPU] Enabling W-O-M sleep");
     updateEnabled = false;
     delay(20);
     device->enableWomSleep();
 }
 
 void MPU::calibrateAccelGyro() {
-    Serial.println("Accel and Gyro calibration, please leave the device still.");
+    Serial.println("[MPU] Accel and Gyro calibration, please leave the device still.");
     updateEnabled = false;
     device->calibrateAccelGyro();
     updateEnabled = true;
 }
 
 void MPU::calibrateMag() {
-    Serial.println("Mag calibration, please wave device in a figure eight for 15 seconds.");
+    Serial.println("[MPU] Mag calibration, please wave device in a figure eight for 15 seconds.");
     updateEnabled = false;
     device->calibrateMag();
     updateEnabled = true;
@@ -189,7 +189,7 @@ void MPU::loadCalibration() {
     if (!preferencesStartLoad()) return;
     if (!preferences->getBool("calibrated", false)) {
         preferencesEnd();
-        log_e("MPU has not yet been calibrated");
+        log_e("[MPU] MPU has not yet been calibrated");
         return;
     }
     device->setAccBias(
@@ -232,9 +232,9 @@ void MPU::saveCalibration() {
 
 float MPU::prefGetValidFloat(const char *key, const float_t defaultValue) {
     float f = preferences->getFloat(key, defaultValue);
-    log_i("loaded %f for (%s, %f) from %s", f, key, defaultValue, preferencesNS);
+    log_i("[MPU] loaded %f for (%s, %f) from %s", f, key, defaultValue, preferencesNS);
     if (isinf(f) || isnan(f)) {
-        log_e("invalid, returning default %f for %s", defaultValue, key);
+        log_e("[MPU] invalid, returning default %f for %s", defaultValue, key);
         f = defaultValue;
     }
     return f;
@@ -243,10 +243,10 @@ float MPU::prefGetValidFloat(const char *key, const float_t defaultValue) {
 size_t MPU::prefPutValidFloat(const char *key, const float_t value) {
     size_t written = 0;
     if (isinf(value) || isnan(value)) {
-        log_e("invalid, not saving %f for %s", value, key);
+        log_e("[MPU] invalid, not saving %f for %s", value, key);
         return written;
     }
     written = preferences->putFloat(key, value);
-    log_i("saved %f for %s in %s", value, key, preferencesNS);
+    log_i("[MPU] saved %f for %s in %s", value, key, preferencesNS);
     return written;
 }

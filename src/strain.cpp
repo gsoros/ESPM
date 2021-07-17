@@ -55,7 +55,7 @@ int Strain::calibrateTo(float knownMass) {
     if (isnan(knownMass) ||
         isinf(knownMass) ||
         (-0.000000001 < knownMass && knownMass < 0.000000001)) {
-        Serial.println("Error setting calibraton factor.");
+        Serial.println("[Strain] Error setting calibraton factor.");
         return -1;
     }
     device->getNewCalibration(knownMass);
@@ -63,14 +63,14 @@ int Strain::calibrateTo(float knownMass) {
 }
 
 void Strain::printCalibration() {
-    Serial.printf("Strain calibration factor: %f\n", device->getCalFactor());
+    Serial.printf("[Strain] Calibration factor: %f\n", device->getCalFactor());
 }
 
 void Strain::loadCalibration() {
     if (!preferencesStartLoad()) return;
     if (!preferences->getBool("calibrated", false)) {
         preferencesEnd();
-        log_e("Device has not yet been calibrated");
+        log_e("[Strain] Device has not yet been calibrated");
         return;
     }
     device->setCalFactor(preferences->getFloat("calibration", 0));

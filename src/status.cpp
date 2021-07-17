@@ -82,12 +82,10 @@ void Status::printStatus() {
         return;
     if (lastOutput < t - statusDelay) {
         Serial.printf(
-            "[Status] %d %d %d %d %.2f %.2f\n",
+            "[Status] %d %d %d %.2f %.2f\n",
             (int)board.getRpm(),
             (int)board.getStrain(),
             (int)board.getPower(),  // not emptying the buffer
-            (int)board.ble.power,
-            //board.battery.pinVoltage,
             board.battery.voltage,
             board.timeUntilDeepSleep(t) / 60000.0);  // time in minutes
         lastOutput = t;

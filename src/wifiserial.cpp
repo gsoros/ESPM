@@ -14,9 +14,9 @@ void WifiSerial::loop() {
         _client = _server.available();
         if (!_client) return;
         _connected = true;
-        Serial.print("WifiSerial client connected\n");
+        Serial.print("[WifiSerial] Client connected\n");
         board.led.blink(5);
-        _client.printf("Welcome to %s.\n", board.hostName);
+        _client.printf("[WifiSerial] Welcome to %s.\n", board.hostName);
     } else if (!_client.connected()) {
         disconnect();
         return;
@@ -42,7 +42,7 @@ void WifiSerial::disconnect() {
     }
     _client.stop();
     _connected = false;
-    Serial.print("WifiSerial client disconnected\n");
+    Serial.print("[WifiSerial] Client disconnected\n");
     board.led.blink(5);
 }
 
@@ -69,7 +69,7 @@ int WifiSerial::read() {
         char c = _rx_buf.shift();
         switch (c) {
             case 4:
-                print("Ctrl-D received\nBye.\n");
+                print("[WifiSerial] Ctrl-D received, bye.\n");
                 _disconnect = true;
                 //return -1;
         }

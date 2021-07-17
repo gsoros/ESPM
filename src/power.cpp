@@ -71,7 +71,7 @@ void Power::saveSettings() {
 }
 
 void Power::printSettings() {
-    Serial.printf("Crank length: %.2fmm\nStrain is %sreversed\nMPU is %sreversed\n",
+    Serial.printf("[Power] Crank length: %.2fmm\nStrain is %sreversed\nMPU is %sreversed\n",
                   crankLength, reverseStrain ? "" : "not ", reverseMPU ? "" : "not ");
 }
 

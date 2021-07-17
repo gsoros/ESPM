@@ -69,5 +69,5 @@ void Battery::saveCalibration() {
 }
 
 void Battery::printCalibration() {
-    Serial.printf("Battery correction factor: %f\n", corrF);
+    Serial.printf("[Battery] Correction factor: %f\n", corrF);
 }

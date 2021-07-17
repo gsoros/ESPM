@@ -108,56 +108,45 @@ void BLE::loop() {
     const ulong t = millis();
     if (lastNotification <= t - 1000) {
         lastNotification = t;
-        power = (short)board.getPower();  // update power so status can display ble.power even if not connected
-        // notify changed values
-        if (connected) {
-            bufPower[0] = powerFlags & 0xff;
-            bufPower[1] = (powerFlags >> 8) & 0xff;
-            bufPower[2] = power & 0xff;
-            bufPower[3] = (power >> 8) & 0xff;
-            cpmChar->setValue((uint8_t *)&bufPower, 4);
-            cpmChar->notify();
 
-            if (crankRevs < board.mpu.revolutions) {
-                crankRevs = board.mpu.revolutions;
-                lastCrankEventTime = (uint16_t)(board.mpu.lastCrankEventTime * 1.024);
-                bufCadence[0] = cadenceFlags & 0xff;
-                bufCadence[1] = crankRevs & 0xff;
-                bufCadence[2] = (crankRevs >> 8) & 0xff;
-                bufCadence[3] = lastCrankEventTime & 0xff;
-                bufCadence[4] = (lastCrankEventTime >> 8) & 0xff;
-                cscmChar->setValue((uint8_t *)&bufCadence, 5);
-                //Serial.printf("[BLE] Notifying crank event #%d ts %d\n", crankRevs, lastCrankEventTime);
-                cscmChar->notify();
-            }
+        power = (short)board.getPower();
+        bufPower[0] = powerFlags & 0xff;
+        bufPower[1] = (powerFlags >> 8) & 0xff;
+        bufPower[2] = power & 0xff;
+        bufPower[3] = (power >> 8) & 0xff;
+        cpmChar->setValue((uint8_t *)&bufPower, 4);
+        cpmChar->notify();
 
-            if (batteryLevel != prevBatteryLevel) {
-                blChar->setValue(&batteryLevel, 1);
-                blChar->notify();
-                prevBatteryLevel = batteryLevel;
-            }
+        //if (crankRevs < board.mpu.revolutions) {
+        crankRevs = board.mpu.revolutions;
+        lastCrankEventTime = (uint16_t)(board.mpu.lastCrankEventTime * 1.024);
+        bufCadence[0] = cadenceFlags & 0xff;
+        bufCadence[1] = crankRevs & 0xff;
+        bufCadence[2] = (crankRevs >> 8) & 0xff;
+        bufCadence[3] = lastCrankEventTime & 0xff;
+        bufCadence[4] = (lastCrankEventTime >> 8) & 0xff;
+        cscmChar->setValue((uint8_t *)&bufCadence, 5);
+        //Serial.printf("[BLE] Notifying crank event #%d ts %d\n", crankRevs, lastCrankEventTime);
+        cscmChar->notify();
+        //}
+
+        if (batteryLevel != board.battery.level) {
+            batteryLevel = board.battery.level;
+            blChar->setValue(&batteryLevel, 1);
+            blChar->notify();
         }
     }
-    if (!connected && prevConnected) {
-        Serial.println("[BLE] Client disconnecting");
-        prevConnected = connected;
-    }
-    if (connected && !prevConnected) {
-        Serial.println("[BLE] Client connecting");
-        prevConnected = connected;
-    }
+
     if (!server->getAdvertising()->isAdvertising())
         startAdvertising();
 }
 
 void BLE::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
-    connected = true;
     Serial.println("[BLE] Server onConnect");
     //NimBLEDevice::startSecurity(desc->conn_handle);
 }
 
 void BLE::onDisconnect(BLEServer *pServer) {
-    connected = false;
     Serial.println("[BLE] Server onDisconnect");
 }
 
@@ -180,7 +169,7 @@ void BLE::onWrite(BLECharacteristic *pCharacteristic) {
 };
 
 void BLE::onNotify(BLECharacteristic *pCharacteristic){
-    //Serial.printf("Sending notification: %d\n", pCharacteristic->getValue<int>());
+    //Serial.printf("[BLE] Sending notification: %d\n", pCharacteristic->getValue<int>());
 };
 
 void BLE::onSubscribe(BLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {

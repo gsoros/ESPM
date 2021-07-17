@@ -51,7 +51,7 @@ class Board : public HasPreferences, public Task {
     char hostName[32] = HOSTNAME;
 
     void setup() {
-        setCpuFrequencyMhz(160);
+        setCpuFrequencyMhz(80);  // unstable below 80MHz
 #ifdef FEATURE_SERIAL
         hwSerial.begin(115200);
 #endif
@@ -99,11 +99,11 @@ class Board : public HasPreferences, public Task {
         const ulong t = millis();
         const long tSleep = timeUntilDeepSleep(t);
         if (0 == tSleep) {
-            Serial.printf("Going to deep sleep now ...zzzZZZ\n");
+            Serial.printf("[Board] Deep sleep now ...zzzZZZ\n");
             deepSleep();
         }
         if (tSleep <= _sleepCountdownAfter && _lastSleepCountdown + _sleepCountdownEvery <= t) {
-            Serial.printf("Going to deep sleep in %lis\n", tSleep / 1000UL);
+            Serial.printf("[Board] Deep sleep in %lis\n", tSleep / 1000UL);
             _lastSleepCountdown = t;
         }
     }
@@ -136,7 +136,7 @@ class Board : public HasPreferences, public Task {
 
     void deepSleep() {
         if (!sleepEnabled) return;
-        Serial.println("Preparing for deep sleep");
+        Serial.println("[Board] Preparing for deep sleep");
         /*
         rtc_gpio_init(MPU_WOM_INT_PIN);
         rtc_gpio_set_direction(MPU_WOM_INT_PIN, RTC_GPIO_MODE_INPUT_ONLY);
@@ -149,7 +149,7 @@ class Board : public HasPreferences, public Task {
         mpu.enableWomSleep();
         //pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
 #ifdef FEATURE_SERIAL
-        Serial.println("Entering deep sleep");
+        Serial.println("[Board] Entering deep sleep");
         Serial.flush();
         delay(1000);
         wifiSerial.disconnect();
