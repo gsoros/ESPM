@@ -17,7 +17,7 @@ void MPU::setup(const uint8_t sdaPin,
     device = new MPU9250();
     //device->verbose(true);
     MPU9250Setting s;
-    s.skip_mag = true;
+    s.skip_mag = true;  // compass not needed
     s.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_125HZ;
     //s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_10HZ;
     //s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_3600HZ;
@@ -66,7 +66,7 @@ void MPU::loop() {
             }
             newRpm = dA / dT / 0.006;             // 1 deg/ms / .006 = 1 rpm
             if (newRpm < -200 || 200 < newRpm) {  // remove value > 200 rpm
-                log_d("invalid rpm %f", newRpm);
+                log_d("[MPU] invalid rpm %f", newRpm);
                 newRpm = 0.0;
             }
             if (-1 < newRpm && newRpm < 1) {  // remove noise from yaw drift at rest
@@ -92,11 +92,10 @@ void MPU::loop() {
             if (0 < lastCrankEventTime) {
                 ulong tDiff = t - lastCrankEventTime;
                 if (300 < tDiff) {  // 300 ms = 200 RPM
-                    //lastCrankEventTimeDiff = tmpDiff;
                     revolutions++;
-                    Serial.printf("[MPU] Crank event #%d dt: %ldms\n", revolutions, tDiff);
+                    //Serial.printf("[MPU] Crank event #%d dt: %ldms\n", revolutions, tDiff);
                 } else {
-                    Serial.printf("[MPU] Crank event skip, dt too small: %ldms\n", tDiff);
+                    //Serial.printf("[MPU] Crank event skip, dt too small: %ldms\n", tDiff);
                 }
             }
             lastCrankEventTime = t;

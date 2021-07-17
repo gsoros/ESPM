@@ -101,23 +101,25 @@ void BLE::setup(const char *deviceName) {
     //advertising->setScanResponse(false);
     //advertising->setMinPreferred(0x0);
     server->start();
-    lastNotification = millis();
+    lastPowerNotification = millis();
 }
 
 void BLE::loop() {
     const ulong t = millis();
-    if (lastNotification <= t - 1000) {
-        lastNotification = t;
+    if (lastPowerNotification <= t - 300) {
+        lastPowerNotification = t;
+        if (power != (short)board.getPower()) {
+            power = (short)board.getPower();
+            bufPower[0] = powerFlags & 0xff;
+            bufPower[1] = (powerFlags >> 8) & 0xff;
+            bufPower[2] = power & 0xff;
+            bufPower[3] = (power >> 8) & 0xff;
+            cpmChar->setValue((uint8_t *)&bufPower, 4);
+            cpmChar->notify();
+        }
+    }
 
-        power = (short)board.getPower();
-        bufPower[0] = powerFlags & 0xff;
-        bufPower[1] = (powerFlags >> 8) & 0xff;
-        bufPower[2] = power & 0xff;
-        bufPower[3] = (power >> 8) & 0xff;
-        cpmChar->setValue((uint8_t *)&bufPower, 4);
-        cpmChar->notify();
-
-        //if (crankRevs < board.mpu.revolutions) {
+    if (crankRevs < board.mpu.revolutions) {
         crankRevs = board.mpu.revolutions;
         lastCrankEventTime = (uint16_t)(board.mpu.lastCrankEventTime * 1.024);
         bufCadence[0] = cadenceFlags & 0xff;
@@ -128,13 +130,12 @@ void BLE::loop() {
         cscmChar->setValue((uint8_t *)&bufCadence, 5);
         //Serial.printf("[BLE] Notifying crank event #%d ts %d\n", crankRevs, lastCrankEventTime);
         cscmChar->notify();
-        //}
+    }
 
-        if (batteryLevel != board.battery.level) {
-            batteryLevel = board.battery.level;
-            blChar->setValue(&batteryLevel, 1);
-            blChar->notify();
-        }
+    if (batteryLevel != board.battery.level) {
+        batteryLevel = board.battery.level;
+        blChar->setValue(&batteryLevel, 1);
+        blChar->notify();
     }
 
     if (!server->getAdvertising()->isAdvertising())
