@@ -89,18 +89,17 @@ void MPU::loop() {
     if ((previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= previousAngle)) {
         static bool secondCrankEvent = false;
         if (!secondCrankEvent) {
-            if (0 < prevCrankEventTime) {
-                ulong tmpDiff = t - prevCrankEventTime;
-                if (300 < tmpDiff) {  // 300 ms = 200 RPM
-                    lastCrankEventTimeDiff = tmpDiff;
+            if (0 < lastCrankEventTime) {
+                ulong tDiff = t - lastCrankEventTime;
+                if (300 < tDiff) {  // 300 ms = 200 RPM
+                    //lastCrankEventTimeDiff = tmpDiff;
                     revolutions++;
-                    crankEventReady = true;
-                    Serial.printf("[MPU] Crank event #%d dt: %ldms\n", revolutions, tmpDiff);
+                    Serial.printf("[MPU] Crank event #%d dt: %ldms\n", revolutions, tDiff);
                 } else {
-                    Serial.printf("[MPU] Crank event skip, dt too small: %ldms\n", tmpDiff);
+                    Serial.printf("[MPU] Crank event skip, dt too small: %ldms\n", tDiff);
                 }
             }
-            prevCrankEventTime = t;
+            lastCrankEventTime = t;
         }
         secondCrankEvent = !secondCrankEvent;
     }

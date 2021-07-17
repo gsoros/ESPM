@@ -22,9 +22,7 @@ class MPU : public Task, public HasPreferences {
     bool magNeedsCalibration = false;
     ulong lastMovement = 0;
     uint16_t revolutions = 0;
-    ulong prevCrankEventTime = 0;
-    ulong lastCrankEventTimeDiff = 0;
-    bool crankEventReady = false;
+    ulong lastCrankEventTime = 0;
 
     struct Quaternion {
         float x, y, z, w;

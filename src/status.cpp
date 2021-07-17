@@ -82,7 +82,7 @@ void Status::printStatus() {
         return;
     if (lastOutput < t - statusDelay) {
         Serial.printf(
-            "S|%d|%d|%d|%d|%.2f|%.2f\n",
+            "[Status] %d %d %d %d %.2f %.2f\n",
             (int)board.getRpm(),
             (int)board.getStrain(),
             (int)board.getPower(),  // not emptying the buffer

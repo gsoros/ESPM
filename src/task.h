@@ -1,6 +1,7 @@
 #ifndef TASK_H
 #define TASK_H
 
+#include "xtensa/core-macros.h"
 #include <Arduino.h>
 #include "splitstream.h"
 
@@ -32,6 +33,7 @@ class Task {
         strncpy(taskName, name, 32);
         taskFreq = freq;
         taskSetDelayFromFreq();
+        Serial.printf("[Task] Starting %s with freq = %d (delay = %d ticks)\n", name, freq, _xTaskDelay);
         //xTaskCreate(taskLoop, taskName, stack, this, priority, &taskHandle);
         BaseType_t err = xTaskCreatePinnedToCore(taskLoop, taskName, stack, this, priority, &taskHandle, 1);
         if (pdPASS != err)
@@ -63,24 +65,20 @@ class Task {
 
    private:
     TickType_t _xLastWakeTime;
-    TickType_t _taskDelay;
+    TickType_t _xTaskDelay;
 
     static void taskLoop(void *p) {
         Task *thisPtr = (Task *)p;
         thisPtr->_xLastWakeTime = xTaskGetTickCount();
         for (;;) {
-            const ulong t = millis();
-            if (thisPtr->_xLastWakeTime + thisPtr->_taskDelay <= t) {
-                //log_w("%s (%dHz) missed a beat", thisPtr->taskName, thisPtr->taskFreq);
-                thisPtr->_xLastWakeTime = t;
-            }
-            vTaskDelayUntil(&(thisPtr->_xLastWakeTime), thisPtr->_taskDelay);
+            vTaskDelayUntil(&(thisPtr->_xLastWakeTime), thisPtr->_xTaskDelay);
             thisPtr->loop();
         }
     }
 
     void taskSetDelayFromFreq() {
-        _taskDelay = 1000 / taskFreq / portTICK_PERIOD_MS;
+        //_xTaskDelay = 1000 / taskFreq / portTICK_PERIOD_MS;
+        _xTaskDelay = pdMS_TO_TICKS(1000 / taskFreq);
     }
 };
 
