@@ -51,7 +51,7 @@ class Board : public HasPreferences, public Task {
     char hostName[32] = HOSTNAME;
 
     void setup() {
-        setCpuFrequencyMhz(80);
+        setCpuFrequencyMhz(160);
 #ifdef FEATURE_SERIAL
         hwSerial.begin(115200);
 #endif
@@ -87,7 +87,7 @@ class Board : public HasPreferences, public Task {
         strain.taskStart("Strain Task", 90);
         power.taskStart("Power Task", 90);
         ota.taskStart("OTA Task", 10, 8192);
-        status.taskStart("Status Task", 20);
+        status.taskStart("Status Task", 10);
         led.taskStart("Led Task", 10);
         taskStart("Board Task", 1);
 #ifdef FEATURE_WEBSERVER

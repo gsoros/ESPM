@@ -180,7 +180,7 @@ void BLE::onWrite(BLECharacteristic *pCharacteristic) {
 };
 
 void BLE::onNotify(BLECharacteristic *pCharacteristic){
-    //Serial.printf("Sending notification: %s\n", pCharacteristic->getValue().c_str());
+    //Serial.printf("Sending notification: %d\n", pCharacteristic->getValue<int>());
 };
 
 void BLE::onSubscribe(BLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
