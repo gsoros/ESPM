@@ -93,8 +93,8 @@ void BLE::setup(const char *deviceName) {
     bs->start();
 
     BLEAdvertising *advertising = server->getAdvertising();
-    advertising->setAppearance(1156);
-    advertising->setManufacturerData("G");
+    advertising->setAppearance(APPEARANCE_CYCLING_POWER_SENSOR);
+    //advertising->setManufacturerData("G");
     advertising->addServiceUUID(cpsUUID);
     advertising->addServiceUUID(cscUUID);
     advertising->addServiceUUID(bsUUID);
@@ -132,9 +132,9 @@ void BLE::loop() {
         cscmChar->notify();
     }
 
-    if (batteryLevel != board.battery.level) {
-        batteryLevel = board.battery.level;
-        blChar->setValue(&batteryLevel, 1);
+    if (lastBatteryLevel != board.battery.level) {
+        lastBatteryLevel = board.battery.level;
+        blChar->setValue(&lastBatteryLevel, 1);
         blChar->notify();
     }
 

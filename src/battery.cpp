@@ -9,7 +9,6 @@ void Battery::setup(Preferences *p) {
 void Battery::loop() {
     measureVoltage();
     calculateLevel();
-    board.ble.batteryLevel = level;
 }
 
 int Battery::calculateLevel() {
@@ -28,7 +27,7 @@ float Battery::measureVoltage(bool useCorrection) {
         delay(1);
     }
     uint32_t readMax = 4095 * samples;  // 2^12 - 1 (12bit adc)
-    if (sum == readMax) log_e("overflow");
+    if (sum == readMax) Serial.printf("[Battery] Overflow");
     pinVoltage =
         map(
             sum,
@@ -46,7 +45,7 @@ float Battery::measureVoltage(bool useCorrection) {
 void Battery::loadCalibration() {
     if (!preferencesStartLoad()) return;
     if (!preferences->getBool("calibrated", false)) {
-        log_e("Not calibrated");
+        Serial.println("[Battery] Not calibrated");
         preferencesEnd();
         return;
     }

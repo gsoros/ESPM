@@ -1,9 +1,9 @@
 #include "wifiserial.h"
 #include "board.h"
 
-void WifiSerial::setup() { setup(23); }
-void WifiSerial::setup(uint16_t port) {
-    _server = WiFiServer(port, 1);  // max 1 client as not async
+void WifiSerial::setup() { setup(WIFISERIAL_PORT, WIFISERIAL_MAXCLIENTS); }
+void WifiSerial::setup(uint16_t port, uint8_t maxClients) {
+    _server = WiFiServer(port, maxClients);
     _server.begin();
 }
 
@@ -17,6 +17,7 @@ void WifiSerial::loop() {
         Serial.print("[WifiSerial] Client connected\n");
         board.led.blink(5);
         _client.printf("[WifiSerial] Welcome to %s.\n", board.hostName);
+        board.status.printHeader();
     } else if (!_client.connected()) {
         disconnect();
         return;

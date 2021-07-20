@@ -15,13 +15,14 @@ void Status::setup() {
 #ifdef COMPILE_TIMESTRING
     log_i("Compile timestring %s\n", COMPILE_TIMESTRING);
 #endif
+    printHeader();
 }
 
 void Status::loop() {
     if (0 < Serial.available()) {
         handleInput(getChar());
     }
-    printStatus();
+    print();
 }
 
 char Status::getChar() {
@@ -66,7 +67,7 @@ int Status::getStr(char *str, int maxLength, bool echo) {
     return received;
 }
 
-void Status::setStatusFreq(float freq) {
+void Status::setFreq(float freq) {
     if (freq < 0.1 || (float)taskFreq < freq) {
         Serial.printf("Frequency %.2f out of range\n", freq);
         return;
@@ -75,7 +76,11 @@ void Status::setStatusFreq(float freq) {
     Serial.printf("Status freq is %.2fHz (%dms delay)\n", freq, statusDelay);
 }
 
-void Status::printStatus() {
+void Status::printHeader() {
+    Serial.println("[Status] Rpm Strain Power Voltage Sleep");
+}
+
+void Status::print() {
     const ulong t = millis();
     static ulong lastOutput = 0;
     if (!statusEnabled)
@@ -305,7 +310,7 @@ void Status::handleInput(const char input) {
                     case 'f':
                         Serial.printf("Enter status output frequency in Hz (0.1...%d) and press [Enter]: ", taskFreq);
                         getStr(tmpStr, 32);
-                        setStatusFreq((float)atof(tmpStr));
+                        setFreq((float)atof(tmpStr));
                         // status freq is not saved
                         menu[1] = '\0';
                         break;

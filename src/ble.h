@@ -15,7 +15,7 @@ class BLE : public Task,
     BLECharacteristic *cpmChar;   // cycling power measurement characteristic
     BLECharacteristic *cscmChar;  // cycling speed and cadence measurement characteristic
     BLECharacteristic *blChar;    // battery level characteristic
-    uint8_t batteryLevel = 0;
+    uint8_t lastBatteryLevel = 0;
     unsigned long lastPowerNotification = 0;
 
     short power = 0;

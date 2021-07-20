@@ -14,8 +14,9 @@ class Status : public Task {
     char getChar();
     int getStr(char *str, int maxLength);
     int getStr(char *str, int maxLength, bool echo);
-    void setStatusFreq(float freq);
-    void printStatus();
+    void setFreq(float freq);
+    void printHeader();
+    void print();
     void handleInput(const char input);
 };
 

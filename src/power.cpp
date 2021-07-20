@@ -10,7 +10,7 @@ void Power::setup(Preferences *p) {
 
 void Power::loop() {
     if (!board.strain.dataReady()) {
-        //log_e("strain not ready, skipping loop at %d, SPS=%f", t, board.strain.device->getSPS());
+        //log_e("strain not ready, skipping loop at %d, SPS=%f", millis(), board.strain.device->getSPS());
         return;
     }
     /*
@@ -34,9 +34,10 @@ void Power::loop() {
     // P      = m * rps * r * G * π * 2
     */
     float power = filterNegative(board.getStrain(), reverseStrain) *
-                  filterNegative(board.getRpm(), reverseMPU) *
+                  //filterNegative(board.getRpm(), reverseMPU) *
+                  abs(board.getRpm()) *  // TODO rpm sometimes reverses mid-ride
                   crankLength *
-                  0.001026949986544;
+                  0.001026949986544;  // 9.80665 * π * 2 / 60 / 1000
     if (reportDouble) power *= 2;
     if (power < 0.0)
         power = 0.0;

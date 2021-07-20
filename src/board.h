@@ -51,7 +51,7 @@ class Board : public HasPreferences, public Task {
     char hostName[32] = HOSTNAME;
 
     void setup() {
-        setCpuFrequencyMhz(80);  // unstable below 80MHz
+        setCpuFrequencyMhz(80);  // no wifi/bt below 80MHz
 #ifdef FEATURE_SERIAL
         hwSerial.begin(115200);
 #endif

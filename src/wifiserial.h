@@ -15,11 +15,17 @@
 #ifndef WIFISERIAL_RINGBUF_TX_SIZE
 #define WIFISERIAL_RINGBUF_TX_SIZE 128
 #endif
+#ifndef WIFISERIAL_PORT
+#define WIFISERIAL_PORT 23
+#endif
+#ifndef WIFISERIAL_MAXCLIENTS
+#define WIFISERIAL_MAXCLIENTS 1  // max 1 client as not async
+#endif
 
 class WifiSerial : public Task, public Stream {
    public:
     void setup();
-    void setup(uint16_t port);
+    void setup(uint16_t port, uint8_t maxClients);
     void loop();
     void disconnect();
     size_t write(uint8_t c);
