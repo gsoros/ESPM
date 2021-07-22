@@ -77,7 +77,7 @@ void Status::setFreq(float freq) {
 }
 
 void Status::printHeader() {
-    Serial.println("[Status] Rpm Strain Power Voltage Sleep");
+    Serial.println("[Status] [Key] Rpm Strain Power Voltage Sleep");
 }
 
 void Status::print() {

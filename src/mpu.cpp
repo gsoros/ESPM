@@ -87,8 +87,7 @@ void MPU::loop() {
         _dataReady = true;
     }
     if ((previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= previousAngle)) {
-        static bool secondCrankEvent = false;
-        if (!secondCrankEvent) {
+        if (!_halfRevolution) {
             if (0 < lastCrankEventTime) {
                 ulong tDiff = t - lastCrankEventTime;
                 if (300 < tDiff) {  // 300 ms = 200 RPM
@@ -100,7 +99,7 @@ void MPU::loop() {
             }
             lastCrankEventTime = t;
         }
-        secondCrankEvent = !secondCrankEvent;
+        _halfRevolution = !_halfRevolution;
     }
     previousTime = t;
     previousAngle = angle;
@@ -192,44 +191,44 @@ void MPU::loadCalibration() {
         return;
     }
     device->setAccBias(
-        prefGetValidFloat("abX", 0),
-        prefGetValidFloat("abY", 0),
-        prefGetValidFloat("abZ", 0));
+        _prefGetValidFloat("abX", 0),
+        _prefGetValidFloat("abY", 0),
+        _prefGetValidFloat("abZ", 0));
     device->setGyroBias(
-        prefGetValidFloat("gbX", 0),
-        prefGetValidFloat("gbY", 0),
-        prefGetValidFloat("gbZ", 0));
+        _prefGetValidFloat("gbX", 0),
+        _prefGetValidFloat("gbY", 0),
+        _prefGetValidFloat("gbZ", 0));
     device->setMagBias(
-        prefGetValidFloat("mbX", 0),
-        prefGetValidFloat("mbY", 0),
-        prefGetValidFloat("mbZ", 0));
+        _prefGetValidFloat("mbX", 0),
+        _prefGetValidFloat("mbY", 0),
+        _prefGetValidFloat("mbZ", 0));
     device->setMagScale(
-        prefGetValidFloat("msX", 1),
-        prefGetValidFloat("msY", 1),
-        prefGetValidFloat("msZ", 1));
+        _prefGetValidFloat("msX", 1),
+        _prefGetValidFloat("msY", 1),
+        _prefGetValidFloat("msZ", 1));
     preferencesEnd();
     printCalibration();
 }
 
 void MPU::saveCalibration() {
     if (!preferencesStartSave()) return;
-    prefPutValidFloat("abX", device->getAccBiasX());
-    prefPutValidFloat("abY", device->getAccBiasY());
-    prefPutValidFloat("abZ", device->getAccBiasZ());
-    prefPutValidFloat("gbX", device->getGyroBiasX());
-    prefPutValidFloat("gbY", device->getGyroBiasY());
-    prefPutValidFloat("gbZ", device->getGyroBiasZ());
-    prefPutValidFloat("mbX", device->getMagBiasX());
-    prefPutValidFloat("mbY", device->getMagBiasY());
-    prefPutValidFloat("mbZ", device->getMagBiasZ());
-    prefPutValidFloat("msX", device->getMagScaleX());
-    prefPutValidFloat("msY", device->getMagScaleY());
-    prefPutValidFloat("msZ", device->getMagScaleZ());
+    _prefPutValidFloat("abX", device->getAccBiasX());
+    _prefPutValidFloat("abY", device->getAccBiasY());
+    _prefPutValidFloat("abZ", device->getAccBiasZ());
+    _prefPutValidFloat("gbX", device->getGyroBiasX());
+    _prefPutValidFloat("gbY", device->getGyroBiasY());
+    _prefPutValidFloat("gbZ", device->getGyroBiasZ());
+    _prefPutValidFloat("mbX", device->getMagBiasX());
+    _prefPutValidFloat("mbY", device->getMagBiasY());
+    _prefPutValidFloat("mbZ", device->getMagBiasZ());
+    _prefPutValidFloat("msX", device->getMagScaleX());
+    _prefPutValidFloat("msY", device->getMagScaleY());
+    _prefPutValidFloat("msZ", device->getMagScaleZ());
     preferences->putBool("calibrated", true);
     preferencesEnd();
 }
 
-float MPU::prefGetValidFloat(const char *key, const float_t defaultValue) {
+float MPU::_prefGetValidFloat(const char *key, const float_t defaultValue) {
     float f = preferences->getFloat(key, defaultValue);
     log_i("[MPU] loaded %f for (%s, %f) from %s", f, key, defaultValue, preferencesNS);
     if (isinf(f) || isnan(f)) {
@@ -239,7 +238,7 @@ float MPU::prefGetValidFloat(const char *key, const float_t defaultValue) {
     return f;
 }
 
-size_t MPU::prefPutValidFloat(const char *key, const float_t value) {
+size_t MPU::_prefPutValidFloat(const char *key, const float_t value) {
     size_t written = 0;
     if (isinf(value) || isnan(value)) {
         log_e("[MPU] invalid, not saving %f for %s", value, key);

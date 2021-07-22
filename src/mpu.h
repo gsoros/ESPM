@@ -56,9 +56,10 @@ class MPU : public Task, public HasPreferences {
     CircularBuffer<float, MPU_RINGBUF_SIZE> _rpmBuf;
     float _rpm = 0.0;  // average rpm of the ring buffer
     bool _dataReady = false;
+    bool _halfRevolution = false;
 
-    float prefGetValidFloat(const char *key, const float_t defaultValue);
-    size_t prefPutValidFloat(const char *key, const float_t value);
+    float _prefGetValidFloat(const char *key, const float_t defaultValue);
+    size_t _prefPutValidFloat(const char *key, const float_t value);
 };
 
 #endif

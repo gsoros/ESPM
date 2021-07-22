@@ -32,10 +32,10 @@ class Task {
         if (taskRunning()) taskStop();
         strncpy(taskName, name, 32);
         taskFreq = freq;
-        taskSetDelayFromFreq();
-        Serial.printf("[Task] Starting %s with freq = %d (delay = %d ticks)\n", name, freq, _xTaskDelay);
-        //xTaskCreate(taskLoop, taskName, stack, this, priority, &taskHandle);
-        BaseType_t err = xTaskCreatePinnedToCore(taskLoop, taskName, stack, this, priority, &taskHandle, 1);
+        _taskSetDelayFromFreq();
+        Serial.printf("[Task] Starting %s at %dHz (delay: %dms)\n", name, freq, _xTaskDelay);
+        //xTaskCreate(_taskLoop, taskName, stack, this, priority, &taskHandle);
+        BaseType_t err = xTaskCreatePinnedToCore(_taskLoop, taskName, stack, this, priority, &taskHandle, 1);
         if (pdPASS != err)
             log_e("Failed to start task %s, error %d", taskName, err);
     }
@@ -52,7 +52,7 @@ class Task {
 
     void taskSetFreq(const uint16_t freq) {
         taskFreq = freq;
-        taskSetDelayFromFreq();
+        _taskSetDelayFromFreq();
     }
 
     int taskGetLowestStackLevel() {
@@ -65,9 +65,9 @@ class Task {
 
    private:
     TickType_t _xLastWakeTime;
-    TickType_t _xTaskDelay;
+    TickType_t _xTaskDelay;  // TODO unit is ticks but actually =ms??
 
-    static void taskLoop(void *p) {
+    static void _taskLoop(void *p) {
         Task *thisPtr = (Task *)p;
         thisPtr->_xLastWakeTime = xTaskGetTickCount();
         for (;;) {
@@ -76,7 +76,7 @@ class Task {
         }
     }
 
-    void taskSetDelayFromFreq() {
+    void _taskSetDelayFromFreq() {
         //_xTaskDelay = 1000 / taskFreq / portTICK_PERIOD_MS;
         _xTaskDelay = pdMS_TO_TICKS(1000 / taskFreq);
     }

@@ -158,15 +158,15 @@ void BLE::startAdvertising() {
 }
 
 void BLE::onRead(BLECharacteristic *pCharacteristic) {
-    Serial.print(pCharacteristic->getUUID().toString().c_str());
-    Serial.print(": onRead(), value: ");
-    Serial.println(pCharacteristic->getValue().c_str());
+    Serial.printf("[BLE] %s: onRead(), value: %s\n",
+                  pCharacteristic->getUUID().toString().c_str(),
+                  pCharacteristic->getValue().c_str());
 };
 
 void BLE::onWrite(BLECharacteristic *pCharacteristic) {
-    Serial.print(pCharacteristic->getUUID().toString().c_str());
-    Serial.print(": onWrite(), value: ");
-    Serial.println(pCharacteristic->getValue().c_str());
+    Serial.printf("[BLE] %s: onWrite(), value: %s\n",
+                  pCharacteristic->getUUID().toString().c_str(),
+                  pCharacteristic->getValue().c_str());
 };
 
 void BLE::onNotify(BLECharacteristic *pCharacteristic){
