@@ -3,7 +3,7 @@
 
 //#define NO_GLOBAL_SERIAL               // defined in compile flags
 ;                                        //
-                                         //#define DISABLE_SLEEP                    // for testing
+#define DISABLE_SLEEP                    // for testing
 ;                                        //
 #define MPU_RINGBUF_SIZE 16              // 128 ms smoothing @ 125 sps
 #define STRAIN_RINGBUF_SIZE 512          // 80 sps @ 10 rpm = 480 samples/rev

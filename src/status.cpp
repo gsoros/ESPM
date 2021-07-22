@@ -105,7 +105,7 @@ void Status::print() {
             [s]train
             set [c]rank length
             toggle [r]everse strain
-            toggle r[e]verse MPU
+            toggle r[e]verse mpu
             toggle [d]ouble power
             [p]rint calibration
             e[x]it
@@ -120,6 +120,11 @@ void Status::print() {
                 [s]sid
                 [p]assword
                 e[x]it
+            [p]rint config
+            e[x]it
+        [b]le
+            toggle c[a]dence in cpm
+            toggle [c]sc service
             [p]rint config
             e[x]it
         c[o]nfig
@@ -330,6 +335,26 @@ void Status::handleInput(const char input) {
                         menu[2] = '\0';
                 }
                 break;
+            case 'b':  // ble
+                switch (menu[1]) {
+                    case 'a':
+                        board.ble.setCadenceInCpm(!board.ble.cadenceInCpm);
+                        menu[1] = '\0';
+                        break;
+                    case 'c':
+                        board.ble.setCscServiceActive(!board.ble.cscServiceActive);
+                        menu[1] = '\0';
+                        break;
+                    case 'x':
+                        strncpy(menu, " ", 2);
+                        break;
+                    default:
+                        board.ble.printSettings();
+                        Serial.print("BLE: toggle c[a]dence in cpm, toggle [c]sc service, [p]rint config or e[x]it\n");
+                        menu[1] = getChar();
+                        menu[2] = '\0';
+                }
+                break;
             case 'r':
                 Serial.print("Rebooting...\n");
                 Serial.flush();
@@ -345,7 +370,7 @@ void Status::handleInput(const char input) {
                 //Serial.print("Ctrl+D received\n");
                 return;
             default:
-                Serial.print("[c]alibrate, [w]iFi, c[o]nfig, [r]eboot or [d]eep sleep\n");
+                Serial.print("[c]alibrate, [w]iFi, [b]le, c[o]nfig, [r]eboot or [d]eep sleep\n");
                 return;
         }
     }
