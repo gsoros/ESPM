@@ -105,7 +105,16 @@ void BLE::setup(const char *deviceName) {
 }
 
 void BLE::loop() {
-    const ulong t = millis();
+    if (lastBatteryLevel != board.battery.level) {
+        lastBatteryLevel = board.battery.level;
+        blChar->setValue(&lastBatteryLevel, 1);
+        blChar->notify();
+    }
+    if (!server->getAdvertising()->isAdvertising())
+        startAdvertising();
+}
+
+void BLE::onCrankEvent(const ulong t, const uint16_t revolutions) {
     if (lastPowerNotification <= t - 300) {
         lastPowerNotification = t;
         if (power != (short)board.getPower()) {
@@ -115,31 +124,22 @@ void BLE::loop() {
             bufPower[2] = power & 0xff;
             bufPower[3] = (power >> 8) & 0xff;
             cpmChar->setValue((uint8_t *)&bufPower, 4);
+            //Serial.printf("[BLE] Notifying power #%d ts %d\n", power, t);
             cpmChar->notify();
         }
     }
-
-    if (crankRevs < board.mpu.revolutions) {
-        crankRevs = board.mpu.revolutions;
-        lastCrankEventTime = (uint16_t)(board.mpu.lastCrankEventTime * 1.024);
+    if (crankRevs < revolutions) {
+        crankRevs = revolutions;
+        lastCrankEventTime = (uint16_t)(t * 1.024);
         bufCadence[0] = cadenceFlags & 0xff;
         bufCadence[1] = crankRevs & 0xff;
         bufCadence[2] = (crankRevs >> 8) & 0xff;
         bufCadence[3] = lastCrankEventTime & 0xff;
         bufCadence[4] = (lastCrankEventTime >> 8) & 0xff;
         cscmChar->setValue((uint8_t *)&bufCadence, 5);
-        //Serial.printf("[BLE] Notifying crank event #%d ts %d\n", crankRevs, lastCrankEventTime);
+        //Serial.printf("[BLE] Notifying cadence #%d ts %d\n", crankRevs, t);
         cscmChar->notify();
     }
-
-    if (lastBatteryLevel != board.battery.level) {
-        lastBatteryLevel = board.battery.level;
-        blChar->setValue(&lastBatteryLevel, 1);
-        blChar->notify();
-    }
-
-    if (!server->getAdvertising()->isAdvertising())
-        startAdvertising();
 }
 
 void BLE::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {

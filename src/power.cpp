@@ -9,35 +9,24 @@ void Power::setup(Preferences *p) {
 }
 
 void Power::loop() {
+    if (_lastCrankEventTime < millis() - 1000) {
+        _powerBuf.push(0.0);
+    }
+}
+
+void Power::onCrankEvent(const ulong msSinceLastEvent) {
+    _lastCrankEventTime = millis();
     if (!board.strain.dataReady()) {
         //log_e("strain not ready, skipping loop at %d, SPS=%f", millis(), board.strain.device->getSPS());
         return;
     }
-    /*
-    const ulong t = millis();
-    static ulong previousT = t;
-    if (t == previousT) return;
-    previousT = t;
-    double deltaT = (t - previousT) / 1000.0;                       // t(s)
-    float rps = filterNegative(board.getRpm(), reverseMPU) / 60;    // revs per sec
-    float mass = filterNegative(board.getStrain(), reverseStrain);  // m(kg)
-    float force = mass * 9.80665;                                   // F(N)   = m(kg) * G(m/s/s)
-    float radius = crankLength / 1000.0;                            // r(m)
-    float circumference = 2.0 * radius * PI;                        // C(m)   = 2 * r(m) * π
-    double distance = circumference * rps * deltaT;                 // s(m)   = C(m) * rps * t(s)
-    double velocity = distance / deltaT;                            // v(m/s) = s(m) / t(s)
-    double power = force * velocity;                                // P(W)   = F(N) * v(m/s)
-    // P      = F * v
-    // P      = m * G * s / t
-    // P      = m * G * C * rps * t / t
-    // P      = m * G * 2 * r * π * rps
-    // P      = m * rps * r * G * π * 2
-    */
-    float power = filterNegative(board.getStrain(), reverseStrain) *
-                  //filterNegative(board.getRpm(), reverseMPU) *
-                  abs(board.getRpm()) *  // TODO rpm sometimes reverses mid-ride
-                  crankLength *
-                  0.001026949986544;  // 9.80665 * π * 2 / 60 / 1000
+    double deltaT = msSinceLastEvent / 1000.0;  // t(s)
+    float radius = crankLength / 1000.0;        // r(m)
+    float distance = 2.0 * radius * PI;         // s(m)   = 2 * r(m) * π
+    double velocity = distance / deltaT;        // v(m/s) = s(m) / t(s)
+    float mass = board.strain.value(true);      // m(kg)
+    float force = mass * 9.80665;               // F(N)   = m(kg) * G(m/s/s)
+    float power = force * velocity;             // P(W)   = F(N) * v(m/s)
     if (reportDouble) power *= 2;
     if (power < 0.0)
         power = 0.0;
@@ -46,11 +35,8 @@ void Power::loop() {
     _powerBuf.push(power);
 }
 
-// Returns the average of the buffered power values, not emptying the buffer by default.
-// Measurements are added to the buffer at the speed of taskFreq.
-// To avoid data loss, POWER_RINGBUF_SIZE should be large enough to hold the
-// measurements between calls.
-float Power::power() { return power(false); }
+// Returns the average of the buffered power values, optionally emptying the buffer.
+// Measurements are added to the buffer once per crank revolution.
 float Power::power(bool clearBuffer) {
     float power = 0;
     if (_powerBuf.isEmpty()) return power;
@@ -87,7 +73,6 @@ void Power::printSettings() {
         reportDouble ? "" : "not ");
 }
 
-float Power::filterNegative(float value) { return filterNegative(value, false); }
 float Power::filterNegative(float value, bool reverse) {
     if (reverse) value *= -1;
     if (value < 0.0)

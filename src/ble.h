@@ -33,6 +33,7 @@ class BLE : public Task,
 
     void setup(const char *deviceName);
     void loop();
+    void onCrankEvent(const ulong t, const uint16_t revolutions);
 
     void onConnect(BLEServer *pServer, ble_gap_conn_desc *desc);
     void onDisconnect(BLEServer *pServer);

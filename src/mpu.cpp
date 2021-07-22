@@ -52,14 +52,12 @@ void MPU::loop() {
         return;
     }
     const ulong t = millis();
-    static ulong previousTime = 0;
-    static float previousAngle = 0.0;
     float angle = device->getYaw() + 180.0;  // 0...360
     float newRpm = 0.0;
-    if (0 < previousTime && !_rpmBuf.isEmpty()) {
-        ushort dT = t - previousTime;  // ms
+    if (0 < _previousTime && !_rpmBuf.isEmpty()) {
+        ushort dT = t - _previousTime;  // ms
         if (0 < dT) {
-            float dA = angle - previousAngle;  // deg
+            float dA = angle - _previousAngle;  // deg
             // roll over zero deg, will fail when spinning faster than 180 deg/dT
             if (-360 < dA && dA <= -180) {
                 dA += 360;
@@ -86,13 +84,15 @@ void MPU::loop() {
         }
         _dataReady = true;
     }
-    if ((previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= previousAngle)) {
+    if ((_previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= _previousAngle)) {
         if (!_halfRevolution) {
             if (0 < lastCrankEventTime) {
                 ulong tDiff = t - lastCrankEventTime;
                 if (300 < tDiff) {  // 300 ms = 200 RPM
                     revolutions++;
-                    //Serial.printf("[MPU] Crank event #%d dt: %ldms\n", revolutions, tDiff);
+                    Serial.printf("[MPU] Crank event #%d dt: %ldms\n", revolutions, tDiff);
+                    board.power.onCrankEvent(tDiff);
+                    board.ble.onCrankEvent(t, revolutions);
                 } else {
                     //Serial.printf("[MPU] Crank event skip, dt too small: %ldms\n", tDiff);
                 }
@@ -101,8 +101,8 @@ void MPU::loop() {
         }
         _halfRevolution = !_halfRevolution;
     }
-    previousTime = t;
-    previousAngle = angle;
+    _previousTime = t;
+    _previousAngle = angle;
 }
 
 float MPU::rpm(bool unsetDataReadyFlag) {

@@ -11,31 +11,36 @@ void Strain::setup(const gpio_num_t doutPin,
     rtc_gpio_hold_dis(sckPin);
     device = new HX711_ADC(doutPin, sckPin);
     device->begin();
-    ulong stabilizingTime = 1000 / 80;
-    bool tare = true;
-    device->start(stabilizingTime, tare);
+    Serial.print("[STRAIN] Starting HX711, waiting for tare...");
+    ulong stabilizingTime = 1000 / 80;  // 80 sps
+    device->start(stabilizingTime, false);
+    device->tare();
+    Serial.println(" done.");
     if (device->getTareTimeoutFlag()) {
-        log_e("HX711 Tare Timeout");
+        Serial.println("[Strain] HX711 tare timeout");
     }
     loadCalibration();
 }
 
 void Strain::loop() {
-    if (!device->update()) {
+    if (1 != device->update()) {  // 1: data ready; 2: tare complete
         return;
     }
-    _measurement = device->getData();
-    //_measurement = device->getDataWithoutSmoothing();
-    _dataReady = true;
+    _measurementBuf.push(device->getData());
 }
 
-float Strain::measurement(bool unsetDataReadyFlag) {
-    if (unsetDataReadyFlag) _dataReady = false;
-    return _measurement;
+// returns the average of the measurement values in the buffer, optionally emtying the buffer
+float Strain::value(bool clearBuffer) {
+    float avg = 0.0;
+    for (decltype(_measurementBuf)::index_t i = 0; i < _measurementBuf.size(); i++) {
+        avg += _measurementBuf[i] / _measurementBuf.size();
+    }
+    if (clearBuffer) _measurementBuf.clear();
+    return avg;
 }
 
 bool Strain::dataReady() {
-    return _dataReady;
+    return _measurementBuf.size();
 }
 
 void Strain::sleep() {

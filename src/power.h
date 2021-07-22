@@ -22,17 +22,18 @@ class Power : public Task, public HasPreferences {
 
     void setup(Preferences *p);
     void loop();
-    float power();
-    float power(bool clearBuffer);
+    float power(bool clearBuffer = false);
+    void onCrankEvent(const ulong msSinceLastEvent);
     void loadSettings();
     void saveSettings();
     void printSettings();
 
    private:
     CircularBuffer<float, POWER_RINGBUF_SIZE> _powerBuf;
+    ulong _lastCrankEventTime = 0;
 
-    float filterNegative(float value);
-    float filterNegative(float value, bool reverse);
+    float
+    filterNegative(float value, bool reverse = false);
 };
 
 #endif

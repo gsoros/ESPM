@@ -3,11 +3,16 @@
 
 #include <Arduino.h>
 #include <HX711_ADC.h>
+#include <CircularBuffer.h>
 #include <Preferences.h>
 #include <driver/rtc_io.h>
 
 #include "haspreferences.h"
 #include "task.h"
+
+#ifndef STRAIN_RINGBUF_SIZE
+#define STRAIN_RINGBUF_SIZE 512  // circular buffer size
+#endif
 
 class Strain : public Task, public HasPreferences {
    public:
@@ -22,7 +27,7 @@ class Strain : public Task, public HasPreferences {
 
     void loop();
 
-    float measurement(bool unsetDataReadyFlag = false);
+    float value(bool clearBuffer = false);
     bool dataReady();
     void sleep();
     int calibrateTo(float knownMass);  // calibrate to a known mass in kg
@@ -32,8 +37,7 @@ class Strain : public Task, public HasPreferences {
     void tare();
 
    private:
-    float _measurement = 0.0;
-    bool _dataReady = false;
+    CircularBuffer<float, STRAIN_RINGBUF_SIZE> _measurementBuf;
 };
 
 #endif

@@ -85,7 +85,7 @@ class Board : public HasPreferences, public Task {
         battery.taskStart("Battery Task", 1);
         mpu.taskStart("MPU Task", 125);
         strain.taskStart("Strain Task", 90);
-        power.taskStart("Power Task", 90);
+        power.taskStart("Power Task", 10);
         ota.taskStart("OTA Task", 10, 8192);
         status.taskStart("Status Task", 10);
         led.taskStart("Led Task", 10);
@@ -127,6 +127,9 @@ class Board : public HasPreferences, public Task {
 
     // Returns time in ms until entering deep sleep, or -1 in case of no such plans.
     long timeUntilDeepSleep(ulong t = 0) {
+#ifdef DISABLE_SLEEP
+        return -1;
+#endif
         if (!sleepEnabled) return -1;
         if (0 == t) t = millis();
         if (0 == mpu.lastMovement || t <= mpu.lastMovement) return -1;
@@ -135,6 +138,9 @@ class Board : public HasPreferences, public Task {
     }
 
     void deepSleep() {
+#ifdef DISABLE_SLEEP
+        return;
+#endif
         if (!sleepEnabled) return;
         Serial.println("[Board] Preparing for deep sleep");
         /*
@@ -160,7 +166,7 @@ class Board : public HasPreferences, public Task {
     }
 
     float getRpm(bool unsetDataReadyFlag = false) { return mpu.rpm(unsetDataReadyFlag); }
-    float getStrain(bool unsetDataReadyFlag = false) { return strain.measurement(unsetDataReadyFlag); }
+    float getStrain(bool clearBuffer = false) { return strain.value(clearBuffer); }
     float getPower(bool clearBuffer = false) { return power.power(clearBuffer); }
     void setSleepDelay(const ulong delay) { _sleepDelay = delay; }
 

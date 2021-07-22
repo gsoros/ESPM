@@ -53,6 +53,8 @@ class MPU : public Task, public HasPreferences {
     void saveCalibration();
 
    private:
+    ulong _previousTime = 0;
+    float _previousAngle = 0.0;
     CircularBuffer<float, MPU_RINGBUF_SIZE> _rpmBuf;
     float _rpm = 0.0;  // average rpm of the ring buffer
     bool _dataReady = false;
