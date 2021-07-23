@@ -14,13 +14,13 @@ void BLE::setup(const char *deviceName, Preferences *p) {
     advertising = server->getAdvertising();
     advertising->setAppearance(APPEARANCE_CYCLING_POWER_SENSOR);
     //advertising->setManufacturerData("G");
+    //advertising->setScanResponse(false);
+    //advertising->setMinPreferred(0x0);
 
     startPowerService();
     startCadenceService();
     startBatterySerice();
 
-    //advertising->setScanResponse(false);
-    //advertising->setMinPreferred(0x0);
     server->start();
     lastPowerNotification = millis();
     lastCadenceNotification = lastPowerNotification;
@@ -53,7 +53,11 @@ void BLE::startPowerService() {
     bufPowerFeature[0] = 0x00;
     bufPowerFeature[1] = 0x00;
     bufPowerFeature[2] = 0x00;
-    bufPowerFeature[3] = 0x00;
+    if (cadenceInCpm) {
+        bufPowerFeature[3] = 0b00001000;  // crank revolution data supported
+    } else {
+        bufPowerFeature[3] = 0x00;
+    }
     cpfChar->setValue((uint8_t *)&bufPowerFeature, 4);
 
     // Cycling Power Mmeasurement
@@ -88,7 +92,14 @@ void BLE::startPowerService() {
     advertising->addServiceUUID(cpsUUID);
 }
 
+void BLE::stopPowerService() {
+    Serial.println("[BLE] Stopping power service");
+    advertising->removeServiceUUID(cpsUUID);
+    server->removeService(cps, true);
+}
+
 void BLE::startCadenceService() {
+    if (!cscServiceActive) return;
     Serial.println("[BLE] Starting CSC service");
     cscUUID = BLEUUID(CYCLING_SPEED_CADENCE_SERVICE_UUID);
     csc = server->createService(cscUUID);
@@ -150,9 +161,13 @@ void BLE::notifyPower(const ulong t) {
     if (t - 300 < lastPowerNotification) return;
     lastPowerNotification = t;
     power = (uint16_t)board.getPower();
-    uint16_t flags = cadenceInCpm ? powerFlagsWithCadence : powerFlags;
-    bufPower[0] = flags & 0xff;
-    bufPower[1] = (flags >> 8) & 0xff;
+    if (cadenceInCpm) {
+        bufPower[0] = powerFlagsWithCadence & 0xff;
+        bufPower[1] = (powerFlagsWithCadence >> 8) & 0xff;
+    } else {
+        bufPower[0] = powerFlags & 0xff;
+        bufPower[1] = (powerFlags >> 8) & 0xff;
+    }
     bufPower[2] = power & 0xff;
     bufPower[3] = (power >> 8) & 0xff;
     if (cadenceInCpm) {
@@ -251,16 +266,18 @@ void BLE::setCadenceInCpm(bool state) {
     if (cadenceInCpm == state) return;
     cadenceInCpm = state;
     saveSettings();
+    stopPowerService();
+    startPowerService();
 }
 
 void BLE::setCscServiceActive(bool state) {
     if (cscServiceActive == state) return;
-    if (cscServiceActive)
-        stopCadenceService();
-    else
-        startCadenceService();
     cscServiceActive = state;
     saveSettings();
+    if (cscServiceActive)
+        startCadenceService();
+    else
+        stopCadenceService();
 }
 
 void BLE::loadSettings() {

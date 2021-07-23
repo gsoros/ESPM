@@ -49,6 +49,7 @@ class BLE : public Task,
     void setup(const char *deviceName, Preferences *p);
     void loop();
     void startPowerService();
+    void stopPowerService();
     void startCadenceService();
     void stopCadenceService();
     void startBatterySerice();
