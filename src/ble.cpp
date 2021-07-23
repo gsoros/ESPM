@@ -50,11 +50,23 @@ void BLE::startPowerService() {
         //| NIMBLE_PROPERTY::READ_ENC
     );
     cpfChar->setCallbacks(this);
+
+    /*
+    // This is incorrect
+    // TODO find out how to set the 4th byte
+    uint32_t powerFeature = (uint32_t)0x00;
+    if (cadenceInCpm) { 
+        powerFeature = powerFeature | (CPF_CRANK_REVOLUTION_DATA_SUPPORTED);
+    }
+    cpfChar->setValue((uint8_t *)&powerFeature, 4);
+    */
+
+    // Correct but ugly
     bufPowerFeature[0] = 0x00;
     bufPowerFeature[1] = 0x00;
     bufPowerFeature[2] = 0x00;
     if (cadenceInCpm) {
-        bufPowerFeature[3] = 0b00001000;  // crank revolution data supported
+        bufPowerFeature[3] = 0b00001000;  // lsb #3: crank revolution data supported
     } else {
         bufPowerFeature[3] = 0x00;
     }
@@ -93,7 +105,7 @@ void BLE::startPowerService() {
 }
 
 void BLE::stopPowerService() {
-    Serial.println("[BLE] Stopping power service");
+    Serial.println("[BLE] Stopping CP service");
     advertising->removeServiceUUID(cpsUUID);
     server->removeService(cps, true);
 }
@@ -129,7 +141,7 @@ void BLE::startCadenceService() {
 }
 
 void BLE::stopCadenceService() {
-    Serial.println("[BLE] Stopping cadence service");
+    Serial.println("[BLE] Stopping CSC service");
     advertising->removeServiceUUID(cscUUID);
     server->removeService(csc, true);
 }
