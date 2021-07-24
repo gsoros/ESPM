@@ -53,10 +53,10 @@ void BLE::startPowerService() {
 
     /*
     // This is incorrect
-    // TODO find out how to set the 4th byte
+    // TODO find out how to set the bytes
     uint32_t powerFeature = (uint32_t)0x00;
     if (cadenceInCpm) { 
-        powerFeature = powerFeature | (CPF_CRANK_REVOLUTION_DATA_SUPPORTED);
+        powerFeature = powerFeature | CPF_CRANK_REVOLUTION_DATA_SUPPORTED;
     }
     cpfChar->setValue((uint8_t *)&powerFeature, 4);
     */
