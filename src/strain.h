@@ -28,6 +28,7 @@ class Strain : public Task, public HasPreferences {
     void loop();
 
     float value(bool clearBuffer = false);
+    float liveValue();
     bool dataReady();
     void sleep();
     int calibrateTo(float knownMass);  // calibrate to a known mass in kg

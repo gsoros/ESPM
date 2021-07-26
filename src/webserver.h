@@ -21,6 +21,7 @@ class WebServer : public Task {
 
     void setup();
     void loop();
+    void off();
 
     void handleCalibrateAccelGyro(AsyncWebServerRequest *request);
     void handleCalibrateMag(AsyncWebServerRequest *request);

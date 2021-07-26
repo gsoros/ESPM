@@ -89,7 +89,7 @@ void Status::print() {
         Serial.printf(
             "[Status] %d %d %d %.2f %.2f\n",
             (int)board.getRpm(),
-            (int)board.getStrain(),
+            (int)board.getLiveStrain(),
             (int)board.getPower(),  // not emptying the buffer
             board.battery.voltage,
             board.timeUntilDeepSleep(t) / 60000.0);  // time in minutes
@@ -131,6 +131,7 @@ void Status::print() {
             [h]ostname
             status [f]requency
             sleep [d]elay
+        [l]ive mode
         [r]eboot
         [d]eep sleep
     */
@@ -355,6 +356,18 @@ void Status::handleInput(const char input) {
                         menu[2] = '\0';
                 }
                 break;
+            case 'l':
+                Serial.print("Entering live mode\n");
+                Serial.flush();
+#ifdef FEATURE_WEBSERVER
+                board.webserver.off();
+#endif
+#ifdef FEATURE_SERIAL
+                board.wifiSerial.off();
+#endif
+                board.ota.off();
+                board.wifi.off();
+                return;
             case 'r':
                 Serial.print("Rebooting...\n");
                 Serial.flush();
@@ -370,7 +383,7 @@ void Status::handleInput(const char input) {
                 //Serial.print("Ctrl+D received\n");
                 return;
             default:
-                Serial.print("[c]alibrate, [w]iFi, [b]le, c[o]nfig, [r]eboot or [d]eep sleep\n");
+                Serial.print("[c]alibrate, [w]iFi, [b]le, c[o]nfig, [l]ive mode, [r]eboot or [d]eep sleep\n");
                 return;
         }
     }

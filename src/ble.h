@@ -17,20 +17,23 @@ class BLE : public Task,
     BLEUUID cpsUUID;              // cycling power service uuid
     BLEService *cps;              // cycling power service
     BLECharacteristic *cpmChar;   // cycling power measurement characteristic
-    BLEUUID cscUUID;              // cycling speed and cadence service uuid
-    BLEService *csc;              // cycling speed and cadence service
+    BLEUUID cscsUUID;             // cycling speed and cadence service uuid
+    BLEService *cscs;             // cycling speed and cadence service
     BLECharacteristic *cscmChar;  // cycling speed and cadence measurement characteristic
-    BLEUUID bsUUID;               // battery level service uuid
-    BLEService *bs;               // battery level service
+    BLEUUID blsUUID;              // battery level service uuid
+    BLEService *bls;              // battery level service
     BLECharacteristic *blChar;    // battery level characteristic
+    BLEUUID asUUID;               // api service uuid
+    BLEService *as;               // api service
+    BLECharacteristic *apiChar;   // api characteristic
     BLEAdvertising *advertising;
 
     uint8_t lastBatteryLevel = 0;
     unsigned long lastPowerNotification = 0;
     unsigned long lastCadenceNotification = 0;
     unsigned long lastBatteryNotification = 0;
-    bool cadenceInCpm = false;
-    bool cscServiceActive = true;
+    bool cadenceInCpm = true;
+    bool cscServiceActive = false;
 
     uint16_t power = 0;
     uint16_t crankRevs = 0;
@@ -53,10 +56,12 @@ class BLE : public Task,
     void startCadenceService();
     void stopCadenceService();
     void startBatterySerice();
+    void startApiSerice();
     void onCrankEvent(const ulong t, const uint16_t revolutions);
     void notifyPower(const ulong t);
     void notifyCadence(const ulong t);
     void notifyBattery(const ulong t);
+    void setApiResponse(const char *response);
 
     void onConnect(BLEServer *pServer, ble_gap_conn_desc *desc);
     void onDisconnect(BLEServer *pServer);

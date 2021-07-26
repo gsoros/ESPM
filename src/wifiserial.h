@@ -27,6 +27,7 @@ class WifiSerial : public Task, public Stream {
     void setup();
     void setup(uint16_t port, uint8_t maxClients);
     void loop();
+    void off();
     void disconnect();
     size_t write(uint8_t c);
     size_t write(const uint8_t *buf, size_t size);

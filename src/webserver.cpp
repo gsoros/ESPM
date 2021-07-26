@@ -53,6 +53,14 @@ void WebServer::loop() {
     }
 }
 
+void WebServer::off() {
+    Serial.println("[WebServer] Shutting down");
+    ws->end();
+    wss->closeAll();
+    wss->enable(false);
+    taskStop();
+}
+
 void WebServer::handleCalibrateAccelGyro(AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Calibrating accel/gyro, device should be motionless.");
     //wssBroadcastEnabled = false;

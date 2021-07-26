@@ -39,6 +39,10 @@ float Strain::value(bool clearBuffer) {
     return avg;
 }
 
+float Strain::liveValue() {
+    return _measurementBuf.last();
+}
+
 bool Strain::dataReady() {
     return _measurementBuf.size();
 }

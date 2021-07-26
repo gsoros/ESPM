@@ -72,3 +72,8 @@ void OTA::setup(const char *hostName, uint16_t port) {
 void OTA::loop() {
     ArduinoOTA.handle();
 }
+
+void OTA::off() {
+    Serial.println("[OTA] Shutting down");
+    taskStop();
+}

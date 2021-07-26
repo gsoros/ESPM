@@ -18,6 +18,7 @@
 #include "strain.h"
 #include "power.h"
 #include "ble.h"
+#include "api.h"
 #include "battery.h"
 #include "wificonnection.h"
 #include "ota.h"
@@ -37,6 +38,7 @@ class Board : public HasPreferences, public Task {
 #endif
     WifiConnection wifi;
     BLE ble;
+    API api;
     Battery battery;
     MPU mpu;
     Strain strain;
@@ -167,6 +169,7 @@ class Board : public HasPreferences, public Task {
 
     float getRpm(bool unsetDataReadyFlag = false) { return mpu.rpm(unsetDataReadyFlag); }
     float getStrain(bool clearBuffer = false) { return strain.value(clearBuffer); }
+    float getLiveStrain() { return strain.liveValue(); }
     float getPower(bool clearBuffer = false) { return power.power(clearBuffer); }
     void setSleepDelay(const ulong delay) { _sleepDelay = delay; }
 

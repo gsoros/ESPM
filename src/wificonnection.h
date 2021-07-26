@@ -31,6 +31,14 @@ class WifiConnection : public HasPreferences, public Task {
 
     void loop() {}
 
+    void off() {
+        Serial.println("[Wifi] Shutting down");
+        settings.apEnable = false;
+        settings.staEnable = false;
+        applySettings();
+        taskStop();
+    }
+
     bool loadSettings() {
         if (!preferencesStartLoad()) return false;
         settings.apEnable = preferences->getBool("apEnable", false);

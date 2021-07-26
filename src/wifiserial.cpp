@@ -35,6 +35,12 @@ void WifiSerial::loop() {
     }
 }
 
+void WifiSerial::off() {
+    Serial.println("[WifiSerial] Shutting down");
+    disconnect();
+    taskStop();
+}
+
 void WifiSerial::disconnect() {
     if (_client.connected()) {
         _client.write(7);  // BEL

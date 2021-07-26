@@ -13,6 +13,7 @@ class OTA : public Task {
     void setup(const char *hostName);
     void setup(const char *hostName, uint16_t port);
     void loop();
+    void off();
 
    private:
     uint8_t lastProgressPercent = 0;

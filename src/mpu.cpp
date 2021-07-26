@@ -52,7 +52,7 @@ void MPU::loop() {
         return;
     }
     const ulong t = millis();
-    float angle = device->getYaw() + 180.0;  // 0...360
+    float angle = device->getYaw() + 180.0;  // -180...180 -> 0...360
     float newRpm = 0.0;
     if (0 < _previousTime && !_rpmBuf.isEmpty()) {
         ushort dT = t - _previousTime;  // ms
