@@ -4,32 +4,57 @@
 #define API_COMMAND_MAXLENGTH 32
 #define API_ARG_MAXLENGTH 32
 
-#define API_SUCCESS 0
-#define API_SUCCESS_S "OK"
-#define API_ERROR 1
-#define API_ERROR_S "Generic error"
-#define API_ERROR_UNKNOWN_COMMAND 2
-#define API_ERROR_UNKNOWN_COMMAND_S "Unknown command"
-#define API_ERROR_COMMAND_TOO_LONG 3
-#define API_ERROR_COMMAND_TOO_LONG_S "Command too long"
-#define API_ERROR_ARG_TOO_LONG 4
-#define API_ERROR_ARG_TOO_LONG_S "Argument too long"
-#define API_ERROR_UNKNOWN_BOOTMODE 5
-#define API_ERROR_UNKNOWN_BOOTMODE_S "Unknown bootmode"
+enum api_result_t {
+    AR_SUCCESS,
+    AR_ERROR,
+    AR_UNKNOWN_COMMAND,
+    AR_COMMAND_TOO_LONG,
+    AR_ARG_TOO_LONG,
+    AR_UNKNOWN_BOOTMODE
+};
 
-#define API_COMMAND_BOOTMODE 1
-#define API_COMMAND_BOOTMODE_S "bootmode"
-#define API_COMMAND_HOSTNAME 2
-#define API_COMMAND_HOSTNAME_S "hostname"
-#define API_COMMAND_REBOOT 3
-#define API_COMMAND_REBOOT_S "reboot"
+enum api_command_t {  // skip 0 so we can use atoi for comparison
+    AC_BOOTMODE = 1,
+    AC_HOSTNAME = 2,
+    AC_REBOOT = 3
+};
 
 class API {
    public:
     const char *tag = "[API]";
 
-    int handleCommand(const char *command);
-    int setBootMode(const char *mode);
+    api_result_t handleCommand(const char *command);
+    api_result_t setBootMode(const char *mode);
+
+    const char *resultStr(api_result_t result) {
+        switch (result) {
+            case AR_SUCCESS:
+                return "OK";
+            case AR_ERROR:
+                return "Generic error";
+            case AR_UNKNOWN_COMMAND:
+                return "Unknown command";
+            case AR_COMMAND_TOO_LONG:
+                return "Command too long";
+            case AR_ARG_TOO_LONG:
+                return "Argument too long";
+            case AR_UNKNOWN_BOOTMODE:
+                return "Unknown bootmode";
+        }
+        return "Unknown error";
+    }
+
+    const char *commandStr(api_command_t command) {
+        switch (command) {
+            case AC_BOOTMODE:
+                return "bootmode";
+            case AC_HOSTNAME:
+                return "hostname";
+            case AC_REBOOT:
+                return "reboot";
+        }
+        return "";
+    }
 };
 
 #endif

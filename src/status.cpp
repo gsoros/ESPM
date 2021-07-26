@@ -86,16 +86,13 @@ void Status::print() {
     if (!statusEnabled)
         return;
     if (lastOutput < t - statusDelay) {
-        if (BOOTMODE_OTA == board.lastBootMode)
-            Serial.println("Waiting for OTA");
-        else
-            Serial.printf(
-                "[Status] %d %d %d %.2f %.2f\n",
-                (int)board.getRpm(),
-                (int)board.getLiveStrain(),
-                (int)board.getPower(),  // not emptying the buffer
-                board.battery.voltage,
-                board.timeUntilDeepSleep(t) / 60000.0);  // time in minutes
+        Serial.printf(
+            "[Status] %d %d %d %.2f %.2f\n",
+            (int)board.getRpm(),
+            (int)board.getLiveStrain(),
+            (int)board.getPower(),  // not emptying the buffer
+            board.battery.voltage,
+            board.timeUntilDeepSleep(t) / 60000.0);  // time in minutes
         lastOutput = t;
     }
 }
@@ -134,7 +131,7 @@ void Status::print() {
             [h]ostname
             status [f]requency
             sleep [d]elay
-        [l]ive mode
+        boo[t] mode
         [r]eboot
         [d]eep sleep
     */
@@ -359,17 +356,14 @@ void Status::handleInput(const char input) {
                         menu[2] = '\0';
                 }
                 break;
-            case 'l':
-                Serial.print("Entering live mode\n");
-                Serial.flush();
-#ifdef FEATURE_WEBSERVER
-                board.webserver.off();
-#endif
-#ifdef FEATURE_SERIAL
-                board.wifiSerial.off();
-#endif
-                board.ota.off();
-                board.wifi.off();
+            case 't':  // boot mode
+                if (BOOTMODE_LIVE == board.bootMode) {
+                    board.setBootMode(BOOTMODE_SETUP);
+                    Serial.printf("Next boot will be in %s mode\n", BOOTMODE_SETUP_S);
+                    return;
+                }
+                board.setBootMode(BOOTMODE_LIVE);
+                Serial.printf("Next boot will be in %s mode\n", BOOTMODE_LIVE_S);
                 return;
             case 'r':
                 Serial.print("Rebooting...\n");
@@ -386,7 +380,7 @@ void Status::handleInput(const char input) {
                 //Serial.print("Ctrl+D received\n");
                 return;
             default:
-                Serial.print("[c]alibrate, [w]iFi, [b]le, c[o]nfig, [l]ive mode, [r]eboot or [d]eep sleep\n");
+                Serial.print("[c]alibrate, [w]iFi, [b]le, c[o]nfig, boo[t] mode, [r]eboot or [d]eep sleep\n");
                 return;
         }
     }

@@ -62,9 +62,9 @@ class Board : public HasPreferences, public Task {
         preferencesSetup(&boardPreferences, "BOARD");
         loadSettings();
         lastBootMode = bootMode;
-        //bootMode = BOOTMODE_DEBUG;
+        //bootMode = BOOTMODE_SETUP;
         led.setup();
-        if (BOOTMODE_OTA == bootMode || BOOTMODE_DEBUG == bootMode) {
+        if (BOOTMODE_SETUP == bootMode) {
             wifi.setup(preferences);
 #ifdef FEATURE_SERIAL
             wifiSerial.setup();
@@ -74,16 +74,14 @@ class Board : public HasPreferences, public Task {
         }
         ble.setup(hostName, preferences);
         battery.setup(preferences);
-        if (BOOTMODE_LIVE == bootMode || BOOTMODE_DEBUG == bootMode) {
-            mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
-            strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
-            power.setup(preferences);
-        }
-        if (BOOTMODE_OTA == bootMode || BOOTMODE_DEBUG == bootMode) {
+        mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
+        strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
+        power.setup(preferences);
+        if (BOOTMODE_SETUP == bootMode) {
             ota.setup(hostName);
         }
         status.setup();
-        if (BOOTMODE_DEBUG == bootMode) {
+        if (BOOTMODE_SETUP == bootMode) {
 #ifdef FEATURE_WEBSERVER
             webserver.setup();
 #endif
@@ -91,7 +89,7 @@ class Board : public HasPreferences, public Task {
     }
 
     void startTasks() {
-        if (BOOTMODE_OTA == bootMode || BOOTMODE_DEBUG == bootMode) {
+        if (BOOTMODE_SETUP == bootMode) {
 #ifdef FEATURE_SERIAL
             wifiSerial.taskStart("WifiSerial Task", 10);
 #endif
@@ -99,18 +97,16 @@ class Board : public HasPreferences, public Task {
         }
         ble.taskStart("BLE Task", 10);
         battery.taskStart("Battery Task", 1);
-        if (BOOTMODE_LIVE == bootMode || BOOTMODE_DEBUG == bootMode) {
-            mpu.taskStart("MPU Task", 125);
-            strain.taskStart("Strain Task", 90);
-            power.taskStart("Power Task", 10);
-        }
-        if (BOOTMODE_OTA == bootMode || BOOTMODE_DEBUG == bootMode) {
+        mpu.taskStart("MPU Task", 125);
+        strain.taskStart("Strain Task", 90);
+        power.taskStart("Power Task", 10);
+        if (BOOTMODE_SETUP == bootMode) {
             ota.taskStart("OTA Task", 10, 8192);
         }
         status.taskStart("Status Task", 10);
         led.taskStart("Led Task", 10);
         taskStart("Board Task", 1);
-        if (BOOTMODE_DEBUG == bootMode) {
+        if (BOOTMODE_SETUP == bootMode) {
 #ifdef FEATURE_WEBSERVER
             webserver.taskStart("Webserver Task", 20, 8192);
 #endif
@@ -119,10 +115,12 @@ class Board : public HasPreferences, public Task {
 
     void resetBootMode() {
         Serial.printf("[Board] BootMode: %d\n", bootMode);
-        if (BOOTMODE_OTA == bootMode) {
+        /*
+        if (BOOTMODE_SETUP == bootMode) {
             bootMode = BOOTMODE_LIVE;
             saveSettings();
         }
+        */
     }
 
     void loop() {
@@ -148,8 +146,7 @@ class Board : public HasPreferences, public Task {
         int mode = preferences->getInt("bootMode", bootMode);
         switch (mode) {
             case BOOTMODE_LIVE:
-            case BOOTMODE_OTA:
-            case BOOTMODE_DEBUG:
+            case BOOTMODE_SETUP:
                 bootMode = (uint8_t)mode;
                 break;
             default:
@@ -164,8 +161,7 @@ class Board : public HasPreferences, public Task {
         preferences->putString("hostName", hostName);
         switch (bootMode) {
             case BOOTMODE_LIVE:
-            case BOOTMODE_OTA:
-            case BOOTMODE_DEBUG:
+            case BOOTMODE_SETUP:
                 preferences->putInt("bootMode", bootMode);
                 break;
             default:
@@ -217,8 +213,7 @@ class Board : public HasPreferences, public Task {
     bool setBootMode(int mode) {
         switch (mode) {
             case BOOTMODE_LIVE:
-            case BOOTMODE_OTA:
-            case BOOTMODE_DEBUG:
+            case BOOTMODE_SETUP:
                 break;
             default:
                 Serial.printf("[Board] Invalid bootmode: %d\n", mode);

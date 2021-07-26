@@ -31,9 +31,7 @@
 #define BOOTMODE_INVALID -1
 #define BOOTMODE_LIVE 1
 #define BOOTMODE_LIVE_S "live"
-#define BOOTMODE_OTA 2
-#define BOOTMODE_OTA_S "ota"
-#define BOOTMODE_DEBUG 3
-#define BOOTMODE_DEBUG_S "debug"
+#define BOOTMODE_SETUP 2
+#define BOOTMODE_SETUP_S "setup"
 
 #endif

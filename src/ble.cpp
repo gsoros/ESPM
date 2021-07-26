@@ -264,8 +264,12 @@ void BLE::onWrite(BLECharacteristic *pCharacteristic) {
                   value,
                   pCharacteristic->getValue().c_str());
     if (pCharacteristic->getHandle() == apiChar->getHandle()) {
-        int result = board.api.handleCommand(value);
-        Serial.printf("API command: %s Result: %d\n", value, result);
+        api_result_t result = board.api.handleCommand(value);
+        Serial.printf("API command: %s Result: %s\n", value, board.api.resultStr(result));
+        if (AR_SUCCESS == result)
+            board.led.blink(2, 100, 300);
+        else
+            board.led.blink(10, 100, 100);
     }
 };
 

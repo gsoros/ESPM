@@ -2,7 +2,7 @@
 #include "board.h"
 
 // Format: command || command=arg
-int API::handleCommand(const char *commandWithArg) {
+api_result_t API::handleCommand(const char *commandWithArg) {
     Serial.printf("%s Handling command %s\n", tag, commandWithArg);
     char command[API_COMMAND_MAXLENGTH] = "";
     char arg[API_ARG_MAXLENGTH] = "";
@@ -10,49 +10,47 @@ int API::handleCommand(const char *commandWithArg) {
     if (eqSign) {
         int eqPos = eqSign - commandWithArg;
         if (API_COMMAND_MAXLENGTH < eqPos) {
-            Serial.printf("%s %s: %s\n", tag, API_ERROR_COMMAND_TOO_LONG_S, commandWithArg);
-            return API_ERROR_COMMAND_TOO_LONG;
+            Serial.printf("%s %s: %s\n", tag, resultStr(AR_COMMAND_TOO_LONG), commandWithArg);
+            return AR_COMMAND_TOO_LONG;
         }
         strncpy(command, commandWithArg, eqPos);
         int argSize = strlen(commandWithArg) - eqPos - 1;
         //Serial.printf("%s argSize=%d\n", tag, argSize);
         if (API_ARG_MAXLENGTH < argSize) {
-            Serial.printf("%s %s: %s\n", tag, API_ERROR_ARG_TOO_LONG_S, commandWithArg);
-            return API_ERROR_ARG_TOO_LONG;
+            Serial.printf("%s %s: %s\n", tag, resultStr(AR_ARG_TOO_LONG), commandWithArg);
+            return AR_ARG_TOO_LONG;
         }
         strncpy(arg, eqSign + 1, argSize);
     } else {
         if (API_COMMAND_MAXLENGTH < strlen(commandWithArg)) {
-            Serial.printf("%s %s: %s\n", tag, API_ERROR_COMMAND_TOO_LONG_S, commandWithArg);
-            return API_ERROR_COMMAND_TOO_LONG;
+            Serial.printf("%s %s: %s\n", tag, resultStr(AR_COMMAND_TOO_LONG), commandWithArg);
+            return AR_COMMAND_TOO_LONG;
         }
         strncpy(command, commandWithArg, sizeof command);
     }
     Serial.printf("%s command=%s arg=%s\n", tag, command, arg);
-    if (0 == strcmp(command, API_COMMAND_BOOTMODE_S) || atoi(command) == API_COMMAND_BOOTMODE)
+    if (0 == strcmp(command, commandStr(AC_BOOTMODE)) || atoi(command) == AC_BOOTMODE)
         return setBootMode(arg);
-    if (0 == strcmp(command, API_COMMAND_REBOOT_S) || atoi(command) == API_COMMAND_REBOOT) {
+    if (0 == strcmp(command, commandStr(AC_REBOOT)) || atoi(command) == AC_REBOOT) {
         ESP.restart();
-        return API_SUCCESS;
+        return AR_SUCCESS;
     }
-    Serial.printf("%s %s: %s\n", tag, API_ERROR_UNKNOWN_COMMAND_S, command);
-    return API_ERROR_UNKNOWN_COMMAND;
+    Serial.printf("%s %s: %s\n", tag, resultStr(AR_UNKNOWN_COMMAND), command);
+    return AR_UNKNOWN_COMMAND;
 }
 
-int API::setBootMode(const char *mode) {
+api_result_t API::setBootMode(const char *mode) {
     int bootMode = BOOTMODE_INVALID;
     if (0 == strcmp(mode, BOOTMODE_LIVE_S) || atoi(mode) == BOOTMODE_LIVE) {
         bootMode = BOOTMODE_LIVE;
-    } else if (0 == strcmp(mode, BOOTMODE_OTA_S) || atoi(mode) == BOOTMODE_OTA) {
-        bootMode = BOOTMODE_OTA;
-    } else if (0 == strcmp(mode, BOOTMODE_DEBUG_S) || atoi(mode) == BOOTMODE_DEBUG) {
-        bootMode = BOOTMODE_DEBUG;
+    } else if (0 == strcmp(mode, BOOTMODE_SETUP_S) || atoi(mode) == BOOTMODE_SETUP) {
+        bootMode = BOOTMODE_SETUP;
     }
     if (BOOTMODE_INVALID == bootMode) {
-        Serial.printf("%s %s: %s\n", tag, API_ERROR_UNKNOWN_BOOTMODE_S, mode);
-        return API_ERROR_UNKNOWN_BOOTMODE;
+        Serial.printf("%s %s: %s\n", tag, resultStr(AR_UNKNOWN_BOOTMODE), mode);
+        return AR_UNKNOWN_BOOTMODE;
     }
     if (board.setBootMode(bootMode))
-        return API_SUCCESS;
-    return API_ERROR;
+        return AR_SUCCESS;
+    return AR_ERROR;
 }
