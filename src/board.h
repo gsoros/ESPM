@@ -49,6 +49,8 @@ class Board : public HasPreferences, public Task {
 #ifdef FEATURE_WEBSERVER
     WebServer webserver;
 #endif
+    uint8_t bootMode = BOOTMODE_LIVE;
+    uint8_t lastBootMode = BOOTMODE_INVALID;
     bool sleepEnabled = true;
     char hostName[32] = HOSTNAME;
 
@@ -59,42 +61,68 @@ class Board : public HasPreferences, public Task {
 #endif
         preferencesSetup(&boardPreferences, "BOARD");
         loadSettings();
+        lastBootMode = bootMode;
+        //bootMode = BOOTMODE_DEBUG;
         led.setup();
-        wifi.setup(preferences);
+        if (BOOTMODE_OTA == bootMode || BOOTMODE_DEBUG == bootMode) {
+            wifi.setup(preferences);
 #ifdef FEATURE_SERIAL
-        wifiSerial.setup();
-        Serial.setup(&hwSerial, &wifiSerial, true, true);
-        while (!hwSerial) vTaskDelay(10);
+            wifiSerial.setup();
+            Serial.setup(&hwSerial, &wifiSerial, true, true);
+            while (!hwSerial) vTaskDelay(10);
 #endif
+        }
         ble.setup(hostName, preferences);
         battery.setup(preferences);
-        mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
-        strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
-        power.setup(preferences);
-        ota.setup(hostName);
+        if (BOOTMODE_LIVE == bootMode || BOOTMODE_DEBUG == bootMode) {
+            mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
+            strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
+            power.setup(preferences);
+        }
+        if (BOOTMODE_OTA == bootMode || BOOTMODE_DEBUG == bootMode) {
+            ota.setup(hostName);
+        }
         status.setup();
+        if (BOOTMODE_DEBUG == bootMode) {
 #ifdef FEATURE_WEBSERVER
-        webserver.setup();
+            webserver.setup();
 #endif
+        }
     }
 
     void startTasks() {
+        if (BOOTMODE_OTA == bootMode || BOOTMODE_DEBUG == bootMode) {
 #ifdef FEATURE_SERIAL
-        wifiSerial.taskStart("WifiSerial Task", 10);
+            wifiSerial.taskStart("WifiSerial Task", 10);
 #endif
-        wifi.taskStart("Wifi Task", 1);
+            wifi.taskStart("Wifi Task", 1);
+        }
         ble.taskStart("BLE Task", 10);
         battery.taskStart("Battery Task", 1);
-        mpu.taskStart("MPU Task", 125);
-        strain.taskStart("Strain Task", 90);
-        power.taskStart("Power Task", 10);
-        ota.taskStart("OTA Task", 10, 8192);
+        if (BOOTMODE_LIVE == bootMode || BOOTMODE_DEBUG == bootMode) {
+            mpu.taskStart("MPU Task", 125);
+            strain.taskStart("Strain Task", 90);
+            power.taskStart("Power Task", 10);
+        }
+        if (BOOTMODE_OTA == bootMode || BOOTMODE_DEBUG == bootMode) {
+            ota.taskStart("OTA Task", 10, 8192);
+        }
         status.taskStart("Status Task", 10);
         led.taskStart("Led Task", 10);
         taskStart("Board Task", 1);
+        if (BOOTMODE_DEBUG == bootMode) {
 #ifdef FEATURE_WEBSERVER
-        webserver.taskStart("Webserver Task", 20, 8192);
+            webserver.taskStart("Webserver Task", 20, 8192);
 #endif
+        }
+    }
+
+    void resetBootMode() {
+        Serial.printf("[Board] BootMode: %d\n", bootMode);
+        if (BOOTMODE_OTA == bootMode) {
+            bootMode = BOOTMODE_LIVE;
+            saveSettings();
+        }
     }
 
     void loop() {
@@ -117,6 +145,16 @@ class Board : public HasPreferences, public Task {
         if (1 < strlen(tmpHostName)) {
             strncpy(hostName, tmpHostName, 32);
         }
+        int mode = preferences->getInt("bootMode", bootMode);
+        switch (mode) {
+            case BOOTMODE_LIVE:
+            case BOOTMODE_OTA:
+            case BOOTMODE_DEBUG:
+                bootMode = (uint8_t)mode;
+                break;
+            default:
+                Serial.printf("[Board] loadSettings: invalid bootmode: %d\n", mode);
+        }
         preferencesEnd();
         return true;
     }
@@ -124,6 +162,15 @@ class Board : public HasPreferences, public Task {
     void saveSettings() {
         if (!preferencesStartSave()) return;
         preferences->putString("hostName", hostName);
+        switch (bootMode) {
+            case BOOTMODE_LIVE:
+            case BOOTMODE_OTA:
+            case BOOTMODE_DEBUG:
+                preferences->putInt("bootMode", bootMode);
+                break;
+            default:
+                Serial.printf("[Board] saveSettings: invalid bootmode: %d\n", bootMode);
+        }
         preferencesEnd();
     }
 
@@ -165,6 +212,24 @@ class Board : public HasPreferences, public Task {
         delay(1000);
         esp_sleep_enable_ext0_wakeup(MPU_WOM_INT_PIN, HIGH);
         esp_deep_sleep_start();
+    }
+
+    bool setBootMode(int mode) {
+        switch (mode) {
+            case BOOTMODE_LIVE:
+            case BOOTMODE_OTA:
+            case BOOTMODE_DEBUG:
+                break;
+            default:
+                Serial.printf("[Board] Invalid bootmode: %d\n", mode);
+                return false;
+        }
+        Serial.printf("[Board] Setting bootmode %d\n", mode);
+        if (bootMode != mode) {
+            bootMode = mode;
+            saveSettings();
+        }
+        return true;
     }
 
     float getRpm(bool unsetDataReadyFlag = false) { return mpu.rpm(unsetDataReadyFlag); }

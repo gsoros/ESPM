@@ -86,13 +86,16 @@ void Status::print() {
     if (!statusEnabled)
         return;
     if (lastOutput < t - statusDelay) {
-        Serial.printf(
-            "[Status] %d %d %d %.2f %.2f\n",
-            (int)board.getRpm(),
-            (int)board.getLiveStrain(),
-            (int)board.getPower(),  // not emptying the buffer
-            board.battery.voltage,
-            board.timeUntilDeepSleep(t) / 60000.0);  // time in minutes
+        if (BOOTMODE_OTA == board.lastBootMode)
+            Serial.println("Waiting for OTA");
+        else
+            Serial.printf(
+                "[Status] %d %d %d %.2f %.2f\n",
+                (int)board.getRpm(),
+                (int)board.getLiveStrain(),
+                (int)board.getPower(),  // not emptying the buffer
+                board.battery.voltage,
+                board.timeUntilDeepSleep(t) / 60000.0);  // time in minutes
         lastOutput = t;
     }
 }

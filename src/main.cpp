@@ -12,6 +12,7 @@ void setup() {
 #endif
     board.setup();
     board.startTasks();
+    board.resetBootMode();
 }
 
 void loop() {

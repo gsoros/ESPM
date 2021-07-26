@@ -4,17 +4,12 @@
 void OTA::setup() { setup("ESPM"); }
 void OTA::setup(const char *hostName) { setup(hostName, 3232); }
 void OTA::setup(const char *hostName, uint16_t port) {
-    // Port defaults to 3232
-    ArduinoOTA.setPort(port);
+    Serial.printf("[OTA] Setup hostname: %s port: %d\n", hostName, port);
+    ArduinoOTA.setHostname(hostName);  // Hostname defaults to esp3232-[MAC]
+    ArduinoOTA.setPort(port);          // Port defaults to 3232
+    ArduinoOTA.setTimeout(5000);       // for choppy WiFi
 
-    // Hostname defaults to esp3232-[MAC]
-    ArduinoOTA.setHostname(hostName);
-
-    ArduinoOTA.setTimeout(5000);  // for choppy WiFi
-
-    // No authentication by default
-    // ArduinoOTA.setPassword("admin");
-
+    // ArduinoOTA.setPassword("admin");// No authentication by default
     // Password can be set with it's md5 value as well
     // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
     // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");

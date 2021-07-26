@@ -259,12 +259,13 @@ void BLE::onRead(BLECharacteristic *pCharacteristic) {
 };
 
 void BLE::onWrite(BLECharacteristic *pCharacteristic) {
+    const char *value = pCharacteristic->getValue().c_str();
     Serial.printf("[BLE] %s: onWrite(), value: %s\n",
-                  pCharacteristic->getUUID().toString().c_str(),
+                  value,
                   pCharacteristic->getValue().c_str());
     if (pCharacteristic->getHandle() == apiChar->getHandle()) {
-        Serial.printf("API command: %s\n", pCharacteristic->getValue().c_str());
-        board.api.handleCommand(pCharacteristic->getValue().c_str());
+        int result = board.api.handleCommand(value);
+        Serial.printf("API command: %s Result: %d\n", value, result);
     }
 };
 
