@@ -28,8 +28,15 @@
 #include "webserver.h"
 #endif
 
+enum bootmode_t {
+    BOOTMODE_INVALID = -1,
+    BOOTMODE_LIVE = 1,
+    BOOTMODE_SETUP = 2
+};
+
 // The one in charge
-class Board : public HasPreferences, public Task {
+class Board : public HasPreferences,
+              public Task {
    public:
     Preferences boardPreferences = Preferences();
 #ifdef FEATURE_SERIAL
@@ -49,8 +56,8 @@ class Board : public HasPreferences, public Task {
 #ifdef FEATURE_WEBSERVER
     WebServer webserver;
 #endif
-    uint8_t bootMode = BOOTMODE_LIVE;
-    uint8_t lastBootMode = BOOTMODE_INVALID;
+    bootmode_t bootMode = BOOTMODE_LIVE;
+    bootmode_t lastBootMode = BOOTMODE_INVALID;
     bool sleepEnabled = true;
     char hostName[32] = HOSTNAME;
 
@@ -113,16 +120,6 @@ class Board : public HasPreferences, public Task {
         }
     }
 
-    void resetBootMode() {
-        Serial.printf("[Board] BootMode: %d\n", bootMode);
-        /*
-        if (BOOTMODE_SETUP == bootMode) {
-            bootMode = BOOTMODE_LIVE;
-            saveSettings();
-        }
-        */
-    }
-
     void loop() {
         const ulong t = millis();
         const long tSleep = timeUntilDeepSleep(t);
@@ -147,7 +144,7 @@ class Board : public HasPreferences, public Task {
         switch (mode) {
             case BOOTMODE_LIVE:
             case BOOTMODE_SETUP:
-                bootMode = (uint8_t)mode;
+                bootMode = (bootmode_t)mode;
                 break;
             default:
                 Serial.printf("[Board] loadSettings: invalid bootmode: %d\n", mode);
@@ -162,7 +159,7 @@ class Board : public HasPreferences, public Task {
         switch (bootMode) {
             case BOOTMODE_LIVE:
             case BOOTMODE_SETUP:
-                preferences->putInt("bootMode", bootMode);
+                preferences->putInt("bootMode", (int)bootMode);
                 break;
             default:
                 Serial.printf("[Board] saveSettings: invalid bootmode: %d\n", bootMode);
@@ -210,7 +207,7 @@ class Board : public HasPreferences, public Task {
         esp_deep_sleep_start();
     }
 
-    bool setBootMode(int mode) {
+    bool setBootMode(bootmode_t mode) {
         switch (mode) {
             case BOOTMODE_LIVE:
             case BOOTMODE_SETUP:
@@ -219,12 +216,45 @@ class Board : public HasPreferences, public Task {
                 Serial.printf("[Board] Invalid bootmode: %d\n", mode);
                 return false;
         }
-        Serial.printf("[Board] Setting bootmode %d\n", mode);
+        Serial.printf("[Board] Setting bootmode %s\n", bootModeStr(mode));
         if (bootMode != mode) {
             bootMode = mode;
             saveSettings();
         }
         return true;
+    }
+
+    void setNextBootMode() {
+        /*
+        if (BOOTMODE_SETUP == bootMode) {
+            bootMode = BOOTMODE_LIVE;
+            saveSettings();
+        }
+        */
+    }
+
+    void printBootMode() {
+        Serial.printf("[Board] BootMode: %s\n", bootModeStr(bootMode));
+    }
+
+    const char *bootModeStr(bootmode_t mode) {
+        switch (mode) {
+            case BOOTMODE_LIVE:
+                return "live";
+            case BOOTMODE_SETUP:
+                return "setup";
+            case BOOTMODE_INVALID:
+                return "invalid";
+        }
+        return "unknown";
+    }
+
+    void reboot() {
+        ble.setApiValue("Rebooting...");
+        delay(500);
+        ble.stop();
+        delay(500);
+        ESP.restart();
     }
 
     float getRpm(bool unsetDataReadyFlag = false) { return mpu.rpm(unsetDataReadyFlag); }

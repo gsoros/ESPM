@@ -32,7 +32,7 @@ api_result_t API::handleCommand(const char *commandWithArg) {
     if (0 == strcmp(command, commandStr(AC_BOOTMODE)) || atoi(command) == AC_BOOTMODE)
         return setBootMode(arg);
     if (0 == strcmp(command, commandStr(AC_REBOOT)) || atoi(command) == AC_REBOOT) {
-        ESP.restart();
+        board.reboot();
         return AR_SUCCESS;
     }
     Serial.printf("%s %s: %s\n", tag, resultStr(AR_UNKNOWN_COMMAND), command);
@@ -40,10 +40,10 @@ api_result_t API::handleCommand(const char *commandWithArg) {
 }
 
 api_result_t API::setBootMode(const char *mode) {
-    int bootMode = BOOTMODE_INVALID;
-    if (0 == strcmp(mode, BOOTMODE_LIVE_S) || atoi(mode) == BOOTMODE_LIVE) {
+    bootmode_t bootMode = BOOTMODE_INVALID;
+    if (0 == strcmp(mode, board.bootModeStr(BOOTMODE_LIVE)) || atoi(mode) == BOOTMODE_LIVE) {
         bootMode = BOOTMODE_LIVE;
-    } else if (0 == strcmp(mode, BOOTMODE_SETUP_S) || atoi(mode) == BOOTMODE_SETUP) {
+    } else if (0 == strcmp(mode, board.bootModeStr(BOOTMODE_SETUP)) || atoi(mode) == BOOTMODE_SETUP) {
         bootMode = BOOTMODE_SETUP;
     }
     if (BOOTMODE_INVALID == bootMode) {

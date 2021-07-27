@@ -155,7 +155,9 @@ void BLE::startBatterySerice() {
         BLEUUID(BATTERY_LEVEL_CHAR_UUID),
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
     blChar->setCallbacks(this);
-    BLEDescriptor *blDesc = blChar->createDescriptor(BLEUUID(BATTERY_LEVEL_DESC_UUID));
+    BLEDescriptor *blDesc = blChar->createDescriptor(
+        BLEUUID(BATTERY_LEVEL_DESC_UUID),
+        NIMBLE_PROPERTY::READ);
     blDesc->setValue("Percentage");
     bls->start();
     advertising->addServiceUUID(blsUUID);
@@ -163,14 +165,20 @@ void BLE::startBatterySerice() {
 
 void BLE::startApiSerice() {
     Serial.println("[BLE] Starting APIS");
+    char s[32] = "";
     asUUID = BLEUUID(API_SERVICE_UUID);
     as = server->createService(asUUID);
     apiChar = as->createCharacteristic(
         BLEUUID(API_CHAR_UUID),
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE);
     apiChar->setCallbacks(this);
-    BLEDescriptor *apiDesc = apiChar->createDescriptor(BLEUUID(API_DESC_UUID));
-    apiDesc->setValue("ESPM API v0.1");
+    strncpy(s, "Ready", 32);
+    apiChar->setValue((uint8_t *)s, strlen(s));
+    BLEDescriptor *apiDesc = apiChar->createDescriptor(
+        BLEUUID(API_DESC_UUID),
+        NIMBLE_PROPERTY::READ);
+    strncpy(s, "ESPM API v0.1", 32);
+    apiDesc->setValue((uint8_t *)s, strlen(s));
     as->start();
     advertising->addServiceUUID(asUUID);
 }
@@ -212,6 +220,7 @@ void BLE::notifyPower(const ulong t) {
 
 void BLE::notifyCadence(const ulong t) {
     if (!cscServiceActive) return;
+    if (cscmChar == nullptr) return;
     if (t - 300 < lastCadenceNotification) return;
     lastCadenceNotification = t;
     bufCadence[0] = cadenceFlags & 0xff;
@@ -232,14 +241,38 @@ void BLE::notifyBattery(const ulong t) {
     blChar->notify();
 }
 
-void BLE::setApiResponse(const char *response) {
+void BLE::setApiValue(const char *response) {
     apiChar->setValue((uint8_t *)response, strlen(response));
     apiChar->notify();
 }
 
+const char *BLE::characteristicStr(BLECharacteristic *c) {
+    if (c == nullptr) return "unknown characteristic";
+    if (cpmChar != nullptr && cpmChar->getHandle() == c->getHandle()) return "CPM";
+    if (cscmChar != nullptr && cscmChar->getHandle() == c->getHandle()) return "CSCM";
+    if (blChar != nullptr && blChar->getHandle() == c->getHandle()) return "BL";
+    if (apiChar != nullptr && apiChar->getHandle() == c->getHandle()) return "API";
+    return c->getUUID().toString().c_str();
+}
+
+void BLE::stop() {
+    while (!_clients.isEmpty())
+        server->disconnect(_clients.shift());
+    server->stopAdvertising();
+}
+
+bool BLE::_hasClient(uint16_t handle) {
+    for (decltype(_clients)::index_t i = 0; i < _clients.size(); i++)
+        if (_clients[i] == handle) return true;
+    return false;
+}
+
 void BLE::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
-    Serial.println("[BLE] Server onConnect");
+    Serial.printf("[BLE] Client connected, ID: %d Address: %s\n",
+                  desc->conn_handle,
+                  BLEAddress(desc->peer_ota_addr).toString().c_str());
     //NimBLEDevice::startSecurity(desc->conn_handle);
+    if (!_hasClient(desc->conn_handle)) _clients.push(desc->conn_handle);
 }
 
 void BLE::onDisconnect(BLEServer *pServer) {
@@ -252,20 +285,23 @@ void BLE::startAdvertising() {
     server->startAdvertising();
 }
 
-void BLE::onRead(BLECharacteristic *pCharacteristic) {
+void BLE::onRead(BLECharacteristic *c) {
     Serial.printf("[BLE] %s: onRead(), value: %s\n",
-                  pCharacteristic->getUUID().toString().c_str(),
-                  pCharacteristic->getValue().c_str());
+                  characteristicStr(c),
+                  c->getValue().c_str());
 };
 
-void BLE::onWrite(BLECharacteristic *pCharacteristic) {
-    const char *value = pCharacteristic->getValue().c_str();
+void BLE::onWrite(BLECharacteristic *c) {
+    const char *value = c->getValue().c_str();
     Serial.printf("[BLE] %s: onWrite(), value: %s\n",
-                  value,
-                  pCharacteristic->getValue().c_str());
-    if (pCharacteristic->getHandle() == apiChar->getHandle()) {
+                  characteristicStr(c),
+                  value);
+    if (c->getHandle() == apiChar->getHandle()) {
         api_result_t result = board.api.handleCommand(value);
-        Serial.printf("API command: %s Result: %s\n", value, board.api.resultStr(result));
+        char reply[BLE_API_RESPONSE_MAXSIZE];
+        snprintf(reply, BLE_API_RESPONSE_MAXSIZE, "%d:%s:%s", result, board.api.resultStr(result), value);
+        Serial.printf("[BLE] Reply: %s\n", reply);
+        setApiValue(reply);
         if (AR_SUCCESS == result)
             board.led.blink(2, 100, 300);
         else
@@ -277,7 +313,7 @@ void BLE::onNotify(BLECharacteristic *pCharacteristic){
     //Serial.printf("[BLE] Sending notification: %d\n", pCharacteristic->getValue<int>());
 };
 
-void BLE::onSubscribe(BLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue) {
+void BLE::onSubscribe(BLECharacteristic *c, ble_gap_conn_desc *desc, uint16_t subValue) {
     Serial.printf("[BLE] Client ID: %d Address: %s ",
                   desc->conn_handle,
                   BLEAddress(desc->peer_ota_addr).toString().c_str());
@@ -289,16 +325,7 @@ void BLE::onSubscribe(BLECharacteristic *pCharacteristic, ble_gap_conn_desc *des
         Serial.print("Subscribed to indications for ");
     else if (subValue == 3)
         Serial.print("subscribed to notifications and indications for ");
-    if (cpmChar->getHandle() == pCharacteristic->getHandle())
-        Serial.println("CPS");
-    else if (cscServiceActive && cscmChar->getHandle() == pCharacteristic->getHandle())  // only reference cscmChar if it has been initialized
-        Serial.println("CSC");
-    else if (blChar->getHandle() == pCharacteristic->getHandle())
-        Serial.println("BS");
-    else if (apiChar->getHandle() == pCharacteristic->getHandle())
-        Serial.println("API");
-    else
-        Serial.println(pCharacteristic->getUUID().toString().c_str());
+    Serial.println(characteristicStr(c));
 };
 
 //bool BLE::onConfirmPIN(uint32_t pin) { Serial.println("onConfirmPIN"); return true; }

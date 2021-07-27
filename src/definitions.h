@@ -28,10 +28,4 @@
 #define HX711_IGN_LOW_SAMPLE 1           //
 #define HX711_SCK_DELAY 1                // microsecond delay after writing sck pin high or low. This delay could be required for faster mcu's.
 
-#define BOOTMODE_INVALID -1
-#define BOOTMODE_LIVE 1
-#define BOOTMODE_LIVE_S "live"
-#define BOOTMODE_SETUP 2
-#define BOOTMODE_SETUP_S "setup"
-
 #endif

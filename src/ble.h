@@ -3,10 +3,15 @@
 
 #include <Arduino.h>
 #include <NimBLEDevice.h>
+#include <CircularBuffer.h>
 
 #include "ble_constants.h"
 #include "haspreferences.h"
 #include "task.h"
+
+#ifndef BLE_API_RESPONSE_MAXSIZE
+#define BLE_API_RESPONSE_MAXSIZE 64
+#endif
 
 class BLE : public Task,
             public HasPreferences,
@@ -61,7 +66,9 @@ class BLE : public Task,
     void notifyPower(const ulong t);
     void notifyCadence(const ulong t);
     void notifyBattery(const ulong t);
-    void setApiResponse(const char *response);
+    void setApiValue(const char *response);
+    const char *characteristicStr(BLECharacteristic *c);
+    void stop();
 
     void onConnect(BLEServer *pServer, ble_gap_conn_desc *desc);
     void onDisconnect(BLEServer *pServer);
@@ -81,6 +88,10 @@ class BLE : public Task,
     void loadSettings();
     void saveSettings();
     void printSettings();
+
+   private:
+    CircularBuffer<uint16_t, 32> _clients;
+    bool _hasClient(uint16_t handle);
 };
 
 #endif

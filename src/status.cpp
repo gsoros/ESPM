@@ -359,16 +359,16 @@ void Status::handleInput(const char input) {
             case 't':  // boot mode
                 if (BOOTMODE_LIVE == board.bootMode) {
                     board.setBootMode(BOOTMODE_SETUP);
-                    Serial.printf("Next boot will be in %s mode\n", BOOTMODE_SETUP_S);
+                    Serial.printf("Next boot will be in %s mode\n", board.bootModeStr(BOOTMODE_SETUP));
                     return;
                 }
                 board.setBootMode(BOOTMODE_LIVE);
-                Serial.printf("Next boot will be in %s mode\n", BOOTMODE_LIVE_S);
+                Serial.printf("Next boot will be in %s mode\n", board.bootModeStr(BOOTMODE_LIVE));
                 return;
             case 'r':
                 Serial.print("Rebooting...\n");
                 Serial.flush();
-                ESP.restart();
+                board.reboot();
                 return;
             case 'd':
                 board.deepSleep();
