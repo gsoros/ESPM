@@ -203,8 +203,8 @@ class Board : public HasPreferences,
         delay(500);
         wifiSerial.disconnect();
 #endif
-        delay(500);
         ble.stop();
+        delay(500);
         esp_sleep_enable_ext0_wakeup(MPU_WOM_INT_PIN, HIGH);
         esp_deep_sleep_start();
     }

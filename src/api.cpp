@@ -29,9 +29,9 @@ api_result_t API::handleCommand(const char *commandWithArg) {
         strncpy(command, commandWithArg, sizeof command);
     }
     Serial.printf("%s command=%s arg=%s\n", tag, command, arg);
-    if (0 == strcmp(command, commandStr(AC_BOOTMODE)) || atoi(command) == AC_BOOTMODE)
-        return setBootMode(arg);
-    if (0 == strcmp(command, commandStr(AC_REBOOT)) || atoi(command) == AC_REBOOT) {
+    api_command_t commandCode = (api_command_t)atoi(command);
+    if (0 == strcmp(command, commandStr(AC_BOOTMODE)) || commandCode == AC_BOOTMODE) return setBootMode(arg);
+    if (0 == strcmp(command, commandStr(AC_REBOOT)) || commandCode == AC_REBOOT) {
         board.reboot();
         return AR_SUCCESS;
     }
@@ -40,15 +40,14 @@ api_result_t API::handleCommand(const char *commandWithArg) {
 }
 
 api_result_t API::setBootMode(const char *mode) {
-    bootmode_t bootMode = BOOTMODE_INVALID;
-    if (0 == strcmp(mode, board.bootModeStr(BOOTMODE_LIVE)) || atoi(mode) == BOOTMODE_LIVE) {
+    bootmode_t bootMode = (bootmode_t)atoi(mode);
+    if (0 == strcmp(mode, board.bootModeStr(BOOTMODE_LIVE)) || bootMode == BOOTMODE_LIVE) {
         bootMode = BOOTMODE_LIVE;
-    } else if (0 == strcmp(mode, board.bootModeStr(BOOTMODE_SETUP)) || atoi(mode) == BOOTMODE_SETUP) {
+    } else if (0 == strcmp(mode, board.bootModeStr(BOOTMODE_SETUP)) || bootMode == BOOTMODE_SETUP) {
         bootMode = BOOTMODE_SETUP;
-    }
-    if (BOOTMODE_INVALID == bootMode) {
-        Serial.printf("%s %s: %s\n", tag, resultStr(AR_UNKNOWN_BOOTMODE), mode);
-        return AR_UNKNOWN_BOOTMODE;
+    } else {
+        Serial.printf("%s %s: %s\n", tag, resultStr(AR_BOOTMODE_INVALID), mode);
+        return AR_BOOTMODE_INVALID;
     }
     if (board.setBootMode(bootMode))
         return AR_SUCCESS;

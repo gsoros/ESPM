@@ -76,10 +76,7 @@ void BLE::startPowerService() {
     // Cycling Power Mmeasurement
     cpmChar = cps->createCharacteristic(
         BLEUUID(CYCLING_POWER_MEASUREMENT_CHAR_UUID),
-        NIMBLE_PROPERTY::READ
-            //| NIMBLE_PROPERTY::READ_ENC
-            //| NIMBLE_PROPERTY::WRITE
-            | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::INDICATE);
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
     cpmChar->setCallbacks(this);
     cps->start();
 
@@ -132,10 +129,7 @@ void BLE::startCadenceService() {
     // Cycling Speed and Cadence Measurement
     cscmChar = cscs->createCharacteristic(
         BLEUUID(CSC_MEASUREMENT_CHAR_UUID),
-        NIMBLE_PROPERTY::READ
-            //| NIMBLE_PROPERTY::READ_ENC
-            //| NIMBLE_PROPERTY::WRITE
-            | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::INDICATE);
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
     cscmChar->setCallbacks(this);
     cscs->start();
     advertising->addServiceUUID(cscsUUID);
@@ -153,7 +147,7 @@ void BLE::startBatterySerice() {
     bls = server->createService(blsUUID);
     blChar = bls->createCharacteristic(
         BLEUUID(BATTERY_LEVEL_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
     blChar->setCallbacks(this);
     BLEDescriptor *blDesc = blChar->createDescriptor(
         BLEUUID(BATTERY_LEVEL_DESC_UUID),
@@ -170,7 +164,9 @@ void BLE::startApiSerice() {
     as = server->createService(asUUID);
     apiChar = as->createCharacteristic(
         BLEUUID(API_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE);
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE
+        //| NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_ENC
+    );
     apiChar->setCallbacks(this);
     strncpy(s, "Ready", 32);
     apiChar->setValue((uint8_t *)s, strlen(s));

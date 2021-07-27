@@ -10,13 +10,14 @@ enum api_result_t {
     AR_UNKNOWN_COMMAND,
     AR_COMMAND_TOO_LONG,
     AR_ARG_TOO_LONG,
-    AR_UNKNOWN_BOOTMODE
+    AR_BOOTMODE_INVALID
 };
 
-enum api_command_t {  // skip 0 so we can use atoi for comparison
-    AC_BOOTMODE = 1,
-    AC_HOSTNAME = 2,
-    AC_REBOOT = 3
+enum api_command_t {
+    AC_INVALID,
+    AC_BOOTMODE,
+    AC_HOSTNAME,
+    AC_REBOOT
 };
 
 class API {
@@ -38,14 +39,16 @@ class API {
                 return "Command too long";
             case AR_ARG_TOO_LONG:
                 return "Argument too long";
-            case AR_UNKNOWN_BOOTMODE:
-                return "Unknown bootmode";
+            case AR_BOOTMODE_INVALID:
+                return "Invalid bootmode";
         }
         return "Unknown error";
     }
 
     const char *commandStr(api_command_t command) {
         switch (command) {
+            case AC_INVALID:
+                return "invalid";
             case AC_BOOTMODE:
                 return "bootmode";
             case AC_HOSTNAME:
@@ -53,7 +56,7 @@ class API {
             case AC_REBOOT:
                 return "reboot";
         }
-        return "";
+        return "unknown";
     }
 };
 
