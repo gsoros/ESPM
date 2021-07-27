@@ -292,16 +292,17 @@ void BLE::onRead(BLECharacteristic *c) {
 };
 
 void BLE::onWrite(BLECharacteristic *c) {
-    const char *value = c->getValue().c_str();
+    char value[BLE_CHAR_VALUE_MAXLENGTH] = "";
+    strncpy(value, c->getValue().c_str(), BLE_CHAR_VALUE_MAXLENGTH);
     Serial.printf("[BLE] %s: onWrite(), value: %s\n",
                   characteristicStr(c),
                   value);
     if (c->getHandle() == apiChar->getHandle()) {
         api_result_t result = board.api.handleCommand(value);
-        char reply[BLE_API_RESPONSE_MAXSIZE];
-        snprintf(reply, BLE_API_RESPONSE_MAXSIZE, "%d:%s:%s", result, board.api.resultStr(result), value);
-        Serial.printf("[BLE] Reply: %s\n", reply);
-        setApiValue(reply);
+        char response[BLE_CHAR_VALUE_MAXLENGTH] = "";
+        snprintf(response, BLE_CHAR_VALUE_MAXLENGTH, "%d:%s; %s", result, board.api.resultStr(result), value);
+        Serial.printf("[BLE] response: %s\n", response);
+        setApiValue(response);
         if (AR_SUCCESS == result)
             board.led.blink(2, 100, 300);
         else

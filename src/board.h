@@ -196,13 +196,15 @@ class Board : public HasPreferences,
         strain.sleep();
         mpu.enableWomSleep();
         //pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
+        ble.setApiValue("Sleep...");
 #ifdef FEATURE_SERIAL
         Serial.println("[Board] Entering deep sleep");
         Serial.flush();
-        delay(1000);
+        delay(500);
         wifiSerial.disconnect();
 #endif
-        delay(1000);
+        delay(500);
+        ble.stop();
         esp_sleep_enable_ext0_wakeup(MPU_WOM_INT_PIN, HIGH);
         esp_deep_sleep_start();
     }

@@ -9,9 +9,7 @@
 #include "haspreferences.h"
 #include "task.h"
 
-#ifndef BLE_API_RESPONSE_MAXSIZE
-#define BLE_API_RESPONSE_MAXSIZE 64
-#endif
+#define BLE_CHAR_VALUE_MAXLENGTH 128
 
 class BLE : public Task,
             public HasPreferences,
