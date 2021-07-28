@@ -357,13 +357,15 @@ void Status::handleInput(const char input) {
                 }
                 break;
             case 't':  // boot mode
-                if (BOOTMODE_LIVE == board.bootMode) {
-                    board.setBootMode(BOOTMODE_SETUP);
-                    Serial.printf("Next boot will be in %s mode\n", board.bootModeStr(BOOTMODE_SETUP));
-                    return;
-                }
-                board.setBootMode(BOOTMODE_LIVE);
-                Serial.printf("Next boot will be in %s mode\n", board.bootModeStr(BOOTMODE_LIVE));
+                Board::BootMode mode;
+                mode =
+                    (Board::BootMode::config == board.bootMode)
+                        ? Board::BootMode::live
+                        : Board::BootMode::config;
+                if (board.setBootMode(mode))
+                    Serial.printf("Next boot will be in %s mode\n", board.bootModeStr(mode));
+                else
+                    Serial.printf("Error setting bootmode %d\n", (int)mode);
                 return;
             case 'r':
                 Serial.print("Rebooting...\n");

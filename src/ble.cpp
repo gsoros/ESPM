@@ -294,12 +294,12 @@ void BLE::onWrite(BLECharacteristic *c) {
                   characteristicStr(c),
                   value);
     if (c->getHandle() == apiChar->getHandle()) {
-        api_result_t result = board.api.handleCommand(value);
+        API::Result result = board.api.handleCommand(value);
         char response[BLE_CHAR_VALUE_MAXLENGTH] = "";
-        snprintf(response, BLE_CHAR_VALUE_MAXLENGTH, "%d:%s; %s", result, board.api.resultStr(result), value);
+        snprintf(response, BLE_CHAR_VALUE_MAXLENGTH, "%d:%s; %s", (int)result, board.api.resultStr(result), value);
         Serial.printf("[BLE] response: %s\n", response);
         setApiValue(response);
-        if (AR_SUCCESS == result)
+        if (API::Result::success == result)
             board.led.blink(2, 100, 300);
         else
             board.led.blink(10, 100, 100);

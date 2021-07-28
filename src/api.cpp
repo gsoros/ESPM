@@ -2,7 +2,7 @@
 #include "board.h"
 
 // Format: command || command=arg
-api_result_t API::handleCommand(const char *commandWithArg) {
+API::Result API::handleCommand(const char *commandWithArg) {
     Serial.printf("%s Handling command %s\n", tag, commandWithArg);
     char command[API_COMMAND_MAXLENGTH] = "";
     char arg[API_ARG_MAXLENGTH] = "";
@@ -10,46 +10,50 @@ api_result_t API::handleCommand(const char *commandWithArg) {
     if (eqSign) {
         int eqPos = eqSign - commandWithArg;
         if (API_COMMAND_MAXLENGTH < eqPos) {
-            Serial.printf("%s %s: %s\n", tag, resultStr(AR_COMMAND_TOO_LONG), commandWithArg);
-            return AR_COMMAND_TOO_LONG;
+            Serial.printf("%s %s: %s\n", tag, resultStr(Result::commandTooLong), commandWithArg);
+            return Result::commandTooLong;
         }
         strncpy(command, commandWithArg, eqPos);
         int argSize = strlen(commandWithArg) - eqPos - 1;
         //Serial.printf("%s argSize=%d\n", tag, argSize);
         if (API_ARG_MAXLENGTH < argSize) {
-            Serial.printf("%s %s: %s\n", tag, resultStr(AR_ARG_TOO_LONG), commandWithArg);
-            return AR_ARG_TOO_LONG;
+            Serial.printf("%s %s: %s\n", tag, resultStr(Result::argTooLong), commandWithArg);
+            return Result::argTooLong;
         }
         strncpy(arg, eqSign + 1, argSize);
     } else {
         if (API_COMMAND_MAXLENGTH < strlen(commandWithArg)) {
-            Serial.printf("%s %s: %s\n", tag, resultStr(AR_COMMAND_TOO_LONG), commandWithArg);
-            return AR_COMMAND_TOO_LONG;
+            Serial.printf("%s %s: %s\n", tag, resultStr(Result::commandTooLong), commandWithArg);
+            return Result::commandTooLong;
         }
         strncpy(command, commandWithArg, sizeof command);
     }
     Serial.printf("%s command=%s arg=%s\n", tag, command, arg);
-    api_command_t commandCode = (api_command_t)atoi(command);
-    if (0 == strcmp(command, commandStr(AC_BOOTMODE)) || commandCode == AC_BOOTMODE) return setBootMode(arg);
-    if (0 == strcmp(command, commandStr(AC_REBOOT)) || commandCode == AC_REBOOT) {
-        board.reboot();
-        return AR_SUCCESS;
-    }
-    Serial.printf("%s %s: %s\n", tag, resultStr(AR_UNKNOWN_COMMAND), command);
-    return AR_UNKNOWN_COMMAND;
+    Command commandCode = (Command)atoi(command);
+    if (0 == strcmp(command, commandStr(Command::bootMode)) || commandCode == Command::bootMode)
+        return commandBootMode(arg);
+    if (0 == strcmp(command, commandStr(Command::reboot)) || commandCode == Command::reboot)
+        return commandReboot();
+    Serial.printf("%s %s: %s\n", tag, resultStr(Result::unknownCommand), command);
+    return Result::unknownCommand;
 }
 
-api_result_t API::setBootMode(const char *mode) {
-    bootmode_t bootMode = (bootmode_t)atoi(mode);
-    if (0 == strcmp(mode, board.bootModeStr(BOOTMODE_LIVE)) || bootMode == BOOTMODE_LIVE) {
-        bootMode = BOOTMODE_LIVE;
-    } else if (0 == strcmp(mode, board.bootModeStr(BOOTMODE_SETUP)) || bootMode == BOOTMODE_SETUP) {
-        bootMode = BOOTMODE_SETUP;
+API::Result API::commandBootMode(const char *modeStr) {
+    Board::BootMode modeCode = (Board::BootMode)atoi(modeStr);
+    if (0 == strcmp(modeStr, board.bootModeStr(Board::BootMode::live)) || modeCode == Board::BootMode::live) {
+        modeCode = Board::BootMode::live;
+    } else if (0 == strcmp(modeStr, board.bootModeStr(Board::BootMode::config)) || modeCode == Board::BootMode::config) {
+        modeCode = Board::BootMode::config;
     } else {
-        Serial.printf("%s %s: %s\n", tag, resultStr(AR_BOOTMODE_INVALID), mode);
-        return AR_BOOTMODE_INVALID;
+        Serial.printf("%s %s: %s\n", tag, resultStr(Result::bootModeInvalid), modeStr);
+        return Result::bootModeInvalid;
     }
-    if (board.setBootMode(bootMode))
-        return AR_SUCCESS;
-    return AR_ERROR;
+    if (board.setBootMode(modeCode))
+        return Result::success;
+    return Result::error;
+}
+
+API::Result API::commandReboot() {
+    board.reboot();
+    return Result::success;
 }

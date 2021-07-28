@@ -20,6 +20,7 @@ void Power::onCrankEvent(const ulong msSinceLastEvent) {
         //log_e("strain not ready, skipping loop at %d, SPS=%f", millis(), board.strain.device->getSPS());
         return;
     }
+    /*
     double deltaT = msSinceLastEvent / 1000.0;  // t(s)
     float radius = crankLength / 1000.0;        // r(m)
     float distance = 2.0 * radius * PI;         // s(m)   = 2 * r(m) * π
@@ -27,6 +28,15 @@ void Power::onCrankEvent(const ulong msSinceLastEvent) {
     float mass = board.strain.value(true);      // m(kg)
     float force = mass * 9.80665;               // F(N)   = m(kg) * G(m/s/s)
     float power = force * velocity;             // P(W)   = F(N) * v(m/s)
+                                                // P      = m * G * v
+                                                // P      = m * 9.80665 * s / t
+                                                // P      = m * 9.80665 * 2 * r * π / t
+                                                // power  = board.strain.value(true) * 9.80665 * 2 * crankLength / 1000.0 * π / (msSinceLastEvent / 1000.0)
+                                                // power  = board.strain.value(true) / msSinceLastEvent * crankLength * 9.80665 * 2  / 1000.0 * π  * 1000.0
+                                                // power  = board.strain.value(true) / msSinceLastEvent * crankLength * 9.80665 * 2 * π
+                                                // power  = board.strain.value(true) / msSinceLastEvent * crankLength * 61.616999192652692
+    */
+    float power = board.strain.value(true) / msSinceLastEvent * crankLength * 61.616999192652692;
     if (reportDouble) power *= 2;
     if (power < 0.0)
         power = 0.0;

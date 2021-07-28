@@ -4,56 +4,57 @@
 #define API_COMMAND_MAXLENGTH 32
 #define API_ARG_MAXLENGTH 32
 
-enum api_result_t {
-    AR_SUCCESS,
-    AR_ERROR,
-    AR_UNKNOWN_COMMAND,
-    AR_COMMAND_TOO_LONG,
-    AR_ARG_TOO_LONG,
-    AR_BOOTMODE_INVALID
-};
-
-enum api_command_t {
-    AC_INVALID,
-    AC_BOOTMODE,
-    AC_HOSTNAME,
-    AC_REBOOT
-};
-
 class API {
    public:
+    enum Result {
+        success,
+        error,
+        unknownCommand,
+        commandTooLong,
+        argTooLong,
+        bootModeInvalid
+    };
+
+    enum Command {
+        invalid,
+        bootMode,
+        hostName,
+        reboot
+    };
+
     const char *tag = "[API]";
 
-    api_result_t handleCommand(const char *command);
-    api_result_t setBootMode(const char *mode);
+    Result handleCommand(const char *commandWithArg);
+    Result commandBootMode(const char *modeStr);
+    Result commandReboot();
 
-    const char *resultStr(api_result_t result) {
-        switch (result) {
-            case AR_SUCCESS:
+    const char *resultStr(Result r) {
+        switch (r) {
+            case success:
                 return "OK";
-            case AR_ERROR:
+            case error:
                 return "Generic error";
-            case AR_UNKNOWN_COMMAND:
+            case unknownCommand:
                 return "Unknown command";
-            case AR_COMMAND_TOO_LONG:
+            case commandTooLong:
                 return "Command too long";
-            case AR_ARG_TOO_LONG:
+            case argTooLong:
                 return "Argument too long";
-            case AR_BOOTMODE_INVALID:
+            case bootModeInvalid:
                 return "Invalid bootmode";
         }
         return "Unknown error";
     }
 
-    const char *commandStr(api_command_t command) {
-        switch (command) {
-            case AC_INVALID:
+    const char *commandStr(Command c) {
+        switch (c) {
+            case invalid:
                 return "invalid";
-            case AC_BOOTMODE:
+            case bootMode:
                 return "bootmode";
-            case AC_HOSTNAME:
+            case hostName:
                 return "hostname";
-            case AC_REBOOT:
+            case reboot:
                 return "reboot";
         }
         return "unknown";

@@ -28,16 +28,15 @@
 #include "webserver.h"
 #endif
 
-enum bootmode_t {
-    BOOTMODE_INVALID = -1,
-    BOOTMODE_LIVE = 1,
-    BOOTMODE_SETUP = 2
-};
-
 // The one in charge
 class Board : public HasPreferences,
               public Task {
    public:
+    enum BootMode {
+        invalid,
+        live,
+        config
+    };
     Preferences boardPreferences = Preferences();
 #ifdef FEATURE_SERIAL
     HardwareSerial hwSerial = HardwareSerial(0);
@@ -56,8 +55,8 @@ class Board : public HasPreferences,
 #ifdef FEATURE_WEBSERVER
     WebServer webserver;
 #endif
-    bootmode_t bootMode = BOOTMODE_LIVE;
-    bootmode_t lastBootMode = BOOTMODE_INVALID;
+    BootMode bootMode = BootMode::live;
+    BootMode lastBootMode = BootMode::invalid;
     bool sleepEnabled = true;
     char hostName[32] = HOSTNAME;
 
@@ -71,7 +70,7 @@ class Board : public HasPreferences,
         lastBootMode = bootMode;
         //bootMode = BOOTMODE_SETUP;
         led.setup();
-        if (BOOTMODE_SETUP == bootMode) {
+        if (BootMode::config == bootMode) {
             wifi.setup(preferences);
 #ifdef FEATURE_SERIAL
             wifiSerial.setup();
@@ -84,11 +83,11 @@ class Board : public HasPreferences,
         mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
         strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
         power.setup(preferences);
-        if (BOOTMODE_SETUP == bootMode) {
+        if (BootMode::config == bootMode) {
             ota.setup(hostName);
         }
         status.setup();
-        if (BOOTMODE_SETUP == bootMode) {
+        if (BootMode::config == bootMode) {
 #ifdef FEATURE_WEBSERVER
             webserver.setup();
 #endif
@@ -96,7 +95,7 @@ class Board : public HasPreferences,
     }
 
     void startTasks() {
-        if (BOOTMODE_SETUP == bootMode) {
+        if (BootMode::config == bootMode) {
 #ifdef FEATURE_SERIAL
             wifiSerial.taskStart("WifiSerial Task", 10);
 #endif
@@ -107,13 +106,13 @@ class Board : public HasPreferences,
         mpu.taskStart("MPU Task", 125);
         strain.taskStart("Strain Task", 90);
         power.taskStart("Power Task", 10);
-        if (BOOTMODE_SETUP == bootMode) {
+        if (BootMode::config == bootMode) {
             ota.taskStart("OTA Task", 10, 8192);
         }
         status.taskStart("Status Task", 10);
         led.taskStart("Led Task", 10);
         taskStart("Board Task", 1);
-        if (BOOTMODE_SETUP == bootMode) {
+        if (BootMode::config == bootMode) {
 #ifdef FEATURE_WEBSERVER
             webserver.taskStart("Webserver Task", 20, 8192);
 #endif
@@ -140,11 +139,11 @@ class Board : public HasPreferences,
         if (1 < strlen(tmpHostName)) {
             strncpy(hostName, tmpHostName, 32);
         }
-        int mode = preferences->getInt("bootMode", bootMode);
+        BootMode mode = (BootMode)preferences->getInt("bootMode", bootMode);
         switch (mode) {
-            case BOOTMODE_LIVE:
-            case BOOTMODE_SETUP:
-                bootMode = (bootmode_t)mode;
+            case BootMode::live:
+            case BootMode::config:
+                bootMode = mode;
                 break;
             default:
                 Serial.printf("[Board] loadSettings: invalid bootmode: %d\n", mode);
@@ -157,8 +156,8 @@ class Board : public HasPreferences,
         if (!preferencesStartSave()) return;
         preferences->putString("hostName", hostName);
         switch (bootMode) {
-            case BOOTMODE_LIVE:
-            case BOOTMODE_SETUP:
+            case BootMode::live:
+            case BootMode::config:
                 preferences->putInt("bootMode", (int)bootMode);
                 break;
             default:
@@ -209,11 +208,12 @@ class Board : public HasPreferences,
         esp_deep_sleep_start();
     }
 
-    bool setBootMode(bootmode_t mode) {
+    bool setBootMode(BootMode mode) {
         switch (mode) {
-            case BOOTMODE_LIVE:
-            case BOOTMODE_SETUP:
+            case BootMode::live:
+            case BootMode::config:
                 break;
+            case BootMode::invalid:
             default:
                 Serial.printf("[Board] Invalid bootmode: %d\n", mode);
                 return false;
@@ -228,8 +228,8 @@ class Board : public HasPreferences,
 
     void setNextBootMode() {
         /*
-        if (BOOTMODE_SETUP == bootMode) {
-            bootMode = BOOTMODE_LIVE;
+        if (BootMode::config == bootMode) {
+            bootMode = BootMode::live;
             saveSettings();
         }
         */
@@ -239,13 +239,13 @@ class Board : public HasPreferences,
         Serial.printf("[Board] BootMode: %s\n", bootModeStr(bootMode));
     }
 
-    const char *bootModeStr(bootmode_t mode) {
+    const char *bootModeStr(BootMode mode) {
         switch (mode) {
-            case BOOTMODE_LIVE:
+            case BootMode::live:
                 return "live";
-            case BOOTMODE_SETUP:
-                return "setup";
-            case BOOTMODE_INVALID:
+            case BootMode::config:
+                return "config";
+            case BootMode::invalid:
                 return "invalid";
         }
         return "unknown";
