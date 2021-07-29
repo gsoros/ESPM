@@ -388,6 +388,7 @@ void BLE::setSecureApi(bool state) {
     if (state == secureApi) return;
     secureApi = state;
     saveSettings();
+    Serial.printf("[BLE] SecureAPI %sabled\n", secureApi ? "en" : "dis");
     /* TODO deinit() does not return
     stop();
     setup(deviceName, preferences);
@@ -398,6 +399,7 @@ void BLE::setPasskey(uint32_t newPasskey) {
     if (newPasskey == passkey) return;
     passkey = newPasskey;
     saveSettings();
+    Serial.printf("[BLE] New passkey: %d\n", passkey);
     /* TODO deinit() does not return
     stop();
     setup(deviceName, preferences);

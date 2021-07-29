@@ -67,7 +67,6 @@ API::Result API::commandPasskey(const char *passkeyStr) {
     strncpy(keyS, passkeyStr, 6);
     uint32_t keyI = (uint32_t)atoi(keyS);
     if (999999 < keyI) return Result::passkeyInvalid;
-    Serial.printf("%s Setting new passkey: %d\n", tag, keyI);
     board.ble.setApiValue("Setting new passkey");
     board.ble.setPasskey(keyI);
     return Result::success;
@@ -76,10 +75,9 @@ API::Result API::commandPasskey(const char *passkeyStr) {
 API::Result API::commandSecureApi(const char *secureApiStr) {
     if (0 == strcmp("true", secureApiStr) || 0 == strcmp("1", secureApiStr)) {
         if (board.ble.secureApi) {
-            board.ble.setApiValue("Already using secureAPI");
+            board.ble.setApiValue("secureAPI already enabled");
             return Result::success;
         }
-        Serial.printf("%s Enabling secureAPI\n", tag);
         board.ble.setApiValue("Enabling secureAPI");
         board.ble.setSecureApi(true);
         return Result::success;
@@ -89,7 +87,6 @@ API::Result API::commandSecureApi(const char *secureApiStr) {
             board.ble.setApiValue("SecureAPI already disabled");
             return Result::success;
         }
-        Serial.printf("%s Disabling secureAPI\n", tag);
         board.ble.setApiValue("Disabling secureAPI");
         board.ble.setSecureApi(false);
         return Result::success;
