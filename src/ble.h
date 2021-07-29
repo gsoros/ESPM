@@ -41,7 +41,7 @@ class BLE : public Task,
     bool cadenceInCpm = true;       // whether to include cadence data in CPM
     bool cscServiceActive = false;  // whether CSC service should be active
     bool secureApi = false;         // whether to use LESC for API service
-    uint32_t passkey = 696669;      // max 6 digits
+    uint32_t passkey = 696669;      // passkey for API service, max 6 digits
 
     uint16_t power = 0;
     uint16_t crankRevs = 0;
@@ -81,10 +81,6 @@ class BLE : public Task,
     void onWrite(BLECharacteristic *pCharacteristic);
     void onNotify(BLECharacteristic *pCharacteristic);
     void onSubscribe(BLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue);
-
-    //bool onConfirmPIN(uint32_t pin);
-    //uint32_t onPassKeyRequest();
-    //void onAuthenticationComplete(ble_gap_conn_desc *desc);
 
     void setCadenceInCpm(bool state);
     void setCscServiceActive(bool state);

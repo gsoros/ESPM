@@ -45,12 +45,11 @@ void MPU::loop() {
         calibrateMag();
         magNeedsCalibration = false;
     }
-    if (!updateEnabled) {
+    if (!updateEnabled)
         return;
-    }
-    if (!device->update()) {
+    if (!device->update())
         return;
-    }
+    // RPM calculation, TODO not really needed anymore
     const ulong t = millis();
     float angle = device->getYaw() + 180.0;  // -180...180 -> 0...360
     float newRpm = 0.0;
@@ -84,6 +83,7 @@ void MPU::loop() {
         }
         _dataReady = true;
     }
+    // Crank event detection
     if ((_previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= _previousAngle)) {
         if (!_halfRevolution) {
             if (0 < lastCrankEventTime) {
@@ -107,7 +107,6 @@ void MPU::loop() {
 
 float MPU::rpm(bool unsetDataReadyFlag) {
     if (unsetDataReadyFlag) _dataReady = false;
-    //return 60.0;
     return _rpm;
 }
 
@@ -124,6 +123,7 @@ MPU::Quaternion MPU::quaternion() {
     return q;
 }
 
+// Enable wake-on-motion and go to sleep
 void MPU::enableWomSleep(void) {
     Serial.println("[MPU] Enabling W-O-M sleep");
     updateEnabled = false;

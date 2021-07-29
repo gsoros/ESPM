@@ -86,7 +86,7 @@ int WifiSerial::read() {
 }
 
 int WifiSerial::peek() {
-    return _rx_buf.first();
+    return available() ? _rx_buf.first() : 0;
 }
 
 void WifiSerial::flush() {

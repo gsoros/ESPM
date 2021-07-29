@@ -8,7 +8,7 @@ void Strain::setup(const gpio_num_t doutPin,
     this->doutPin = doutPin;
     this->sckPin = sckPin;
     preferencesSetup(p, preferencesNS);
-    rtc_gpio_hold_dis(sckPin);
+    rtc_gpio_hold_dis(sckPin);  // required to put HX711 into sleep mode
     device = new HX711_ADC(doutPin, sckPin);
     device->begin();
     Serial.print("[STRAIN] Starting HX711, waiting for tare...");
@@ -23,15 +23,15 @@ void Strain::setup(const gpio_num_t doutPin,
 }
 
 void Strain::loop() {
-    if (1 != device->update()) {  // 1: data ready; 2: tare complete
+    if (1 != device->update())  // 1: data ready; 2: tare complete
         return;
-    }
     _measurementBuf.push(device->getData());
 }
 
 // returns the average of the measurement values in the buffer, optionally emtying the buffer
 float Strain::value(bool clearBuffer) {
     float avg = 0.0;
+    if (!dataReady()) return avg;
     for (decltype(_measurementBuf)::index_t i = 0; i < _measurementBuf.size(); i++) {
         avg += _measurementBuf[i] / _measurementBuf.size();
     }
@@ -40,11 +40,11 @@ float Strain::value(bool clearBuffer) {
 }
 
 float Strain::liveValue() {
-    return _measurementBuf.last();
+    return dataReady() ? _measurementBuf.last() : 0.0;
 }
 
 bool Strain::dataReady() {
-    return _measurementBuf.size();
+    return 0 < _measurementBuf.size();
 }
 
 void Strain::sleep() {
@@ -82,7 +82,7 @@ void Strain::loadCalibration() {
         log_e("[Strain] Device has not yet been calibrated");
         return;
     }
-    device->setCalFactor(preferences->getFloat("calibration", 0));
+    device->setCalFactor(preferences->getFloat("calibration", 0.0));
     preferencesEnd();
 }
 

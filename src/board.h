@@ -112,11 +112,11 @@ class Board : public HasPreferences,
         status.taskStart("Status Task", 10);
         led.taskStart("Led Task", 10);
         taskStart("Board Task", 1);
-        if (BootMode::config == bootMode) {
 #ifdef FEATURE_WEBSERVER
+        if (BootMode::config == bootMode) {
             webserver.taskStart("Webserver Task", 20, 8192);
-#endif
         }
+#endif
     }
 
     void loop() {

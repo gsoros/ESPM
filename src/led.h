@@ -22,7 +22,7 @@ class Led : public Task {
         if (!state) {                      // led is off
             if (lastSet <= t - offTime) {  //
                 set(true, t);              // turn on
-                if (0 < count)             // we are executing a blink sequence
+                if (0 < count)             // in a blink sequence
                     count--;               // decrease remaining blinks counter
             }
             return;

@@ -59,7 +59,7 @@ class WifiConnection : public HasPreferences, public Task {
 
     void loadDefaultSettings() {
         settings.apEnable = true;
-        strncpy(settings.apSSID, "ESP32", 32);
+        strncpy(settings.apSSID, HOSTNAME, 32);
         strncpy(settings.apPassword, "", 32);
         settings.staEnable = false;
         strncpy(settings.staSSID, "", 32);
@@ -121,11 +121,13 @@ class WifiConnection : public HasPreferences, public Task {
                 settings.apEnable = false;
             } else {
                 log_i("Setting up WiFi AP '%s'\n", settings.apSSID);
-                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) { log_i("WiFi AP new connection, now active: %d\n",
-                                                                                 WiFi.softAPgetStationNum()); },
+                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+                    log_i("WiFi AP new connection, now active: %d\n", WiFi.softAPgetStationNum());
+                },
                              SYSTEM_EVENT_AP_STACONNECTED);
-                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) { log_i("WiFi AP station disconnected, now active: %d\n",
-                                                                                 WiFi.softAPgetStationNum()); },
+                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+                    log_i("WiFi AP station disconnected, now active: %d\n", WiFi.softAPgetStationNum());
+                },
                              SYSTEM_EVENT_AP_STADISCONNECTED);
                 WiFi.softAP(settings.apSSID, settings.apPassword);
             }
@@ -136,10 +138,13 @@ class WifiConnection : public HasPreferences, public Task {
                 settings.staEnable = false;
             } else {
                 log_i("Connecting WiFi STA to AP '%s'\n", settings.staSSID);
-                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) { log_i("WiFi STA connected, IP: %s\n",
-                                                                                 WiFi.localIP().toString().c_str()); },
+                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+                    log_i("WiFi STA connected, IP: %s\n", WiFi.localIP().toString().c_str());
+                },
                              SYSTEM_EVENT_STA_GOT_IP);
-                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) { log_i("WiFi STA disconnected\n"); },
+                WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+                    log_i("WiFi STA disconnected\n");
+                },
                              SYSTEM_EVENT_STA_LOST_IP);
                 WiFi.begin(settings.staSSID, settings.staPassword);
             }

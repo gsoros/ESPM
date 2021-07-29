@@ -98,43 +98,45 @@ void Status::print() {
 }
 
 /*
-        [c]alibrate 
-            [a]ccel/gyro
-            [m]ag
-            [b]attery
-            [s]train
-            set [c]rank length
-            toggle [r]everse strain
-            toggle r[e]verse mpu
-            toggle [d]ouble power
-            [p]rint calibration
+    [c]alibrate 
+        [a]ccel/gyro
+        [m]ag
+        [b]attery
+        [s]train
+        set [c]rank length
+        toggle [r]everse strain
+        toggle r[e]verse mpu
+        toggle [d]ouble power
+        [p]rint calibration
+        e[x]it
+    [w]ifi
+        [a]p
+            [e]nable
+            [s]sid
+            [p]assword
             e[x]it
-        [w]ifi
-            [a]p
-                [e]nable
-                [s]sid
-                [p]assword
-                e[x]it
-            [s]ta
-                [e]nable
-                [s]sid
-                [p]assword
-                e[x]it
-            [p]rint config
+        [s]ta
+            [e]nable
+            [s]sid
+            [p]assword
             e[x]it
-        [b]le
-            toggle c[a]dence in cpm
-            toggle [c]sc service
-            [p]rint config
-            e[x]it
-        c[o]nfig
-            [h]ostname
-            status [f]requency
-            sleep [d]elay
-        boo[t] mode
-        [r]eboot
-        [d]eep sleep
-    */
+        [p]rint config
+        e[x]it
+    [b]le
+        toggle c[a]dence in cpm
+        toggle [c]sc service
+        toggle [s]ecure api
+        pass[k]ey
+        [p]rint config
+        e[x]it
+    c[o]nfig
+        [h]ostname
+        status [f]requency
+        sleep [d]elay
+    boo[t] mode
+    [r]eboot
+    [d]eep sleep
+*/
 void Status::handleInput(const char input) {
     char tmpStr[32] = "";
     float tmpF = 0.0;
@@ -346,12 +348,22 @@ void Status::handleInput(const char input) {
                         board.ble.setCscServiceActive(!board.ble.cscServiceActive);
                         menu[1] = '\0';
                         break;
+                    case 's':
+                        board.ble.setSecureApi(!board.ble.secureApi);
+                        menu[1] = '\0';
+                        break;
+                    case 'k':
+                        Serial.print("Enter new numerical passkey (max 6 digits) and press [Enter]: ");
+                        getStr(tmpStr, 6);
+                        board.api.commandPasskey(tmpStr);
+                        menu[1] = '\0';
+                        break;
                     case 'x':
                         strncpy(menu, " ", 2);
                         break;
                     default:
                         board.ble.printSettings();
-                        Serial.print("BLE: toggle c[a]dence in cpm, toggle [c]sc service, [p]rint config or e[x]it\n");
+                        Serial.print("BLE: toggle c[a]dence in cpm, toggle [c]sc service, toggle [s]ecure api, pass[k]ey, [p]rint config or e[x]it\n");
                         menu[1] = getChar();
                         menu[2] = '\0';
                 }
