@@ -2,13 +2,19 @@
 #include "board.h"
 
 void BLE::setup(const char *deviceName, Preferences *p) {
+    strncpy(this->deviceName, deviceName, sizeof(this->deviceName));
     preferencesSetup(p, "BLE");
     loadSettings();
     printSettings();
+    enabled = true;
     BLEDevice::init(deviceName);
-    //NimBLEDevice::setSecurityAuth(false, false, false);
-    //NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
-    //NimBLEDevice::setSecurityPasskey(0);
+
+    if (secureApi) {
+        NimBLEDevice::setSecurityAuth(true, true, true);
+        NimBLEDevice::setSecurityPasskey(passkey);
+        NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
+    }
+
     server = BLEDevice::createServer();
     server->setCallbacks(this);
     advertising = server->getAdvertising();
@@ -17,9 +23,9 @@ void BLE::setup(const char *deviceName, Preferences *p) {
     //advertising->setScanResponse(false);
     //advertising->setMinPreferred(0x0);
 
-    startPowerService();
-    startCadenceService();
-    startBatterySerice();
+    startCpService();
+    startCscService();
+    startBlSerice();
     startApiSerice();
 
     server->start();
@@ -29,17 +35,18 @@ void BLE::setup(const char *deviceName, Preferences *p) {
 }
 
 void BLE::loop() {
+    if (!enabled) return;
     const ulong t = millis();
-    if (lastPowerNotification < t - 1000) notifyPower(t);
-    if (lastCadenceNotification < t - 1500) notifyCadence(t);
+    if (lastPowerNotification < t - 1000) notifyCp(t);
+    if (lastCadenceNotification < t - 1500) notifyCsc(t);
     if (lastBatteryLevel != board.battery.level) {
-        notifyBattery(t);
+        notifyBl(t);
     }
     if (!server->getAdvertising()->isAdvertising())
         startAdvertising();
 }
 
-void BLE::startPowerService() {
+void BLE::startCpService() {
     Serial.println("[BLE] Starting CPS");
     cpsUUID = BLEUUID(CYCLING_POWER_SERVICE_UUID);
     cps = server->createService(cpsUUID);
@@ -102,13 +109,13 @@ void BLE::startPowerService() {
     advertising->addServiceUUID(cpsUUID);
 }
 
-void BLE::stopPowerService() {
+void BLE::stopCpService() {
     Serial.println("[BLE] Stopping CPS");
     advertising->removeServiceUUID(cpsUUID);
     server->removeService(cps, true);
 }
 
-void BLE::startCadenceService() {
+void BLE::startCscService() {
     if (!cscServiceActive) return;
     Serial.println("[BLE] Starting CSCS");
     cscsUUID = BLEUUID(CYCLING_SPEED_CADENCE_SERVICE_UUID);
@@ -135,14 +142,15 @@ void BLE::startCadenceService() {
     advertising->addServiceUUID(cscsUUID);
 }
 
-void BLE::stopCadenceService() {
+void BLE::stopCscService() {
     Serial.println("[BLE] Stopping CSCS");
     advertising->removeServiceUUID(cscsUUID);
     server->removeService(cscs, true);
 }
 
-void BLE::startBatterySerice() {
-    Serial.println("[BLE] Starting BS");
+// Start Battey Level service
+void BLE::startBlSerice() {
+    Serial.println("[BLE] Starting BLS");
     blsUUID = BLEUUID(BATTERY_SERVICE_UUID);
     bls = server->createService(blsUUID);
     blChar = bls->createCharacteristic(
@@ -162,11 +170,10 @@ void BLE::startApiSerice() {
     char s[32] = "";
     asUUID = BLEUUID(API_SERVICE_UUID);
     as = server->createService(asUUID);
-    apiChar = as->createCharacteristic(
-        BLEUUID(API_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE
-        //| NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_ENC
-    );
+    uint32_t properties = NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE;
+    if (secureApi)
+        properties |= NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::WRITE_ENC | NIMBLE_PROPERTY::WRITE_AUTHEN;
+    apiChar = as->createCharacteristic(BLEUUID(API_CHAR_UUID), properties);
     apiChar->setCallbacks(this);
     strncpy(s, "Ready", 32);
     apiChar->setValue((uint8_t *)s, strlen(s));
@@ -183,12 +190,17 @@ void BLE::onCrankEvent(const ulong t, const uint16_t revolutions) {
     if (crankRevs < revolutions) {
         crankRevs = revolutions;
         lastCrankEventTime = (uint16_t)(t * 1.024);
-        notifyCadence(t);
+        notifyCsc(t);
     }
-    notifyPower(t);
+    notifyCp(t);
 }
 
-void BLE::notifyPower(const ulong t) {
+// notify Cycling Power service
+void BLE::notifyCp(const ulong t) {
+    if (!enabled) {
+        Serial.println("[BLE] Not enabled, not notifying CP");
+        return;
+    }
     if (t - 300 < lastPowerNotification) return;
     lastPowerNotification = t;
     power = (uint16_t)board.getPower();
@@ -214,7 +226,12 @@ void BLE::notifyPower(const ulong t) {
     cpmChar->notify();
 }
 
-void BLE::notifyCadence(const ulong t) {
+// notify Cycling Speed and Cadence service
+void BLE::notifyCsc(const ulong t) {
+    if (!enabled) {
+        Serial.println("[BLE] Not enabled, not notifying SCS");
+        return;
+    }
     if (!cscServiceActive) return;
     if (cscmChar == nullptr) return;
     if (t - 300 < lastCadenceNotification) return;
@@ -229,7 +246,13 @@ void BLE::notifyCadence(const ulong t) {
     cscmChar->notify();
 }
 
-void BLE::notifyBattery(const ulong t) {
+// Notify Battery Level service
+void BLE::notifyBl(const ulong t) {
+    if (!enabled) {
+        Serial.println("[BLE] Not enabled, not notifying BL");
+        return;
+    }
+
     if (t - 2000 < lastBatteryNotification) return;
     lastBatteryLevel = board.battery.level;
     lastBatteryNotification = t;
@@ -237,8 +260,12 @@ void BLE::notifyBattery(const ulong t) {
     blChar->notify();
 }
 
-void BLE::setApiValue(const char *response) {
-    apiChar->setValue((uint8_t *)response, strlen(response));
+void BLE::setApiValue(const char *val) {
+    if (!enabled) {
+        Serial.println("[BLE] Not enabled, not setting API value");
+        return;
+    }
+    apiChar->setValue((uint8_t *)val, strlen(val));
     apiChar->notify();
 }
 
@@ -251,16 +278,14 @@ const char *BLE::characteristicStr(BLECharacteristic *c) {
     return c->getUUID().toString().c_str();
 }
 
+// disconnect clients, stop advertising and shutdown BLE
 void BLE::stop() {
     while (!_clients.isEmpty())
         server->disconnect(_clients.shift());
     server->stopAdvertising();
-}
-
-bool BLE::_hasClient(uint16_t handle) {
-    for (decltype(_clients)::index_t i = 0; i < _clients.size(); i++)
-        if (_clients[i] == handle) return true;
-    return false;
+    enabled = false;
+    delay(100);  // give the BLE stack a chance to clear packets
+    //BLEDevice::deinit(true);  // TODO never returns
 }
 
 void BLE::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
@@ -268,7 +293,13 @@ void BLE::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
                   desc->conn_handle,
                   BLEAddress(desc->peer_ota_addr).toString().c_str());
     //NimBLEDevice::startSecurity(desc->conn_handle);
-    if (!_hasClient(desc->conn_handle)) _clients.push(desc->conn_handle);
+    // save client handle so we can gracefully disconnect them
+    bool savedClientHandle = false;
+    for (decltype(_clients)::index_t i = 0; i < _clients.size(); i++)
+        if (_clients[i] == desc->conn_handle)
+            savedClientHandle = true;
+    if (!savedClientHandle)
+        _clients.push(desc->conn_handle);
 }
 
 void BLE::onDisconnect(BLEServer *pServer) {
@@ -276,6 +307,10 @@ void BLE::onDisconnect(BLEServer *pServer) {
 }
 
 void BLE::startAdvertising() {
+    if (!enabled) {
+        Serial.println("[BLE] Not enabled, not starting advertising");
+        return;
+    }
     delay(300);
     Serial.println("[BLE] Start advertising");
     server->startAdvertising();
@@ -325,32 +360,52 @@ void BLE::onSubscribe(BLECharacteristic *c, ble_gap_conn_desc *desc, uint16_t su
     Serial.println(characteristicStr(c));
 };
 
-//bool BLE::onConfirmPIN(uint32_t pin) { Serial.println("onConfirmPIN"); return true; }
-//uint32_t BLE::onPassKeyRequest() {Serial.println("onPassKeyRequest");  return 0; }
-//void BLE::onAuthenticationComplete(ble_gap_conn_desc *desc) { Serial.println("onAuthenticationComplete"); }
-
 void BLE::setCadenceInCpm(bool state) {
-    if (cadenceInCpm == state) return;
+    if (state == cadenceInCpm) return;
     cadenceInCpm = state;
     saveSettings();
-    stopPowerService();
-    startPowerService();
+    stopCpService();
+    startCpService();
 }
 
 void BLE::setCscServiceActive(bool state) {
-    if (cscServiceActive == state) return;
+    if (state == cscServiceActive) return;
     cscServiceActive = state;
     saveSettings();
     if (cscServiceActive)
-        startCadenceService();
+        startCscService();
     else
-        stopCadenceService();
+        stopCscService();
+}
+
+void BLE::setSecureApi(bool state) {
+    if (state == secureApi) return;
+    secureApi = state;
+    saveSettings();
+    /* TODO deinit() does not return, hence reboot()
+    stop();
+    setup(deviceName, preferences);
+    */
+    board.reboot();
+}
+
+void BLE::setPasskey(uint32_t newPasskey) {
+    if (newPasskey == passkey) return;
+    passkey = newPasskey;
+    saveSettings();
+    /* TODO deinit() does not return, hence reboot()
+    stop();
+    setup(deviceName, preferences);
+    */
+    board.reboot();
 }
 
 void BLE::loadSettings() {
     if (!preferencesStartLoad()) return;
-    cadenceInCpm = preferences->getBool("cadenceInCpm", false);
-    cscServiceActive = preferences->getBool("cscService", true);
+    cadenceInCpm = preferences->getBool("cadenceInCpm", cadenceInCpm);
+    cscServiceActive = preferences->getBool("cscService", cscServiceActive);
+    secureApi = preferences->getBool("secureApi", secureApi);
+    passkey = (uint32_t)preferences->getInt("passkey", passkey);
     preferencesEnd();
 }
 
@@ -358,12 +413,14 @@ void BLE::saveSettings() {
     if (!preferencesStartSave()) return;
     preferences->putBool("cadenceInCpm", cadenceInCpm);
     preferences->putBool("cscService", cscServiceActive);
+    preferences->putBool("secureApi", secureApi);
+    preferences->putInt("passkey", (int32_t)passkey);
     preferencesEnd();
 }
 
 void BLE::printSettings() {
-    Serial.printf(
-        "[BLE] Settings\nAdd cadence data to CPM: %s\nCSC service active: %s\n",
-        cadenceInCpm ? "Yes" : "No",
-        cscServiceActive ? "Yes" : "No");
+    Serial.printf("[BLE] Cadence data in CPM: %s\n", cadenceInCpm ? "Yes" : "No");
+    Serial.printf("[BLE] CSC service: %s\n", cscServiceActive ? "Active" : "Not active");
+    Serial.printf("[BLE] SecureAPI: %s\n", secureApi ? "Yes" : "No");
+    Serial.printf("[BLE] Passkey: %d\n", passkey);
 }

@@ -16,6 +16,8 @@ class BLE : public Task,
             public BLEServerCallbacks,
             public BLECharacteristicCallbacks {
    public:
+    char deviceName[32] = "ESPM";
+    bool enabled = true;
     BLEServer *server;
     BLEUUID cpsUUID;              // cycling power service uuid
     BLEService *cps;              // cycling power service
@@ -35,8 +37,11 @@ class BLE : public Task,
     unsigned long lastPowerNotification = 0;
     unsigned long lastCadenceNotification = 0;
     unsigned long lastBatteryNotification = 0;
-    bool cadenceInCpm = true;
-    bool cscServiceActive = false;
+
+    bool cadenceInCpm = true;       // whether to include cadence data in CPM
+    bool cscServiceActive = false;  // whether CSC service should be active
+    bool secureApi = false;         // whether to use LESC for API service
+    uint32_t passkey = 696669;      // max 6 digits
 
     uint16_t power = 0;
     uint16_t crankRevs = 0;
@@ -54,16 +59,16 @@ class BLE : public Task,
 
     void setup(const char *deviceName, Preferences *p);
     void loop();
-    void startPowerService();
-    void stopPowerService();
-    void startCadenceService();
-    void stopCadenceService();
-    void startBatterySerice();
+    void startCpService();
+    void stopCpService();
+    void startCscService();
+    void stopCscService();
+    void startBlSerice();
     void startApiSerice();
     void onCrankEvent(const ulong t, const uint16_t revolutions);
-    void notifyPower(const ulong t);
-    void notifyCadence(const ulong t);
-    void notifyBattery(const ulong t);
+    void notifyCp(const ulong t);
+    void notifyCsc(const ulong t);
+    void notifyBl(const ulong t);
     void setApiValue(const char *response);
     const char *characteristicStr(BLECharacteristic *c);
     void stop();
@@ -83,13 +88,14 @@ class BLE : public Task,
 
     void setCadenceInCpm(bool state);
     void setCscServiceActive(bool state);
+    void setSecureApi(bool state);
+    void setPasskey(uint32_t newPasskey);
     void loadSettings();
     void saveSettings();
     void printSettings();
 
    private:
-    CircularBuffer<uint16_t, 32> _clients;
-    bool _hasClient(uint16_t handle);
+    CircularBuffer<uint16_t, 32> _clients;  // keeps track of connected client handles, in order to gracefully disconnect them before deep sleep or reboot; TODO add has() to CircularBuffer
 };
 
 #endif

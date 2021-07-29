@@ -358,10 +358,9 @@ void Status::handleInput(const char input) {
                 break;
             case 't':  // boot mode
                 Board::BootMode mode;
-                mode =
-                    (Board::BootMode::config == board.bootMode)
-                        ? Board::BootMode::live
-                        : Board::BootMode::config;
+                mode = (Board::BootMode::config == board.bootMode)
+                           ? Board::BootMode::live
+                           : Board::BootMode::config;
                 if (board.setBootMode(mode))
                     Serial.printf("Next boot will be in %s mode\n", board.bootModeStr(mode));
                 else

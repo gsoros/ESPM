@@ -4,37 +4,40 @@
 // Format: command || command=arg
 API::Result API::handleCommand(const char *commandWithArg) {
     Serial.printf("%s Handling command %s\n", tag, commandWithArg);
-    char command[API_COMMAND_MAXLENGTH] = "";
-    char arg[API_ARG_MAXLENGTH] = "";
+    char commandStr[API_COMMAND_MAXLENGTH] = "";
+    char argStr[API_ARG_MAXLENGTH] = "";
+    int commandWithArgLength = strlen(commandWithArg);
     char *eqSign = strstr(commandWithArg, "=");
+    int commandEnd = eqSign ? eqSign - commandWithArg : commandWithArgLength;
+
+    if (API_COMMAND_MAXLENGTH < commandEnd) {
+        Serial.printf("%s %s: %s\n", tag, resultStr(Result::commandTooLong), commandWithArg);
+        return Result::commandTooLong;
+    }
+    strncpy(commandStr, commandWithArg, commandEnd);
+
     if (eqSign) {
-        int eqPos = eqSign - commandWithArg;
-        if (API_COMMAND_MAXLENGTH < eqPos) {
-            Serial.printf("%s %s: %s\n", tag, resultStr(Result::commandTooLong), commandWithArg);
-            return Result::commandTooLong;
-        }
-        strncpy(command, commandWithArg, eqPos);
-        int argSize = strlen(commandWithArg) - eqPos - 1;
-        //Serial.printf("%s argSize=%d\n", tag, argSize);
-        if (API_ARG_MAXLENGTH < argSize) {
+        int argLength = commandWithArgLength - commandEnd - 1;
+        Serial.printf("%s argSize=%d\n", tag, argLength);
+        if (API_ARG_MAXLENGTH < argLength) {
             Serial.printf("%s %s: %s\n", tag, resultStr(Result::argTooLong), commandWithArg);
             return Result::argTooLong;
         }
-        strncpy(arg, eqSign + 1, argSize);
-    } else {
-        if (API_COMMAND_MAXLENGTH < strlen(commandWithArg)) {
-            Serial.printf("%s %s: %s\n", tag, resultStr(Result::commandTooLong), commandWithArg);
-            return Result::commandTooLong;
-        }
-        strncpy(command, commandWithArg, sizeof command);
+        strncpy(argStr, eqSign + 1, argLength);
     }
-    Serial.printf("%s command=%s arg=%s\n", tag, command, arg);
-    Command commandCode = (Command)atoi(command);
-    if (0 == strcmp(command, commandStr(Command::bootMode)) || commandCode == Command::bootMode)
-        return commandBootMode(arg);
-    if (0 == strcmp(command, commandStr(Command::reboot)) || commandCode == Command::reboot)
+
+    Serial.printf("%s commandStr=%s argStr=%s\n", tag, commandStr, argStr);
+
+    Command command = parseCommandStr(commandStr);
+    if (Command::bootMode == command)
+        return commandBootMode(argStr);
+    if (Command::reboot == command)
         return commandReboot();
-    Serial.printf("%s %s: %s\n", tag, resultStr(Result::unknownCommand), command);
+    if (Command::passkey == command)
+        return commandPasskey(argStr);
+    if (Command::secureApi == command)
+        return commandSecureApi(argStr);
+    Serial.printf("%s %s: %s\n", tag, resultStr(Result::unknownCommand), commandStr);
     return Result::unknownCommand;
 }
 
@@ -56,4 +59,40 @@ API::Result API::commandBootMode(const char *modeStr) {
 API::Result API::commandReboot() {
     board.reboot();
     return Result::success;
+}
+
+API::Result API::commandPasskey(const char *passkeyStr) {
+    if (6 < strlen(passkeyStr)) return Result::passkeyInvalid;
+    char keyS[7] = "";
+    strncpy(keyS, passkeyStr, 6);
+    uint32_t keyI = (uint32_t)atoi(keyS);
+    if (999999 < keyI) return Result::passkeyInvalid;
+    Serial.printf("%s Setting new passkey: %d\n", tag, keyI);
+    board.ble.setApiValue("Setting new passkey");
+    board.ble.setPasskey(keyI);
+    return Result::success;
+}
+
+API::Result API::commandSecureApi(const char *secureApiStr) {
+    if (0 == strcmp("true", secureApiStr) || 0 == strcmp("1", secureApiStr)) {
+        if (board.ble.secureApi) {
+            board.ble.setApiValue("Already using secureAPI");
+            return Result::success;
+        }
+        Serial.printf("%s Setting up secureAPI\n", tag);
+        board.ble.setApiValue("Setting up secureAPI");
+        board.ble.setSecureApi(true);
+        return Result::success;
+    }
+    if (0 == strcmp("false", secureApiStr) || 0 == strcmp("0", secureApiStr)) {
+        if (!board.ble.secureApi) {
+            board.ble.setApiValue("SecureAPI already disabled");
+            return Result::success;
+        }
+        Serial.printf("%s Disabling secureAPI\n", tag);
+        board.ble.setApiValue("Disabling secureAPI");
+        board.ble.setSecureApi(false);
+        return Result::success;
+    }
+    return Result::secureApiInvalid;
 }
