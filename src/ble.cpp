@@ -83,7 +83,9 @@ void BLE::startCpService() {
     // Cycling Power Mmeasurement
     cpmChar = cps->createCharacteristic(
         BLEUUID(CYCLING_POWER_MEASUREMENT_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
+        //| NIMBLE_PROPERTY::INDICATE
+    );
     cpmChar->setCallbacks(this);
     cps->start();
 
@@ -136,7 +138,9 @@ void BLE::startCscService() {
     // Cycling Speed and Cadence Measurement
     cscmChar = cscs->createCharacteristic(
         BLEUUID(CSC_MEASUREMENT_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
+        //NIMBLE_PROPERTY::INDICATE
+    );
     cscmChar->setCallbacks(this);
     cscs->start();
     advertising->addServiceUUID(cscsUUID);
@@ -155,7 +159,9 @@ void BLE::startBlSerice() {
     bls = server->createService(blsUUID);
     blChar = bls->createCharacteristic(
         BLEUUID(BATTERY_LEVEL_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
+        //| NIMBLE_PROPERTY::INDICATE
+    );
     blChar->setCallbacks(this);
     BLEDescriptor *blDesc = blChar->createDescriptor(
         BLEUUID(BATTERY_LEVEL_DESC_UUID),
@@ -382,22 +388,20 @@ void BLE::setSecureApi(bool state) {
     if (state == secureApi) return;
     secureApi = state;
     saveSettings();
-    /* TODO deinit() does not return, hence reboot()
+    /* TODO deinit() does not return
     stop();
     setup(deviceName, preferences);
     */
-    board.reboot();
 }
 
 void BLE::setPasskey(uint32_t newPasskey) {
     if (newPasskey == passkey) return;
     passkey = newPasskey;
     saveSettings();
-    /* TODO deinit() does not return, hence reboot()
+    /* TODO deinit() does not return
     stop();
     setup(deviceName, preferences);
     */
-    board.reboot();
 }
 
 void BLE::loadSettings() {

@@ -79,8 +79,8 @@ API::Result API::commandSecureApi(const char *secureApiStr) {
             board.ble.setApiValue("Already using secureAPI");
             return Result::success;
         }
-        Serial.printf("%s Setting up secureAPI\n", tag);
-        board.ble.setApiValue("Setting up secureAPI");
+        Serial.printf("%s Enabling secureAPI\n", tag);
+        board.ble.setApiValue("Enabling secureAPI");
         board.ble.setSecureApi(true);
         return Result::success;
     }
