@@ -41,6 +41,7 @@ API::Result API::handleCommand(const char *commandWithArg) {
     return Result::unknownCommand;
 }
 
+// TODO If secureApi=true, to prevent lockout, maybe require passkey before setBootMode(live)?
 API::Result API::commandBootMode(const char *modeStr) {
     Board::BootMode modeCode = (Board::BootMode)atoi(modeStr);
     if (0 == strcmp(modeStr, board.bootModeStr(Board::BootMode::live)) || modeCode == Board::BootMode::live) {
@@ -61,6 +62,7 @@ API::Result API::commandReboot() {
     return Result::success;
 }
 
+// TODO If bootmode=live, to prevent lockout, maybe require confirmation before setting passkey?
 API::Result API::commandPasskey(const char *passkeyStr) {
     if (6 < strlen(passkeyStr)) return Result::passkeyInvalid;
     char keyS[7] = "";
@@ -72,10 +74,11 @@ API::Result API::commandPasskey(const char *passkeyStr) {
     return Result::success;
 }
 
+// TODO If bootmode=live, to prevent lockout, maybe require passkey before enabling secureAPI?
 API::Result API::commandSecureApi(const char *secureApiStr) {
     if (0 == strcmp("true", secureApiStr) || 0 == strcmp("1", secureApiStr)) {
         if (board.ble.secureApi) {
-            board.ble.setApiValue("secureAPI already enabled");
+            board.ble.setApiValue("SecureAPI already enabled");
             return Result::success;
         }
         board.ble.setApiValue("Enabling secureAPI");
