@@ -80,12 +80,20 @@ void BLE::startCpService() {
     }
     cpfChar->setValue((uint8_t *)&bufPowerFeature, 4);
 
-    // Cycling Power Mmeasurement
+    // Cycling Power Measurement
     cpmChar = cps->createCharacteristic(
         BLEUUID(CYCLING_POWER_MEASUREMENT_CHAR_UUID),
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
         //| NIMBLE_PROPERTY::INDICATE
     );
+
+    BLEDescriptor *cpmDesc = cpmChar->createDescriptor(
+        BLEUUID(CYCLING_POWER_MEASUREMENT_DESC_UUID),
+        NIMBLE_PROPERTY::READ);
+    char s[32];
+    strncpy(s, cadenceInCpm ? "Power and cadence measurement" : "Power measurement", sizeof(s));
+    cpmDesc->setValue((uint8_t *)s, strlen(s));
+
     cpmChar->setCallbacks(this);
     cps->start();
 
@@ -141,6 +149,13 @@ void BLE::startCscService() {
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
         //NIMBLE_PROPERTY::INDICATE
     );
+
+    BLEDescriptor *cscmDesc = cscmChar->createDescriptor(
+        BLEUUID(CSC_MEASUREMENT_DESC_UUID),
+        NIMBLE_PROPERTY::READ);
+    char s[32] = "Cadence measurement";
+    cscmDesc->setValue((uint8_t *)s, strlen(s));
+
     cscmChar->setCallbacks(this);
     cscs->start();
     advertising->addServiceUUID(cscsUUID);
@@ -166,7 +181,8 @@ void BLE::startBlSerice() {
     BLEDescriptor *blDesc = blChar->createDescriptor(
         BLEUUID(BATTERY_LEVEL_DESC_UUID),
         NIMBLE_PROPERTY::READ);
-    blDesc->setValue("Percentage");
+    char s[32] = "Percentage";
+    blDesc->setValue((uint8_t *)s, strlen(s));
     bls->start();
     advertising->addServiceUUID(blsUUID);
 }
