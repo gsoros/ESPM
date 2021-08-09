@@ -31,6 +31,8 @@ API::Result API::handleCommand(const char *commandWithArg) {
     Command command = parseCommandStr(commandStr);
     if (Command::bootMode == command)
         return commandBootMode(argStr);
+    if (Command::hostName == command)
+        return commandHostName(argStr);
     if (Command::reboot == command)
         return commandReboot();
     if (Command::passkey == command)
@@ -55,6 +57,15 @@ API::Result API::commandBootMode(const char *modeStr) {
     if (board.setBootMode(modeCode))
         return Result::success;
     return Result::error;
+}
+
+API::Result API::commandHostName(const char *hostNameStr) {
+    int maxSize = sizeof(board.hostName);
+    if (maxSize - 1 < strlen(hostNameStr)) return Result::hostNameInvalid;
+    if (!isAlNumStr(hostNameStr)) return Result::hostNameInvalid;
+    strncpy(board.hostName, hostNameStr, maxSize);
+    board.saveSettings();
+    return Result::success;
 }
 
 API::Result API::commandReboot() {
@@ -95,4 +106,16 @@ API::Result API::commandSecureApi(const char *secureApiStr) {
         return Result::success;
     }
     return Result::secureApiInvalid;
+}
+
+bool API::isAlNumStr(const char *str) {
+    int len = strlen(str);
+    int cnt = 0;
+    while (*str != '\0' && cnt < len) {
+        Serial.printf("%s isAlNum(%c): %d\n", tag, *str, isalnum(*str));
+        if (!isalnum(*str)) return false;
+        str++;
+        cnt++;
+    }
+    return true;
 }

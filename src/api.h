@@ -15,6 +15,7 @@ class API {
         commandTooLong,
         argTooLong,
         bootModeInvalid,
+        hostNameInvalid,
         passkeyInvalid,
         secureApiInvalid
     };
@@ -32,6 +33,7 @@ class API {
 
     Result handleCommand(const char *commandWithArg);
     Result commandBootMode(const char *modeStr);
+    Result commandHostName(const char *hostNameStr);
     Result commandReboot();
     Result commandPasskey(const char *passkeyStr);
     Result commandSecureApi(const char *secureApiStr);
@@ -50,6 +52,8 @@ class API {
                 return "Argument too long";
             case bootModeInvalid:
                 return "Invalid bootmode";
+            case hostNameInvalid:
+                return "Invalid hostname";
             case passkeyInvalid:
                 return "Invalid passkey";
             case secureApiInvalid:
@@ -84,6 +88,8 @@ class API {
         if (0 == strcmp(str, commandStr(Command::secureApi))) return Command::secureApi;
         return Command::invalid;
     }
+
+    bool isAlNumStr(const char *str);
 };
 
 #endif
