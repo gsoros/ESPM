@@ -69,7 +69,8 @@ class BLE : public Task,
     void notifyCp(const ulong t);
     void notifyCsc(const ulong t);
     void notifyBl(const ulong t);
-    void setApiValue(const char *response);
+    void handleApiCommand(const char *command);
+    void setApiValue(const char *value);
     const char *characteristicStr(BLECharacteristic *c);
     void stop();
 

@@ -355,7 +355,10 @@ void Status::handleInput(const char input) {
                     case 'k':
                         Serial.print("Enter new numerical passkey (max 6 digits) and press [Enter]: ");
                         getStr(tmpStr, 6);
-                        board.api.commandPasskey(tmpStr);
+                        char reply[API_REPLY_MAXLENGTH];
+                        API::Result apiResult;
+                        apiResult = board.api.commandPasskey(tmpStr, reply);
+                        Serial.printf("Reply from API: %d:%s\n", apiResult, reply);
                         menu[1] = '\0';
                         break;
                     case 'x':

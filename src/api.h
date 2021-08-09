@@ -5,6 +5,7 @@
 
 #define API_COMMAND_MAXLENGTH 32
 #define API_ARG_MAXLENGTH 32
+#define API_REPLY_MAXLENGTH 64
 
 class API {
    public:
@@ -31,12 +32,12 @@ class API {
 
     const char *tag = "[API]";
 
-    Result handleCommand(const char *commandWithArg);
-    Result commandBootMode(const char *modeStr);
-    Result commandHostName(const char *hostNameStr);
+    Result handleCommand(const char *commandWithArg, char *reply);
+    Result commandBootMode(const char *modeStr, char *reply);
+    Result commandHostName(const char *hostNameStr, char *reply);
     Result commandReboot();
-    Result commandPasskey(const char *passkeyStr);
-    Result commandSecureApi(const char *secureApiStr);
+    Result commandPasskey(const char *passkeyStr, char *reply);
+    Result commandSecureApi(const char *secureApiStr, char *reply);
 
     const char *resultStr(Result r) {
         switch (r) {
@@ -62,7 +63,7 @@ class API {
         return "Unknown error";
     }
 
-    const char *commandStr(Command c) {
+    const char *commandCodeToStr(Command c) {
         switch (c) {
             case invalid:
                 return "invalid";
@@ -81,11 +82,16 @@ class API {
     }
 
     Command parseCommandStr(const char *str) {
-        if (0 == strcmp(str, commandStr(Command::bootMode))) return Command::bootMode;
-        if (0 == strcmp(str, commandStr(Command::hostName))) return Command::hostName;
-        if (0 == strcmp(str, commandStr(Command::reboot))) return Command::reboot;
-        if (0 == strcmp(str, commandStr(Command::passkey))) return Command::passkey;
-        if (0 == strcmp(str, commandStr(Command::secureApi))) return Command::secureApi;
+        if (atoi(str) == Command::bootMode ||
+            0 == strcmp(str, commandCodeToStr(Command::bootMode))) return Command::bootMode;
+        if (atoi(str) == Command::hostName ||
+            0 == strcmp(str, commandCodeToStr(Command::hostName))) return Command::hostName;
+        if (atoi(str) == Command::reboot ||
+            0 == strcmp(str, commandCodeToStr(Command::reboot))) return Command::reboot;
+        if (atoi(str) == Command::passkey ||
+            0 == strcmp(str, commandCodeToStr(Command::passkey))) return Command::passkey;
+        if (atoi(str) == Command::secureApi ||
+            0 == strcmp(str, commandCodeToStr(Command::secureApi))) return Command::secureApi;
         return Command::invalid;
     }
 

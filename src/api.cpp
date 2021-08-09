@@ -1,8 +1,8 @@
 #include "api.h"
 #include "board.h"
 
-// Format: command || command=arg
-API::Result API::handleCommand(const char *commandWithArg) {
+// Command format: commandCode|commandStr[=[arg]]; Reply format: commandCode:commandStr=[arg]
+API::Result API::handleCommand(const char *commandWithArg, char *reply) {
     Serial.printf("%s Handling command %s\n", tag, commandWithArg);
     char commandStr[API_COMMAND_MAXLENGTH] = "";
     char argStr[API_ARG_MAXLENGTH] = "";
@@ -29,42 +29,63 @@ API::Result API::handleCommand(const char *commandWithArg) {
     Serial.printf("%s commandStr=%s argStr=%s\n", tag, commandStr, argStr);
 
     Command command = parseCommandStr(commandStr);
+
+    // by default echo back the commandCode:commandStr=[arg] so client can
+    // verify that this is a response to the correct command
+    snprintf(reply, API_REPLY_MAXLENGTH, "%d:%s=", (int)command, commandCodeToStr(command));
+
+    // these command processors can add their respective value to the reply
     if (Command::bootMode == command)
-        return commandBootMode(argStr);
+        return commandBootMode(argStr, reply);
     if (Command::hostName == command)
-        return commandHostName(argStr);
+        return commandHostName(argStr, reply);
     if (Command::reboot == command)
         return commandReboot();
     if (Command::passkey == command)
-        return commandPasskey(argStr);
+        return commandPasskey(argStr, reply);
     if (Command::secureApi == command)
-        return commandSecureApi(argStr);
+        return commandSecureApi(argStr, reply);
     Serial.printf("%s %s: %s\n", tag, resultStr(Result::unknownCommand), commandStr);
     return Result::unknownCommand;
 }
 
 // TODO If secureApi=true, to prevent lockout, maybe require passkey before setBootMode(live)?
-API::Result API::commandBootMode(const char *modeStr) {
-    Board::BootMode modeCode = (Board::BootMode)atoi(modeStr);
-    if (0 == strcmp(modeStr, board.bootModeStr(Board::BootMode::live)) || modeCode == Board::BootMode::live) {
-        modeCode = Board::BootMode::live;
-    } else if (0 == strcmp(modeStr, board.bootModeStr(Board::BootMode::config)) || modeCode == Board::BootMode::config) {
-        modeCode = Board::BootMode::config;
-    } else {
-        Serial.printf("%s %s: %s\n", tag, resultStr(Result::bootModeInvalid), modeStr);
-        return Result::bootModeInvalid;
+API::Result API::commandBootMode(const char *modeStr, char *reply) {
+    // set bootmode
+    if (0 < strlen(modeStr)) {
+        Board::BootMode modeCode = (Board::BootMode)atoi(modeStr);
+        if (0 == strcmp(modeStr, board.bootModeStr(Board::BootMode::live)) ||
+            modeCode == Board::BootMode::live) {
+            modeCode = Board::BootMode::live;
+        } else if (0 == strcmp(modeStr, board.bootModeStr(Board::BootMode::config)) ||
+                   modeCode == Board::BootMode::config) {
+            modeCode = Board::BootMode::config;
+        } else {
+            Serial.printf("%s %s: %s\n", tag, resultStr(Result::bootModeInvalid), modeStr);
+            return Result::bootModeInvalid;
+        }
+        if (!board.setBootMode(modeCode))
+            return Result::error;
     }
-    if (board.setBootMode(modeCode))
-        return Result::success;
-    return Result::error;
+    //get bootmode
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
+             replyTmp, board.bootMode, board.bootModeStr(board.bootMode));
+    return Result::success;
 }
 
-API::Result API::commandHostName(const char *hostNameStr) {
-    int maxSize = sizeof(board.hostName);
-    if (maxSize - 1 < strlen(hostNameStr)) return Result::hostNameInvalid;
-    if (!isAlNumStr(hostNameStr)) return Result::hostNameInvalid;
-    strncpy(board.hostName, hostNameStr, maxSize);
-    board.saveSettings();
+API::Result API::commandHostName(const char *hostNameStr, char *reply) {
+    // set hostname
+    if (0 < strlen(hostNameStr)) {
+        int maxSize = sizeof(board.hostName);
+        if (maxSize - 1 < strlen(hostNameStr)) return Result::hostNameInvalid;
+        if (!isAlNumStr(hostNameStr)) return Result::hostNameInvalid;
+        strncpy(board.hostName, hostNameStr, maxSize);
+        board.saveSettings();
+    }
+    // get hostname
+    strncat(reply, board.hostName, API_REPLY_MAXLENGTH - strlen(reply));
     return Result::success;
 }
 
@@ -74,38 +95,46 @@ API::Result API::commandReboot() {
 }
 
 // TODO If bootmode=live, to prevent lockout, maybe require confirmation before setting passkey?
-API::Result API::commandPasskey(const char *passkeyStr) {
-    if (6 < strlen(passkeyStr)) return Result::passkeyInvalid;
+API::Result API::commandPasskey(const char *passkeyStr, char *reply) {
     char keyS[7] = "";
-    strncpy(keyS, passkeyStr, 6);
-    uint32_t keyI = (uint32_t)atoi(keyS);
-    if (999999 < keyI) return Result::passkeyInvalid;
-    board.ble.setApiValue("Setting new passkey");
-    board.ble.setPasskey(keyI);
+    // set passkey
+    if (0 < strlen(passkeyStr)) {
+        if (6 < strlen(passkeyStr)) return Result::passkeyInvalid;
+        strncpy(keyS, passkeyStr, 6);
+        uint32_t keyI = (uint32_t)atoi(keyS);
+        if (999999 < keyI) return Result::passkeyInvalid;
+        board.ble.setPasskey(keyI);
+    }
+    // get passkey
+    //itoa(board.ble.passkey, keyS, 10);
+    //strncat(reply, keyS, API_REPLY_MAXLENGTH - strlen(reply));
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, (int)board.ble.passkey);
     return Result::success;
 }
 
 // TODO If bootmode=live, to prevent lockout, maybe require passkey before enabling secureAPI?
-API::Result API::commandSecureApi(const char *secureApiStr) {
-    if (0 == strcmp("true", secureApiStr) || 0 == strcmp("1", secureApiStr)) {
-        if (board.ble.secureApi) {
-            board.ble.setApiValue("SecureAPI already enabled");
-            return Result::success;
+API::Result API::commandSecureApi(const char *secureApiStr, char *reply) {
+    // set secureApi
+    int newValue = -1;
+    if (0 < strlen(secureApiStr)) {
+        if (0 == strcmp("true", secureApiStr) || 0 == strcmp("1", secureApiStr)) {
+            newValue = 1;
+        } else if (0 == strcmp("false", secureApiStr) || 0 == strcmp("0", secureApiStr)) {
+            newValue = 0;
         }
-        board.ble.setApiValue("Enabling secureAPI");
-        board.ble.setSecureApi(true);
-        return Result::success;
-    }
-    if (0 == strcmp("false", secureApiStr) || 0 == strcmp("0", secureApiStr)) {
-        if (!board.ble.secureApi) {
-            board.ble.setApiValue("SecureAPI already disabled");
-            return Result::success;
+        if (newValue == -1) {
+            return Result::secureApiInvalid;
         }
-        board.ble.setApiValue("Disabling secureAPI");
-        board.ble.setSecureApi(false);
-        return Result::success;
+        board.ble.setSecureApi((bool)newValue);
     }
-    return Result::secureApiInvalid;
+    //get secureApi
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
+             replyTmp, (int)board.ble.secureApi, board.ble.secureApi ? "true" : "false");
+    return Result::success;
 }
 
 bool API::isAlNumStr(const char *str) {

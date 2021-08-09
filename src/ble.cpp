@@ -282,12 +282,27 @@ void BLE::notifyBl(const ulong t) {
     blChar->notify();
 }
 
-void BLE::setApiValue(const char *val) {
+// response format: responseCode:responseStr;commandCode:commandStr=[arg]
+void BLE::handleApiCommand(const char *command) {
+    char reply[API_REPLY_MAXLENGTH] = "";
+    API::Result result = board.api.handleCommand(command, reply);
+    char response[BLE_CHAR_VALUE_MAXLENGTH] = "";
+    snprintf(response, sizeof(response), "%d:%s;%s",
+             (int)result, board.api.resultStr(result), reply);
+    Serial.printf("[BLE] handleApiCommand(\"%s\") response: %s\n", command, response);
+    setApiValue(response);
+    if (API::Result::success == result)
+        board.led.blink(2, 100, 300);
+    else
+        board.led.blink(10, 100, 100);
+}
+
+void BLE::setApiValue(const char *value) {
     if (!enabled) {
         Serial.println("[BLE] Not enabled, not setting API value");
         return;
     }
-    apiChar->setValue((uint8_t *)val, strlen(val));
+    apiChar->setValue((uint8_t *)value, strlen(value));
     apiChar->notify();
 }
 
@@ -346,21 +361,12 @@ void BLE::onRead(BLECharacteristic *c) {
 
 void BLE::onWrite(BLECharacteristic *c) {
     char value[BLE_CHAR_VALUE_MAXLENGTH] = "";
-    strncpy(value, c->getValue().c_str(), BLE_CHAR_VALUE_MAXLENGTH);
+    strncpy(value, c->getValue().c_str(), sizeof(value));
     Serial.printf("[BLE] %s: onWrite(), value: %s\n",
                   characteristicStr(c),
                   value);
-    if (c->getHandle() == apiChar->getHandle()) {
-        API::Result result = board.api.handleCommand(value);
-        char response[BLE_CHAR_VALUE_MAXLENGTH] = "";
-        snprintf(response, BLE_CHAR_VALUE_MAXLENGTH, "%d:%s; %s", (int)result, board.api.resultStr(result), value);
-        Serial.printf("[BLE] response: %s\n", response);
-        setApiValue(response);
-        if (API::Result::success == result)
-            board.led.blink(2, 100, 300);
-        else
-            board.led.blink(10, 100, 100);
-    }
+    if (c->getHandle() == apiChar->getHandle())
+        handleApiCommand(value);
 };
 
 void BLE::onNotify(BLECharacteristic *pCharacteristic){
