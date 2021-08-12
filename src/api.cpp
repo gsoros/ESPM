@@ -32,7 +32,15 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
 
     // by default echo back the commandCode:commandStr= so client can
     // verify that this is a response to the correct command
-    snprintf(reply, API_REPLY_MAXLENGTH, "%d:%s=", (int)command, commandCodeToStr(command));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%d:%s=", (int)command,
+             command == API::Command::invalid
+                 ? commandStr
+                 : commandCodeToStr(command));
+
+    if (command == API::Command::invalid) {
+        Serial.printf("%s %s: %s\n", tag, resultStr(Result::unknownCommand), commandStr);
+        return Result::unknownCommand;
+    }
 
     // these command processors can add their respective [value] to the reply
     if (Command::bootMode == command)
@@ -45,7 +53,6 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandPasskey(argStr, reply);
     if (Command::secureApi == command)
         return commandSecureApi(argStr, reply);
-    Serial.printf("%s %s: %s\n", tag, resultStr(Result::unknownCommand), commandStr);
     return Result::unknownCommand;
 }
 
@@ -141,7 +148,7 @@ bool API::isAlNumStr(const char *str) {
     int len = strlen(str);
     int cnt = 0;
     while (*str != '\0' && cnt < len) {
-        Serial.printf("%s isAlNum(%c): %d\n", tag, *str, isalnum(*str));
+        //Serial.printf("%s isAlNumStr(%c): %d\n", tag, *str, isalnum(*str));
         if (!isalnum(*str)) return false;
         str++;
         cnt++;
