@@ -1,7 +1,7 @@
 #include "api.h"
 #include "board.h"
 
-// Command format: commandCode|commandStr[=[arg]]; Reply format: commandCode:commandStr=[arg]
+// Command format: commandCode|commandStr[=[arg]]; Reply format: commandCode:commandStr=[value]
 API::Result API::handleCommand(const char *commandWithArg, char *reply) {
     Serial.printf("%s Handling command %s\n", tag, commandWithArg);
     char commandStr[API_COMMAND_MAXLENGTH] = "";
@@ -30,11 +30,11 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
 
     Command command = parseCommandStr(commandStr);
 
-    // by default echo back the commandCode:commandStr=[arg] so client can
+    // by default echo back the commandCode:commandStr= so client can
     // verify that this is a response to the correct command
     snprintf(reply, API_REPLY_MAXLENGTH, "%d:%s=", (int)command, commandCodeToStr(command));
 
-    // these command processors can add their respective value to the reply
+    // these command processors can add their respective [value] to the reply
     if (Command::bootMode == command)
         return commandBootMode(argStr, reply);
     if (Command::hostName == command)
