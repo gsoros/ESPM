@@ -16,27 +16,29 @@ class BLE : public Task,
             public BLEServerCallbacks,
             public BLECharacteristicCallbacks {
    public:
-    char deviceName[32] = "ESPM";
-    bool enabled = true;
-    BLEServer *server;
-    BLEUUID cpsUUID;              // cycling power service uuid
-    BLEService *cps;              // cycling power service
-    BLECharacteristic *cpmChar;   // cycling power measurement characteristic
-    BLEUUID cscsUUID;             // cycling speed and cadence service uuid
-    BLEService *cscs;             // cycling speed and cadence service
-    BLECharacteristic *cscmChar;  // cycling speed and cadence measurement characteristic
-    BLEUUID blsUUID;              // battery level service uuid
-    BLEService *bls;              // battery level service
-    BLECharacteristic *blChar;    // battery level characteristic
-    BLEUUID asUUID;               // api service uuid
-    BLEService *as;               // api service
-    BLECharacteristic *apiChar;   // api characteristic
-    BLEAdvertising *advertising;
+    char deviceName[32] = "ESPM";      // advertised device name
+    bool enabled = true;               // whether bluetooth is enabled
+    BLEServer *server;                 // pointer to the ble server
+    BLEUUID cpsUUID;                   // cycling power service uuid
+    BLEService *cps;                   // cycling power service
+    BLECharacteristic *cpmChar;        // cycling power measurement characteristic
+    BLEUUID cscsUUID;                  // cycling speed and cadence service uuid
+    BLEService *cscs;                  // cycling speed and cadence service
+    BLECharacteristic *cscmChar;       // cycling speed and cadence measurement characteristic
+    BLEUUID blsUUID;                   // battery level service uuid
+    BLEService *bls;                   // battery level service
+    BLECharacteristic *blChar;         // battery level characteristic
+    BLEUUID asUUID;                    // api service uuid
+    BLEService *as;                    // api service
+    BLECharacteristic *apiChar;        // api characteristic
+    BLECharacteristic *apiStrainChar;  // api strain characteristic
+    BLEAdvertising *advertising;       // pointer to advertising
 
     uint8_t lastBatteryLevel = 0;
     unsigned long lastPowerNotification = 0;
     unsigned long lastCadenceNotification = 0;
     unsigned long lastBatteryNotification = 0;
+    bool apiStrainCharEnabled = false;  // enables strain measurement value stream
 
     bool cadenceInCpm = true;       // whether to include cadence data in CPM
     bool cscServiceActive = false;  // whether CSC service should be active
@@ -71,6 +73,7 @@ class BLE : public Task,
     void notifyBl(const ulong t);
     void handleApiCommand(const char *command);
     void setApiValue(const char *value);
+    void setApiStrainValue(float value);
     const char *characteristicStr(BLECharacteristic *c);
     void stop();
 
@@ -87,6 +90,7 @@ class BLE : public Task,
     void setCscServiceActive(bool state);
     void setSecureApi(bool state);
     void setPasskey(uint32_t newPasskey);
+    void setApiStrainCharEnabled(bool state);
     void loadSettings();
     void saveSettings();
     void printSettings();

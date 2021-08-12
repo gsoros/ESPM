@@ -39,11 +39,9 @@ void BLE::loop() {
     const ulong t = millis();
     if (lastPowerNotification < t - 1000) notifyCp(t);
     if (lastCadenceNotification < t - 1500) notifyCsc(t);
-    if (lastBatteryLevel != board.battery.level) {
-        notifyBl(t);
-    }
-    if (!server->getAdvertising()->isAdvertising())
-        startAdvertising();
+    if (lastBatteryLevel != board.battery.level) notifyBl(t);
+    if (apiStrainCharEnabled) setApiStrainValue(board.strain.liveValue());
+    if (!advertising->isAdvertising()) startAdvertising();
 }
 
 void BLE::startCpService() {
@@ -192,6 +190,8 @@ void BLE::startApiSerice() {
     char s[32] = "";
     asUUID = BLEUUID(API_SERVICE_UUID);
     as = server->createService(asUUID);
+
+    // api char for writing commands and reading responses
     uint32_t properties = NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE;
     if (secureApi)
         properties |= NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::WRITE_ENC | NIMBLE_PROPERTY::WRITE_AUTHEN;
@@ -204,6 +204,12 @@ void BLE::startApiSerice() {
         NIMBLE_PROPERTY::READ);
     strncpy(s, "ESPM API v0.1", 32);
     apiDesc->setValue((uint8_t *)s, strlen(s));
+
+    // api char that streams the strain measurement values
+    properties = NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY;
+    apiStrainChar = as->createCharacteristic(BLEUUID(API_STRAIN_CHAR_UUID), properties);
+    apiStrainChar->setCallbacks(this);
+
     as->start();
     advertising->addServiceUUID(asUUID);
 }
@@ -306,12 +312,28 @@ void BLE::setApiValue(const char *value) {
     apiChar->notify();
 }
 
+void BLE::setApiStrainValue(float value) {
+    if (!enabled) return;
+
+    union {
+        float value;
+        byte bytes[4];
+    } u;
+    u.value = value;
+    byte bytes[4];
+    memcpy(bytes, u.bytes, 4);
+
+    apiStrainChar->setValue((uint8_t *)bytes, 4);
+    apiStrainChar->notify();
+}
+
 const char *BLE::characteristicStr(BLECharacteristic *c) {
     if (c == nullptr) return "unknown characteristic";
     if (cpmChar != nullptr && cpmChar->getHandle() == c->getHandle()) return "CPM";
     if (cscmChar != nullptr && cscmChar->getHandle() == c->getHandle()) return "CSCM";
     if (blChar != nullptr && blChar->getHandle() == c->getHandle()) return "BL";
     if (apiChar != nullptr && apiChar->getHandle() == c->getHandle()) return "API";
+    if (apiStrainChar != nullptr && apiStrainChar->getHandle() == c->getHandle()) return "APISTRAIN";
     return c->getUUID().toString().c_str();
 }
 
@@ -426,6 +448,11 @@ void BLE::setPasskey(uint32_t newPasskey) {
     stop();
     setup(deviceName, preferences);
     */
+}
+
+void BLE::setApiStrainCharEnabled(bool state) {
+    if (state == apiStrainCharEnabled) return;
+    apiStrainCharEnabled = state;
 }
 
 void BLE::loadSettings() {

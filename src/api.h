@@ -27,7 +27,8 @@ class API {
         hostName,
         reboot,
         passkey,
-        secureApi
+        secureApi,
+        apiStrain
     };
 
     const char *tag = "[API]";
@@ -38,6 +39,7 @@ class API {
     Result commandReboot();
     Result commandPasskey(const char *passkeyStr, char *reply);
     Result commandSecureApi(const char *secureApiStr, char *reply);
+    Result commandApiStrain(const char *enabledStr, char *reply);
 
     const char *resultStr(Result r) {
         switch (r) {
@@ -77,6 +79,8 @@ class API {
                 return "passkey";
             case secureApi:
                 return "secureApi";
+            case apiStrain:
+                return "apiStrain";
         }
         return "unknown";
     }
@@ -92,6 +96,8 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::passkey))) return Command::passkey;
         if (atoi(str) == Command::secureApi ||
             0 == strcmp(str, commandCodeToStr(Command::secureApi))) return Command::secureApi;
+        if (atoi(str) == Command::apiStrain ||
+            0 == strcmp(str, commandCodeToStr(Command::apiStrain))) return Command::apiStrain;
         return Command::invalid;
     }
 

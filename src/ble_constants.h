@@ -99,5 +99,6 @@
 
 #define API_SERVICE_UUID "55bebab5-1857-4b14-a07b-d4879edad159"
 #define API_CHAR_UUID "da34811a-03c0-4efe-a266-ed014e181b65"
+#define API_STRAIN_CHAR_UUID "1d7fd29e-86bc-4640-86b5-00fa3462b480"
 #define API_DESC_UUID ((uint16_t)0x2901)
 #endif
