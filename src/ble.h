@@ -39,6 +39,7 @@ class BLE : public Task,
     unsigned long lastCadenceNotification = 0;
     unsigned long lastBatteryNotification = 0;
     bool apiStrainCharEnabled = false;  // enables strain measurement value stream
+    unsigned long lastApiStrainNotification = 0;
 
     bool cadenceInCpm = true;       // whether to include cadence data in CPM
     bool cscServiceActive = false;  // whether CSC service should be active

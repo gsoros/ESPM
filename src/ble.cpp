@@ -40,8 +40,11 @@ void BLE::loop() {
     if (lastPowerNotification < t - 1000) notifyCp(t);
     if (lastCadenceNotification < t - 1500) notifyCsc(t);
     if (lastBatteryLevel != board.battery.level) notifyBl(t);
-    if (apiStrainCharEnabled) setApiStrainValue(board.strain.liveValue());
     if (!advertising->isAdvertising()) startAdvertising();
+    if (apiStrainCharEnabled && lastApiStrainNotification < t - 200) {
+        setApiStrainValue(board.strain.liveValue());
+        lastApiStrainNotification = t;
+    }
 }
 
 void BLE::startCpService() {
