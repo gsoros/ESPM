@@ -12,7 +12,12 @@ void Battery::loop() {
 }
 
 int Battery::calculateLevel() {
-    level = map(voltage * 1000, 3200, 4200, 0, 100000) / 1000;
+    float voltageTmp = voltage;
+    if (voltageTmp < 3.2F)
+        voltageTmp = 3.2;
+    else if (voltageTmp > 4.2F)
+        voltageTmp = 4.2;
+    level = map(voltageTmp * 1000, 3200, 4200, 0, 100000) / 1000;
     return level;
 }
 
