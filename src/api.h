@@ -18,7 +18,9 @@ class API {
         bootModeInvalid,
         hostNameInvalid,
         passkeyInvalid,
-        secureApiInvalid
+        secureApiInvalid,
+        calibrationFailed,
+        tareFailed
     };
 
     enum Command {
@@ -28,7 +30,9 @@ class API {
         reboot,
         passkey,
         secureApi,
-        apiStrain
+        apiStrain,
+        calibrateStrain,
+        tare
     };
 
     const char *tag = "[API]";
@@ -40,6 +44,8 @@ class API {
     Result commandPasskey(const char *passkeyStr, char *reply);
     Result commandSecureApi(const char *secureApiStr, char *reply);
     Result commandApiStrain(const char *enabledStr, char *reply);
+    Result commandCalibrateStrain(const char *knownMass, char *reply);
+    Result commandTare(const char *str, char *reply);
 
     const char *resultStr(Result r) {
         switch (r) {
@@ -61,6 +67,10 @@ class API {
                 return "Invalid passkey";
             case secureApiInvalid:
                 return "Invalid secureApi argument";
+            case calibrationFailed:
+                return "Calibration failed";
+            case tareFailed:
+                return "Tare failed";
         }
         return "Unknown error";
     }
@@ -81,6 +91,10 @@ class API {
                 return "secureApi";
             case apiStrain:
                 return "apiStrain";
+            case calibrateStrain:
+                return "calibrateStrain";
+            case tare:
+                return "tare";
         }
         return "unknown";
     }
@@ -98,6 +112,10 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::secureApi))) return Command::secureApi;
         if (atoi(str) == Command::apiStrain ||
             0 == strcmp(str, commandCodeToStr(Command::apiStrain))) return Command::apiStrain;
+        if (atoi(str) == Command::calibrateStrain ||
+            0 == strcmp(str, commandCodeToStr(Command::calibrateStrain))) return Command::calibrateStrain;
+        if (atoi(str) == Command::tare ||
+            0 == strcmp(str, commandCodeToStr(Command::tare))) return Command::tare;
         return Command::invalid;
     }
 

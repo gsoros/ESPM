@@ -55,6 +55,10 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandSecureApi(argStr, reply);
     if (Command::apiStrain == command)
         return commandApiStrain(argStr, reply);
+    if (Command::calibrateStrain == command)
+        return commandCalibrateStrain(argStr, reply);
+    if (Command::tare == command)
+        return commandTare(argStr, reply);
     return Result::unknownCommand;
 }
 
@@ -163,6 +167,27 @@ API::Result API::commandApiStrain(const char *enabledStr, char *reply) {
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s", replyTmp,
              (int)board.ble.apiStrainCharEnabled,
              board.ble.apiStrainCharEnabled ? "true" : "false");
+    return Result::success;
+}
+
+API::Result API::commandCalibrateStrain(const char *knownMassStr, char *reply) {
+    Result result = Result::error;
+    float knownMass;
+    knownMass = (float)atof(knownMassStr);
+    if (1 < knownMass && knownMass < 1000) {
+        if (0 == board.strain.calibrateTo(knownMass)) {
+            board.strain.saveCalibration();
+            result = Result::success;
+        }
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%f", replyTmp, knownMass);
+    return result;
+}
+
+API::Result API::commandTare(const char *str, char *reply) {
+    board.strain.tare();
     return Result::success;
 }
 
