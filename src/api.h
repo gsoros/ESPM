@@ -80,9 +80,9 @@ class API {
             case invalid:
                 return "invalid";
             case bootMode:
-                return "bootmode";
+                return "bootMode";
             case hostName:
-                return "hostname";
+                return "hostName";
             case reboot:
                 return "reboot";
             case passkey:
