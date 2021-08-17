@@ -2,8 +2,14 @@
 #define BLE_CONSTANTS_H
 
 /*
-    Based on https://github.com/ihaque/pelomon/blob/main/pelomon/ble_constants.h
+    Parts based on https://github.com/ihaque/pelomon/blob/main/pelomon/ble_constants.h
 */
+
+#define DEVICE_INFORMATION_SERVICE_UUID ((uint16_t)0x180a)
+#define DEVICE_NAME_CHAR_UUID ((uint16_t)0x2a00)
+#define MANUFACTURER_NAME_STRING_CHAR_UUID ((uint16_t)0x2a29)
+#define MODEL_NUMBER_STRING_CHAR_UUID ((uint16_t)0x2a24)
+#define FIRMWARE_REVISION_STRING_CHAR_UUID ((uint16_t)0x2a26)
 
 #define CYCLING_POWER_SERVICE_UUID ((uint16_t)0x1818)
 #define CYCLING_SPEED_CADENCE_SERVICE_UUID ((uint16_t)0x1816)
@@ -97,8 +103,13 @@
 #define BATTERY_LEVEL_CHAR_UUID ((uint16_t)0x2A19)
 #define BATTERY_LEVEL_DESC_UUID ((uint16_t)0x2901)
 
+#define WEIGHT_SCALE_FEATURE_UUID ((uint16_t)0x2a9e)
+#define WEIGHT_SCALE_SERVICE_UUID ((uint16_t)0x181d)
+#define WEIGHT_MEASUREMENT_CHAR_UUID ((uint16_t)0x2a9d)
+#define WEIGHT_MEASUREMENT_DESC_UUID ((uint16_t)0x2901)
+
 #define API_SERVICE_UUID "55bebab5-1857-4b14-a07b-d4879edad159"
 #define API_CHAR_UUID "da34811a-03c0-4efe-a266-ed014e181b65"
-#define API_STRAIN_CHAR_UUID "1d7fd29e-86bc-4640-86b5-00fa3462b480"
 #define API_DESC_UUID ((uint16_t)0x2901)
+
 #endif

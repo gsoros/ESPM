@@ -23,10 +23,12 @@ void BLE::setup(const char *deviceName, Preferences *p) {
     //advertising->setScanResponse(false);
     //advertising->setMinPreferred(0x0);
 
+    startDiService();
     startCpService();
     startCscService();
-    startBlSerice();
-    startApiSerice();
+    startBlService();
+    startWsService();
+    startApiService();
 
     server->start();
     lastPowerNotification = millis();
@@ -41,10 +43,27 @@ void BLE::loop() {
     if (lastCadenceNotification < t - 1500) notifyCsc(t);
     if (lastBatteryLevel != board.battery.level) notifyBl(t);
     if (!advertising->isAdvertising()) startAdvertising();
-    if (apiStrainCharEnabled && lastApiStrainNotification < t - 200) {
-        setApiStrainValue(board.strain.liveValue());
-        lastApiStrainNotification = t;
+    if (wmCharUpdateEnabled && lastWmNotification < t - 200) {
+        setWmValue(board.strain.liveValue());
+        lastWmNotification = t;
     }
+}
+
+// Start Device Information service
+void BLE::startDiService() {
+    Serial.println("[BLE] Starting DIS");
+    disUUID = BLEUUID(DEVICE_INFORMATION_SERVICE_UUID);
+    dis = server->createService(disUUID);
+    diChar = dis->createCharacteristic(
+        BLEUUID(DEVICE_NAME_CHAR_UUID),
+        NIMBLE_PROPERTY::READ
+        //| NIMBLE_PROPERTY::NOTIFY
+        //| NIMBLE_PROPERTY::INDICATE
+    );
+    diChar->setValue((uint8_t *)&deviceName, strlen(deviceName));
+    diChar->setCallbacks(this);
+    dis->start();
+    advertising->addServiceUUID(disUUID);
 }
 
 void BLE::startCpService() {
@@ -169,7 +188,7 @@ void BLE::stopCscService() {
 }
 
 // Start Battey Level service
-void BLE::startBlSerice() {
+void BLE::startBlService() {
     Serial.println("[BLE] Starting BLS");
     blsUUID = BLEUUID(BATTERY_SERVICE_UUID);
     bls = server->createService(blsUUID);
@@ -188,7 +207,45 @@ void BLE::startBlSerice() {
     advertising->addServiceUUID(blsUUID);
 }
 
-void BLE::startApiSerice() {
+// Start Weight Scale service
+void BLE::startWsService() {
+    Serial.println("[BLE] Starting WSS");
+    wssUUID = BLEUUID(WEIGHT_SCALE_SERVICE_UUID);
+    wss = server->createService(wssUUID);
+
+    // Weight Scale Feature
+    BLECharacteristic *wsfChar = wss->createCharacteristic(
+        BLEUUID(WEIGHT_SCALE_FEATURE_UUID),
+        NIMBLE_PROPERTY::READ
+        //| NIMBLE_PROPERTY::READ_ENC
+    );
+    wsfChar->setCallbacks(this);
+    unsigned char bufWsf[4];
+    bufWsf[0] = 0x00;  // No features supported
+    bufWsf[1] = 0x00;  // Measurement resolution: not specified
+    bufWsf[2] = 0x00;
+    bufWsf[3] = 0x00;
+    wsfChar->setValue((uint8_t *)&bufWsf, 4);
+
+    // Weight Measurement
+    wmChar = wss->createCharacteristic(
+        BLEUUID(WEIGHT_MEASUREMENT_CHAR_UUID),
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
+        //NIMBLE_PROPERTY::INDICATE
+    );
+
+    BLEDescriptor *wmDesc = wmChar->createDescriptor(
+        BLEUUID(WEIGHT_MEASUREMENT_DESC_UUID),
+        NIMBLE_PROPERTY::READ);
+    char s[32] = "Can be enabled in API";
+    wmDesc->setValue((uint8_t *)s, strlen(s));
+
+    wmChar->setCallbacks(this);
+    wss->start();
+    advertising->addServiceUUID(wssUUID);
+}
+
+void BLE::startApiService() {
     Serial.println("[BLE] Starting APIS");
     char s[32] = "";
     asUUID = BLEUUID(API_SERVICE_UUID);
@@ -207,11 +264,6 @@ void BLE::startApiSerice() {
         NIMBLE_PROPERTY::READ);
     strncpy(s, "ESPM API v0.1", 32);
     apiDesc->setValue((uint8_t *)s, strlen(s));
-
-    // api char that streams the strain measurement values
-    properties = NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY;
-    apiStrainChar = as->createCharacteristic(BLEUUID(API_STRAIN_CHAR_UUID), properties);
-    apiStrainChar->setCallbacks(this);
 
     as->start();
     advertising->addServiceUUID(asUUID);
@@ -315,19 +367,20 @@ void BLE::setApiValue(const char *value) {
     apiChar->notify();
 }
 
-void BLE::setApiStrainValue(float value) {
+// Set Weight Measurement char value
+void BLE::setWmValue(float value) {
     if (!enabled) return;
-
-    union {
-        float value;
-        byte bytes[4];
-    } u;
-    u.value = value;
-    byte bytes[4];
-    memcpy(bytes, u.bytes, 4);
-
-    apiStrainChar->setValue((uint8_t *)bytes, 4);
-    apiStrainChar->notify();
+    uint8_t flags;
+    flags = (uint8_t)0;  // Measurement Units: SI; no additional fields present
+    uint16_t measurement;
+    // (value/5*1000) https://github.com/oesmith/gatt-xml/blob/master/org.bluetooth.characteristic.weight_measurement.xml
+    measurement = (uint16_t)(value * 200);
+    uint8_t bytes[3];
+    bytes[0] = flags;
+    bytes[1] = measurement & 0xff;
+    bytes[2] = (measurement >> 8) & 0xff;
+    wmChar->setValue((uint8_t *)bytes, 3);
+    wmChar->notify();
 }
 
 const char *BLE::characteristicStr(BLECharacteristic *c) {
@@ -336,7 +389,7 @@ const char *BLE::characteristicStr(BLECharacteristic *c) {
     if (cscmChar != nullptr && cscmChar->getHandle() == c->getHandle()) return "CSCM";
     if (blChar != nullptr && blChar->getHandle() == c->getHandle()) return "BL";
     if (apiChar != nullptr && apiChar->getHandle() == c->getHandle()) return "API";
-    if (apiStrainChar != nullptr && apiStrainChar->getHandle() == c->getHandle()) return "APISTRAIN";
+    if (wmChar != nullptr && wmChar->getHandle() == c->getHandle()) return "WM";
     return c->getUUID().toString().c_str();
 }
 
@@ -453,9 +506,9 @@ void BLE::setPasskey(uint32_t newPasskey) {
     */
 }
 
-void BLE::setApiStrainCharEnabled(bool state) {
-    if (state == apiStrainCharEnabled) return;
-    apiStrainCharEnabled = state;
+// Set the "update enabled" flag on the Weight Measurement char
+void BLE::setWmCharUpdateEnabled(bool state) {
+    wmCharUpdateEnabled = state;
 }
 
 void BLE::loadSettings() {

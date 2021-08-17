@@ -53,8 +53,8 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandPasskey(argStr, reply);
     if (Command::secureApi == command)
         return commandSecureApi(argStr, reply);
-    if (Command::apiStrain == command)
-        return commandApiStrain(argStr, reply);
+    if (Command::weightService == command)
+        return commandWeightService(argStr, reply);
     if (Command::calibrateStrain == command)
         return commandCalibrateStrain(argStr, reply);
     if (Command::tare == command)
@@ -150,23 +150,21 @@ API::Result API::commandSecureApi(const char *secureApiStr, char *reply) {
     return Result::success;
 }
 
-API::Result API::commandApiStrain(const char *enabledStr, char *reply) {
+API::Result API::commandWeightService(const char *enabledStr, char *reply) {
     // set value
     if (0 < strlen(enabledStr)) {
         bool newValue = false;
         if (0 == strcmp("true", enabledStr) || 0 == strcmp("1", enabledStr))
             newValue = true;
-        else if (0 == strcmp("false", enabledStr) || 0 == strcmp("0", enabledStr))
-            newValue = false;
-        board.ble.setApiStrainCharEnabled(newValue);
-        if (!newValue) board.ble.setApiStrainValue(0);
+        board.ble.setWmCharUpdateEnabled(newValue);
+        if (!newValue) board.ble.setWmValue(0.0);
     }
     // get value
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s", replyTmp,
-             (int)board.ble.apiStrainCharEnabled,
-             board.ble.apiStrainCharEnabled ? "true" : "false");
+             (int)board.ble.wmCharUpdateEnabled,
+             board.ble.wmCharUpdateEnabled ? "true" : "false");
     return Result::success;
 }
 

@@ -30,7 +30,7 @@ class API {
         reboot,
         passkey,
         secureApi,
-        apiStrain,
+        weightService,
         calibrateStrain,
         tare
     };
@@ -43,7 +43,7 @@ class API {
     Result commandReboot();
     Result commandPasskey(const char *passkeyStr, char *reply);
     Result commandSecureApi(const char *secureApiStr, char *reply);
-    Result commandApiStrain(const char *enabledStr, char *reply);
+    Result commandWeightService(const char *enabledStr, char *reply);
     Result commandCalibrateStrain(const char *knownMass, char *reply);
     Result commandTare(const char *str, char *reply);
 
@@ -89,8 +89,8 @@ class API {
                 return "passkey";
             case secureApi:
                 return "secureApi";
-            case apiStrain:
-                return "apiStrain";
+            case weightService:
+                return "weightService";
             case calibrateStrain:
                 return "calibrateStrain";
             case tare:
@@ -110,8 +110,8 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::passkey))) return Command::passkey;
         if (atoi(str) == Command::secureApi ||
             0 == strcmp(str, commandCodeToStr(Command::secureApi))) return Command::secureApi;
-        if (atoi(str) == Command::apiStrain ||
-            0 == strcmp(str, commandCodeToStr(Command::apiStrain))) return Command::apiStrain;
+        if (atoi(str) == Command::weightService ||
+            0 == strcmp(str, commandCodeToStr(Command::weightService))) return Command::weightService;
         if (atoi(str) == Command::calibrateStrain ||
             0 == strcmp(str, commandCodeToStr(Command::calibrateStrain))) return Command::calibrateStrain;
         if (atoi(str) == Command::tare ||
