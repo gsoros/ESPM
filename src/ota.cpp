@@ -17,20 +17,12 @@ void OTA::setup(const char *hostName, uint16_t port) {
     ArduinoOTA
         .onStart([]() {
             Serial.println("[OTA] Update start");
-#ifdef FEATURE_WEBSERVER
-            Serial.println("[OTA] Stopping webserver task");
-            board.webserver.taskStop();
-#endif
             Serial.println("[OTA] Disabling sleep");
             board.sleepEnabled = false;
             if (ArduinoOTA.getCommand() == U_FLASH)
                 Serial.println("[OTA] Flash");
             else {  // U_SPIFFS
                 Serial.println("[OTA] FS");
-#ifdef FEATURE_WEBSERVER
-                Serial.println("[OTA] Unmounting littlefs");
-                LITTLEFS.end();
-#endif
             }
         })
         .onEnd([]() {

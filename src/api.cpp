@@ -43,8 +43,8 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
     }
 
     // these command processors can add their respective [value] to the reply
-    if (Command::bootMode == command)
-        return commandBootMode(argStr, reply);
+    if (Command::wifi == command)
+        return commandWifi(argStr, reply);
     if (Command::hostName == command)
         return commandHostName(argStr, reply);
     if (Command::reboot == command)
@@ -59,42 +59,38 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandCalibrateStrain(argStr, reply);
     if (Command::tare == command)
         return commandTare(argStr, reply);
+    if (Command::wifiApSSID == command)
+        return commandWifiApSSID(argStr, reply);
+    if (Command::wifiApPassword == command)
+        return commandWifiApPassword(argStr, reply);
     return Result::unknownCommand;
 }
 
-// TODO If secureApi=true, to prevent lockout, maybe require passkey before setBootMode(live)?
-API::Result API::commandBootMode(const char *modeStr, char *reply) {
-    // set bootmode
-    if (0 < strlen(modeStr)) {
-        Board::BootMode modeCode = (Board::BootMode)atoi(modeStr);
-        if (0 == strcmp(modeStr, board.bootModeStr(Board::BootMode::live)) ||
-            modeCode == Board::BootMode::live) {
-            modeCode = Board::BootMode::live;
-        } else if (0 == strcmp(modeStr, board.bootModeStr(Board::BootMode::config)) ||
-                   modeCode == Board::BootMode::config) {
-            modeCode = Board::BootMode::config;
-        } else {
-            Serial.printf("%s %s: %s\n", tag, resultStr(Result::bootModeInvalid), modeStr);
-            return Result::bootModeInvalid;
+// TODO If secureApi=true, to prevent lockout, maybe require passkey before disabling wifi?
+API::Result API::commandWifi(const char *str, char *reply) {
+    // set wifi
+    bool newValue = true;  // enable wifi by default
+    if (0 < strlen(str)) {
+        if (0 == strcmp("false", str) || 0 == strcmp("0", str)) {
+            newValue = false;
         }
-        if (!board.setBootMode(modeCode))
-            return Result::error;
+        board.wifi.setEnabled(newValue);
     }
-    //get bootmode
+    //get wifi
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
-             replyTmp, board.bootMode, board.bootModeStr(board.bootMode));
+             replyTmp, (int)board.wifi.isEnabled(), board.wifi.isEnabled() ? "true" : "false");
     return Result::success;
 }
 
-API::Result API::commandHostName(const char *hostNameStr, char *reply) {
+API::Result API::commandHostName(const char *str, char *reply) {
     // set hostname
-    if (0 < strlen(hostNameStr)) {
+    if (0 < strlen(str)) {
         int maxSize = sizeof(board.hostName);
-        if (maxSize - 1 < strlen(hostNameStr)) return Result::hostNameInvalid;
-        if (!isAlNumStr(hostNameStr)) return Result::hostNameInvalid;
-        strncpy(board.hostName, hostNameStr, maxSize);
+        if (maxSize - 1 < strlen(str)) return Result::stringInvalid;
+        if (!isAlNumStr(str)) return Result::stringInvalid;
+        strncpy(board.hostName, str, maxSize);
         board.saveSettings();
     }
     // get hostname
@@ -108,12 +104,12 @@ API::Result API::commandReboot() {
 }
 
 // TODO If bootmode=live, to prevent lockout, maybe require confirmation before setting passkey?
-API::Result API::commandPasskey(const char *passkeyStr, char *reply) {
+API::Result API::commandPasskey(const char *str, char *reply) {
     char keyS[7] = "";
     // set passkey
-    if (0 < strlen(passkeyStr)) {
-        if (6 < strlen(passkeyStr)) return Result::passkeyInvalid;
-        strncpy(keyS, passkeyStr, 6);
+    if (0 < strlen(str)) {
+        if (6 < strlen(str)) return Result::passkeyInvalid;
+        strncpy(keyS, str, 6);
         uint32_t keyI = (uint32_t)atoi(keyS);
         if (999999 < keyI) return Result::passkeyInvalid;
         board.ble.setPasskey(keyI);
@@ -128,13 +124,13 @@ API::Result API::commandPasskey(const char *passkeyStr, char *reply) {
 }
 
 // TODO If bootmode=live, to prevent lockout, maybe require passkey before enabling secureAPI?
-API::Result API::commandSecureApi(const char *secureApiStr, char *reply) {
+API::Result API::commandSecureApi(const char *str, char *reply) {
     // set secureApi
     int newValue = -1;
-    if (0 < strlen(secureApiStr)) {
-        if (0 == strcmp("true", secureApiStr) || 0 == strcmp("1", secureApiStr)) {
+    if (0 < strlen(str)) {
+        if (0 == strcmp("true", str) || 0 == strcmp("1", str)) {
             newValue = 1;
-        } else if (0 == strcmp("false", secureApiStr) || 0 == strcmp("0", secureApiStr)) {
+        } else if (0 == strcmp("false", str) || 0 == strcmp("0", str)) {
             newValue = 0;
         }
         if (newValue == -1) {
@@ -150,11 +146,11 @@ API::Result API::commandSecureApi(const char *secureApiStr, char *reply) {
     return Result::success;
 }
 
-API::Result API::commandWeightService(const char *enabledStr, char *reply) {
+API::Result API::commandWeightService(const char *str, char *reply) {
     // set value
-    if (0 < strlen(enabledStr)) {
+    if (0 < strlen(str)) {
         bool newValue = false;
-        if (0 == strcmp("true", enabledStr) || 0 == strcmp("1", enabledStr))
+        if (0 == strcmp("true", str) || 0 == strcmp("1", str))
             newValue = true;
         board.ble.setWmCharUpdateEnabled(newValue);
         if (!newValue) board.ble.setWmValue(0.0);
@@ -168,10 +164,10 @@ API::Result API::commandWeightService(const char *enabledStr, char *reply) {
     return Result::success;
 }
 
-API::Result API::commandCalibrateStrain(const char *knownMassStr, char *reply) {
+API::Result API::commandCalibrateStrain(const char *str, char *reply) {
     Result result = Result::error;
     float knownMass;
-    knownMass = (float)atof(knownMassStr);
+    knownMass = (float)atof(str);
     if (1 < knownMass && knownMass < 1000) {
         if (0 == board.strain.calibrateTo(knownMass)) {
             board.strain.saveCalibration();
@@ -186,6 +182,88 @@ API::Result API::commandCalibrateStrain(const char *knownMassStr, char *reply) {
 
 API::Result API::commandTare(const char *str, char *reply) {
     board.strain.tare();
+    return Result::success;
+}
+
+API::Result API::commandWifiApEnabled(const char *str, char *reply) {
+    bool newValue = true;  // enable by default
+    if (0 < strlen(str)) {
+        if (0 == strcmp("false", str) || 0 == strcmp("0", str)) {
+            newValue = false;
+        }
+        board.wifi.settings.apEnabled = newValue;
+        board.wifi.saveSettings();
+        board.wifi.applySettings();
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
+             replyTmp, (int)board.wifi.settings.apEnabled,
+             board.wifi.settings.apEnabled ? "true" : "false");
+    return Result::success;
+}
+
+API::Result API::commandWifiApSSID(const char *str, char *reply) {
+    if (0 < strlen(str)) {
+        if (SETTINGS_STR_LENGTH - 1 < strlen(str)) return Result::argTooLong;
+        if (!isAlNumStr(str)) return Result::stringInvalid;
+        strncpy(board.wifi.settings.apSSID, str, SETTINGS_STR_LENGTH);
+        board.wifi.saveSettings();
+        board.wifi.applySettings();
+    }
+    strncat(reply, board.wifi.settings.apSSID, API_REPLY_MAXLENGTH - strlen(reply));
+    return Result::success;
+}
+
+API::Result API::commandWifiApPassword(const char *str, char *reply) {
+    if (0 < strlen(str)) {
+        if (SETTINGS_STR_LENGTH - 1 < strlen(str)) return Result::argTooLong;
+        strncpy(board.wifi.settings.apPassword, str, SETTINGS_STR_LENGTH);
+        board.wifi.saveSettings();
+        board.wifi.applySettings();
+    }
+    strncat(reply, "***", API_REPLY_MAXLENGTH - strlen(reply));
+    return Result::success;
+}
+
+API::Result API::commandWifiStaEnabled(const char *str, char *reply) {
+    bool newValue = true;  // enable by default
+    if (0 < strlen(str)) {
+        if (0 == strcmp("false", str) || 0 == strcmp("0", str)) {
+            newValue = false;
+        }
+        board.wifi.settings.staEnabled = newValue;
+        board.wifi.saveSettings();
+        board.wifi.applySettings();
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
+             replyTmp, (int)board.wifi.settings.staEnabled,
+             board.wifi.settings.staEnabled ? "true" : "false");
+    return Result::success;
+}
+
+API::Result API::commandWifiStaSSID(const char *str, char *reply) {
+    if (0 < strlen(str)) {
+        if (SETTINGS_STR_LENGTH - 1 < strlen(str)) return Result::argTooLong;
+        if (!isAlNumStr(str)) return Result::stringInvalid;
+        strncpy(board.wifi.settings.staSSID, str, SETTINGS_STR_LENGTH);
+        board.wifi.saveSettings();
+        board.wifi.applySettings();
+    }
+    strncat(reply, board.wifi.settings.staSSID, API_REPLY_MAXLENGTH - strlen(reply));
+    return Result::success;
+}
+
+API::Result API::commandWifiStaPassword(const char *str, char *reply) {
+    if (0 < strlen(str)) {
+        if (SETTINGS_STR_LENGTH - 1 < strlen(str)) return Result::argTooLong;
+        strncpy(board.wifi.settings.staPassword, str, SETTINGS_STR_LENGTH);
+        board.wifi.saveSettings();
+        board.wifi.applySettings();
+    }
+    strncat(reply, "***", API_REPLY_MAXLENGTH - strlen(reply));
     return Result::success;
 }
 

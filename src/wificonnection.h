@@ -12,20 +12,21 @@ class WifiConnection : public HasPreferences, public Task {
    public:
     typedef struct
     {
-        bool apEnable;
-        char apSSID[32];
-        char apPassword[32];
-        bool staEnable;
-        char staSSID[32];
-        char staPassword[32];
+        bool enabled;
+        bool apEnabled;
+        char apSSID[SETTINGS_STR_LENGTH];
+        char apPassword[SETTINGS_STR_LENGTH];
+        bool staEnabled;
+        char staSSID[SETTINGS_STR_LENGTH];
+        char staPassword[SETTINGS_STR_LENGTH];
     } ConnectionSettings;
 
     ConnectionSettings settings;
 
     void setup(Preferences *p, const char *preferencesNS = "WiFi") {
         preferencesSetup(p, preferencesNS);
-        if (!loadSettings())
-            loadDefaultSettings();
+        loadDefaultSettings();
+        loadSettings();
         applySettings();
     }
 
@@ -33,68 +34,69 @@ class WifiConnection : public HasPreferences, public Task {
 
     void off() {
         Serial.println("[Wifi] Shutting down");
-        settings.apEnable = false;
-        settings.staEnable = false;
+        settings.enabled = false;
         applySettings();
         taskStop();
     }
 
-    bool loadSettings() {
-        if (!preferencesStartLoad()) return false;
-        settings.apEnable = preferences->getBool("apEnable", false);
+    void loadSettings() {
+        if (!preferencesStartLoad()) return;
+        settings.enabled = preferences->getBool("enabled", false);
+        settings.apEnabled = preferences->getBool("apEnabled", false);
         //preferences->getBytes("apSSID", settings.apSSID, 32);
         //preferences->getBytes("apPassword", settings.apPassword, 32);
         strncpy(settings.apSSID, preferences->getString("apSSID").c_str(), 32);
         strncpy(settings.apPassword, preferences->getString("apPassword").c_str(), 32);
-        settings.staEnable = preferences->getBool("staEnable", false);
+        settings.staEnabled = preferences->getBool("staEnabled", false);
         //preferences->getBytes("staSSID", settings.staSSID, 32);
         //preferences->getBytes("staPassword", settings.staPassword, 32);
         strncpy(settings.staSSID, preferences->getString("staSSID").c_str(), 32);
         strncpy(settings.staPassword, preferences->getString("staPassword").c_str(), 32);
         preferencesEnd();
-        if (!settings.staEnable && !settings.apEnable)
-            return false;
-        return true;
     }
 
     void loadDefaultSettings() {
-        settings.apEnable = true;
+        settings.enabled = true;
+        settings.apEnabled = true;
         strncpy(settings.apSSID, HOSTNAME, 32);
         strncpy(settings.apPassword, "", 32);
-        settings.staEnable = false;
+        settings.staEnabled = false;
         strncpy(settings.staSSID, "", 32);
         strncpy(settings.staPassword, "", 32);
     }
 
     void saveSettings() {
         if (!preferencesStartSave()) return;
-        preferences->putBool("apEnable", settings.apEnable);
+        preferences->putBool("enabled", settings.enabled);
+        preferences->putBool("apEnabled", settings.apEnabled);
         preferences->putString("apSSID", settings.apSSID);
         preferences->putString("apPassword", settings.apPassword);
-        preferences->putBool("staEnable", settings.staEnable);
+        preferences->putBool("staEnabled", settings.staEnabled);
         preferences->putString("staSSID", settings.staSSID);
         preferences->putString("staPassword", settings.staPassword);
         preferencesEnd();
     }
 
     void printSettings() {
+        Serial.printf("[Wifi] Wifi %sabled\n",
+                      settings.enabled ? "En" : "Dis");
         printAPSettings();
         printSTASettings();
     }
 
     void printAPSettings() {
         Serial.printf("[Wifi] AP %s '%s' '%s'\n",
-                      settings.apEnable ? "Enabled" : "Disabled",
+                      settings.apEnabled ? "Enabled" : "Disabled",
                       settings.apSSID,
                       "***"  //settings.apPassword
         );
-        if (settings.apEnable)
+        if (settings.apEnabled)
             Serial.printf("[Wifi] AP online, IP: %s\n", WiFi.softAPIP().toString().c_str());
     }
 
     void printSTASettings() {
         Serial.printf("[Wifi] STA %s '%s' '%s'\n",
-                      settings.staEnable ? "Enabled" : "Disabled",
+                      settings.staEnabled ? "Enabled" : "Disabled",
                       settings.staSSID,
                       "***"  //settings.staPassword
         );
@@ -106,19 +108,19 @@ class WifiConnection : public HasPreferences, public Task {
         Serial.println("[Wifi] Applying settings, connection might need to be reset");
         Serial.flush();
         delay(1000);
-        if (settings.apEnable || settings.staEnable) {
-            if (settings.apEnable && settings.staEnable)
+        if (settings.enabled && (settings.apEnabled || settings.staEnabled)) {
+            if (settings.apEnabled && settings.staEnabled)
                 WiFi.mode(WIFI_MODE_APSTA);
-            else if (settings.apEnable)
+            else if (settings.apEnabled)
                 WiFi.mode(WIFI_MODE_AP);
             else
                 WiFi.mode(WIFI_MODE_STA);
         } else
             WiFi.mode(WIFI_MODE_NULL);
-        if (settings.apEnable) {
+        if (settings.enabled && settings.apEnabled) {
             if (0 == strcmp("", const_cast<char *>(settings.apSSID))) {
                 log_e("Warning: cannot enable AP with empty SSID\n");
-                settings.apEnable = false;
+                settings.apEnabled = false;
             } else {
                 log_i("Setting up WiFi AP '%s'\n", settings.apSSID);
                 WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -132,10 +134,10 @@ class WifiConnection : public HasPreferences, public Task {
                 WiFi.softAP(settings.apSSID, settings.apPassword);
             }
         }
-        if (settings.staEnable) {
+        if (settings.enabled && settings.staEnabled) {
             if (0 == strcmp("", const_cast<char *>(settings.staSSID))) {
                 log_e("Warning: cannot enable STA with empty SSID\n");
-                settings.staEnable = false;
+                settings.staEnabled = false;
             } else {
                 log_i("Connecting WiFi STA to AP '%s'\n", settings.staSSID);
                 WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -149,6 +151,16 @@ class WifiConnection : public HasPreferences, public Task {
                 WiFi.begin(settings.staSSID, settings.staPassword);
             }
         }
+    }
+
+    void setEnabled(bool state) {
+        settings.enabled = state;
+        applySettings();
+        saveSettings();
+    }
+
+    bool isEnabled() {
+        return settings.enabled;
     }
 
     bool connected() {

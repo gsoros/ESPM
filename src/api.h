@@ -15,8 +15,7 @@ class API {
         unknownCommand,
         commandTooLong,
         argTooLong,
-        bootModeInvalid,
-        hostNameInvalid,
+        stringInvalid,
         passkeyInvalid,
         secureApiInvalid,
         calibrationFailed,
@@ -25,27 +24,39 @@ class API {
 
     enum Command {
         invalid,
-        bootMode,
+        wifi,
         hostName,
         reboot,
         passkey,
         secureApi,
         weightService,
         calibrateStrain,
-        tare
+        tare,
+        wifiApEnabled,
+        wifiApSSID,
+        wifiApPassword,
+        wifiStaEnabled,
+        wifiStaSSID,
+        wifiStaPassword
     };
 
     const char *tag = "[API]";
 
     Result handleCommand(const char *commandWithArg, char *reply);
-    Result commandBootMode(const char *modeStr, char *reply);
-    Result commandHostName(const char *hostNameStr, char *reply);
+    Result commandWifi(const char *str, char *reply);
+    Result commandHostName(const char *str, char *reply);
     Result commandReboot();
-    Result commandPasskey(const char *passkeyStr, char *reply);
-    Result commandSecureApi(const char *secureApiStr, char *reply);
-    Result commandWeightService(const char *enabledStr, char *reply);
-    Result commandCalibrateStrain(const char *knownMass, char *reply);
+    Result commandPasskey(const char *str, char *reply);
+    Result commandSecureApi(const char *str, char *reply);
+    Result commandWeightService(const char *str, char *reply);
+    Result commandCalibrateStrain(const char *str, char *reply);
     Result commandTare(const char *str, char *reply);
+    Result commandWifiApEnabled(const char *str, char *reply);
+    Result commandWifiApSSID(const char *str, char *reply);
+    Result commandWifiApPassword(const char *str, char *reply);
+    Result commandWifiStaEnabled(const char *str, char *reply);
+    Result commandWifiStaSSID(const char *str, char *reply);
+    Result commandWifiStaPassword(const char *str, char *reply);
 
     const char *resultStr(Result r) {
         switch (r) {
@@ -59,10 +70,8 @@ class API {
                 return "Command too long";
             case argTooLong:
                 return "Argument too long";
-            case bootModeInvalid:
-                return "Invalid bootmode";
-            case hostNameInvalid:
-                return "Invalid hostname";
+            case stringInvalid:
+                return "Invalid string";
             case passkeyInvalid:
                 return "Invalid passkey";
             case secureApiInvalid:
@@ -79,8 +88,8 @@ class API {
         switch (c) {
             case invalid:
                 return "invalid";
-            case bootMode:
-                return "bootMode";
+            case wifi:
+                return "wifi";
             case hostName:
                 return "hostName";
             case reboot:
@@ -95,13 +104,25 @@ class API {
                 return "calibrateStrain";
             case tare:
                 return "tare";
+            case wifiApEnabled:
+                return "wifiApEnabled";
+            case wifiApSSID:
+                return "wifiApSSID";
+            case wifiApPassword:
+                return "wifiApPassword";
+            case wifiStaEnabled:
+                return "wifiStaEnabled";
+            case wifiStaSSID:
+                return "wifiStaSSID";
+            case wifiStaPassword:
+                return "wifiStaPassword";
         }
         return "unknown";
     }
 
     Command parseCommandStr(const char *str) {
-        if (atoi(str) == Command::bootMode ||
-            0 == strcmp(str, commandCodeToStr(Command::bootMode))) return Command::bootMode;
+        if (atoi(str) == Command::wifi ||
+            0 == strcmp(str, commandCodeToStr(Command::wifi))) return Command::wifi;
         if (atoi(str) == Command::hostName ||
             0 == strcmp(str, commandCodeToStr(Command::hostName))) return Command::hostName;
         if (atoi(str) == Command::reboot ||
@@ -116,6 +137,18 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::calibrateStrain))) return Command::calibrateStrain;
         if (atoi(str) == Command::tare ||
             0 == strcmp(str, commandCodeToStr(Command::tare))) return Command::tare;
+        if (atoi(str) == Command::wifiApEnabled ||
+            0 == strcmp(str, commandCodeToStr(Command::wifiApEnabled))) return Command::wifiApEnabled;
+        if (atoi(str) == Command::wifiApSSID ||
+            0 == strcmp(str, commandCodeToStr(Command::wifiApSSID))) return Command::wifiApSSID;
+        if (atoi(str) == Command::wifiApPassword ||
+            0 == strcmp(str, commandCodeToStr(Command::wifiApPassword))) return Command::wifiApPassword;
+        if (atoi(str) == Command::wifiStaEnabled ||
+            0 == strcmp(str, commandCodeToStr(Command::wifiStaEnabled))) return Command::wifiStaEnabled;
+        if (atoi(str) == Command::wifiStaSSID ||
+            0 == strcmp(str, commandCodeToStr(Command::wifiStaSSID))) return Command::wifiStaSSID;
+        if (atoi(str) == Command::wifiStaPassword ||
+            0 == strcmp(str, commandCodeToStr(Command::wifiStaPassword))) return Command::wifiStaPassword;
         return Command::invalid;
     }
 

@@ -427,8 +427,10 @@ void BLE::startAdvertising() {
         return;
     }
     delay(300);
-    Serial.println("[BLE] Start advertising");
-    server->startAdvertising();
+    if (!advertising->isAdvertising()) {
+        server->startAdvertising();
+        Serial.println("[BLE] Start advertising");
+    }
 }
 
 void BLE::onRead(BLECharacteristic *c) {

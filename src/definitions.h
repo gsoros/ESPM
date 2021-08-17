@@ -5,6 +5,8 @@
 ;                                        //
 ;                                        // #define DISABLE_SLEEP // for testing
 ;                                        //
+#define SETTINGS_STR_LENGTH 32           // maximum length of settings strings
+;                                        //
 #define MPU_RINGBUF_SIZE 16              // 128 ms smoothing @ 125 sps
 #define STRAIN_RINGBUF_SIZE 512          // 80 sps @ 10 rpm = 480 samples/rev
 #define POWER_RINGBUF_SIZE 2             // 3 sec smoothing @ 100 rpm

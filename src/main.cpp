@@ -12,8 +12,6 @@ void setup() {
 #endif
     board.setup();
     board.startTasks();
-    board.printBootMode();
-    board.setNextBootMode();
 }
 
 void loop() {

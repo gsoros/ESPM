@@ -110,6 +110,7 @@ void Status::print() {
         [p]rint calibration
         e[x]it
     [w]ifi
+        toggle wifi [e]nabled
         [a]p
             [e]nable
             [s]sid
@@ -133,7 +134,6 @@ void Status::print() {
         [h]ostname
         status [f]requency
         sleep [d]elay
-    boo[t] mode
     [r]eboot
     [d]eep sleep
 */
@@ -228,10 +228,14 @@ void Status::handleInput(const char input) {
                 break;
             case 'w':  // wifi
                 switch (menu[1]) {
+                    case 'e':
+                        board.wifi.setEnabled(!board.wifi.isEnabled());
+                        menu[1] = '\0';
+                        break;
                     case 'a':
                         switch (menu[2]) {
                             case 'e':
-                                board.wifi.settings.apEnable = !board.wifi.settings.apEnable;
+                                board.wifi.settings.apEnabled = !board.wifi.settings.apEnabled;
                                 board.wifi.applySettings();
                                 board.wifi.saveSettings();
                                 menu[2] = '\0';
@@ -263,7 +267,7 @@ void Status::handleInput(const char input) {
                     case 's':
                         switch (menu[2]) {
                             case 'e':
-                                board.wifi.settings.staEnable = !board.wifi.settings.staEnable;
+                                board.wifi.settings.staEnabled = !board.wifi.settings.staEnabled;
                                 board.wifi.applySettings();
                                 board.wifi.saveSettings();
                                 menu[2] = '\0';
@@ -300,7 +304,7 @@ void Status::handleInput(const char input) {
                         strncpy(menu, " ", 2);
                         break;
                     default:
-                        Serial.print("WiFi setup: [a]P, [s]TA, [p]rint config or e[x]it\n");
+                        Serial.print("WiFi setup: toggle wifi [e]nabled, [a]P, [s]TA, [p]rint config or e[x]it\n");
                         menu[1] = getChar();
                         menu[2] = '\0';
                 }
@@ -371,16 +375,6 @@ void Status::handleInput(const char input) {
                         menu[2] = '\0';
                 }
                 break;
-            case 't':  // boot mode
-                Board::BootMode mode;
-                mode = (Board::BootMode::config == board.bootMode)
-                           ? Board::BootMode::live
-                           : Board::BootMode::config;
-                if (board.setBootMode(mode))
-                    Serial.printf("Next boot will be in %s mode\n", board.bootModeStr(mode));
-                else
-                    Serial.printf("Error setting bootmode %d\n", (int)mode);
-                return;
             case 'r':
                 Serial.print("Rebooting...\n");
                 Serial.flush();
@@ -396,7 +390,7 @@ void Status::handleInput(const char input) {
                 //Serial.print("Ctrl+D received\n");
                 return;
             default:
-                Serial.print("[c]alibrate, [w]iFi, [b]le, c[o]nfig, boo[t] mode, [r]eboot or [d]eep sleep\n");
+                Serial.print("[c]alibrate, [w]iFi, [b]le, c[o]nfig, [r]eboot or [d]eep sleep\n");
                 return;
         }
     }
