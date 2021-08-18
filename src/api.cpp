@@ -48,7 +48,7 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
     if (Command::hostName == command)
         return commandHostName(argStr, reply);
     if (Command::reboot == command)
-        return commandReboot();
+        return commandReboot(argStr, reply);
     if (Command::passkey == command)
         return commandPasskey(argStr, reply);
     if (Command::secureApi == command)
@@ -98,7 +98,25 @@ API::Result API::commandHostName(const char *str, char *reply) {
     return Result::success;
 }
 
-API::Result API::commandReboot() {
+API::Result API::commandReboot(const char *str, char *reply) {
+    uint32_t delayT = 0;
+    if (0 < strlen(str)) {
+        delayT = (uint32_t)atoi(str);
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    snprintf(replyTmp, API_REPLY_MAXLENGTH, "%d:%s;%s%d",
+             (int)Result::success,
+             resultStr(Result::success),
+             reply,
+             delayT);
+    board.ble.setApiValue(replyTmp);
+    if (delayT > 0) {
+        Serial.printf("%sRebooting in %ds\n", tag, delayT);
+        delay(delayT);
+    }
+    board.ble.setApiValue("Rebooting...");
+    Serial.printf("%sRebooting...\n", tag);
+    Serial.flush();
     board.reboot();
     return Result::success;
 }

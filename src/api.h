@@ -45,7 +45,7 @@ class API {
     Result handleCommand(const char *commandWithArg, char *reply);
     Result commandWifi(const char *str, char *reply);
     Result commandHostName(const char *str, char *reply);
-    Result commandReboot();
+    Result commandReboot(const char *str, char *reply);
     Result commandPasskey(const char *str, char *reply);
     Result commandSecureApi(const char *str, char *reply);
     Result commandWeightService(const char *str, char *reply);
