@@ -5,6 +5,10 @@ void OTA::setup() { setup("ESPM"); }
 void OTA::setup(const char *hostName) { setup(hostName, 3232); }
 void OTA::setup(const char *hostName, uint16_t port) {
     Serial.printf("[OTA] Setup hostname: %s port: %d\n", hostName, port);
+    if (WiFi.getMode() == WIFI_MODE_NULL) {
+        Serial.printf("[OTA] Wifi is disabled, not starting\n");
+        return;
+    }
     ArduinoOTA.setHostname(hostName);  // Hostname defaults to esp3232-[MAC]
     ArduinoOTA.setPort(port);          // Port defaults to 3232
     ArduinoOTA.setTimeout(5000);       // for choppy WiFi
@@ -58,6 +62,10 @@ void OTA::setup(const char *hostName, uint16_t port) {
 }
 
 void OTA::loop() {
+    if (WiFi.getMode() == WIFI_MODE_NULL) {
+        Serial.printf("[OTA] Wifi is disabled, task should be stopped\n");
+        return;
+    }
     ArduinoOTA.handle();
 }
 

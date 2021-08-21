@@ -4,10 +4,18 @@
 void WifiSerial::setup() { setup(WIFISERIAL_PORT, WIFISERIAL_MAXCLIENTS); }
 void WifiSerial::setup(uint16_t port, uint8_t maxClients) {
     _server = WiFiServer(port, maxClients);
+    if (WiFi.getMode() == WIFI_MODE_NULL) {
+        Serial.printf("[OTA] Wifi is disabled, not starting\n");
+        return;
+    }
     _server.begin();
 }
 
 void WifiSerial::loop() {
+    if (WiFi.getMode() == WIFI_MODE_NULL) {
+        Serial.printf("[WifiSerial] Wifi is disabled, task should be stopped\n");
+        return;
+    }
     if (!WiFi.isConnected() && WiFi.softAPgetStationNum() < 1) return;
     if (!_connected) {
         if (!_server.hasClient()) return;

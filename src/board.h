@@ -59,7 +59,7 @@ class Board : public HasPreferences,
         led.setup();
         wifi.setup(preferences);
 #ifdef FEATURE_SERIAL
-        wifiSerial.setup();
+        //wifiSerial.setup(); // Wifi will setup and start WifiSerial
         Serial.setup(&hwSerial, &wifiSerial, true, true);
         while (!hwSerial) vTaskDelay(10);
 #endif
@@ -68,13 +68,13 @@ class Board : public HasPreferences,
         mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
         strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
         power.setup(preferences);
-        ota.setup(hostName);
+        //ota.setup(hostName); // Wifi will setup and start OTA
         status.setup();
     }
 
     void startTasks() {
 #ifdef FEATURE_SERIAL
-        startTask("wifiSerial");
+        //startTask("wifiSerial");
 #endif
         // wifi.taskStart("Wifi Task", 1); // Wifi task is empty
         startTask("ble");
@@ -82,7 +82,7 @@ class Board : public HasPreferences,
         startTask("mpu");
         startTask("strain");
         startTask("power");
-        startTask("ota");
+        //startTask("ota");
         startTask("status");
         startTask("led");
         taskStart("Board Task", 1);
@@ -90,6 +90,10 @@ class Board : public HasPreferences,
 
     void startTask(const char *taskName) {
         if (strcmp("wifiSerial", taskName) == 0) {
+            if (WiFi.getMode() == WIFI_MODE_NULL) {
+                Serial.printf("[Board] Wifi disabled, not starting WifiSerial task\n");
+                return;
+            }
             wifiSerial.taskStart("WifiSerial Task", 10);
             return;
         }
@@ -114,6 +118,10 @@ class Board : public HasPreferences,
             return;
         }
         if (strcmp("ota", taskName) == 0) {
+            if (WiFi.getMode() == WIFI_MODE_NULL) {
+                Serial.printf("[Board] Wifi disabled, not starting OTA task\n");
+                return;
+            }
             ota.taskStart("OTA Task", 10, 8192);
             return;
         }
@@ -131,6 +139,10 @@ class Board : public HasPreferences,
     void stopTask(const char *taskName) {
         if (strcmp("ota", taskName) == 0) {
             ota.off();
+            return;
+        }
+        if (strcmp("wifiSerial", taskName) == 0) {
+            wifiSerial.off();
             return;
         }
         log_e("unknown task: %s", taskName);

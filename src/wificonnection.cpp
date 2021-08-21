@@ -3,10 +3,10 @@
 
 void WifiConnection::setup(Preferences *p, const char *preferencesNS) {
     preferencesSetup(p, preferencesNS);
-    registerCallbacks();
     loadDefaultSettings();
     loadSettings();
     applySettings();
+    registerCallbacks();
 };
 
 void WifiConnection::loop(){};
@@ -118,10 +118,19 @@ void WifiConnection::applySettings() {
         }
     }
     if (oldWifiMode != newWifiMode) {
-        if (newWifiMode == WIFI_MODE_NULL)
+        if (newWifiMode == WIFI_MODE_NULL) {
             board.stopTask("ota");
-        else
-            board.restartTask("ota");  // TODO mdns is not found on network change without reboot
+            board.stopTask("wifiSerial");
+        } else {
+            board.stopTask("ota");
+            board.ota.setup(board.hostName);
+            board.startTask("ota");
+#ifdef FEATURE_SERIAL
+            board.stopTask("wifiSerial");
+            board.wifiSerial.setup();
+            board.startTask("wifiSerial");
+#endif
+        }
     }
 };
 
