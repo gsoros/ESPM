@@ -72,6 +72,14 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandWifiStaSSID(argStr, reply);
     if (Command::wifiStaPassword == command)
         return commandWifiStaPassword(argStr, reply);
+    if (Command::crankLength == command)
+        return commandCrankLength(argStr, reply);
+    if (Command::reverseStrain == command)
+        return commandReverseStrain(argStr, reply);
+    if (Command::doublePower == command)
+        return commandDoublePower(argStr, reply);
+    if (Command::sleepDelay == command)
+        return commandSleepDelay(argStr, reply);
     return Result::unknownCommand;
 }
 
@@ -130,7 +138,7 @@ API::Result API::commandReboot(const char *str, char *reply) {
     return Result::success;
 }
 
-// TODO If bootmode=live, to prevent lockout, maybe require confirmation before setting passkey?
+// TODO To prevent lockout, maybe require confirmation before setting passkey?
 API::Result API::commandPasskey(const char *str, char *reply) {
     char keyS[7] = "";
     // set passkey
@@ -150,7 +158,7 @@ API::Result API::commandPasskey(const char *str, char *reply) {
     return Result::success;
 }
 
-// TODO If bootmode=live, to prevent lockout, maybe require passkey before enabling secureAPI?
+// TODO To prevent lockout, maybe require passkey before enabling secureAPI?
 API::Result API::commandSecureApi(const char *str, char *reply) {
     // set secureApi
     int newValue = -1;
@@ -292,6 +300,74 @@ API::Result API::commandWifiStaPassword(const char *str, char *reply) {
     }
     strncat(reply, "***", API_REPLY_MAXLENGTH - strlen(reply));
     return Result::success;
+}
+
+API::Result API::commandCrankLength(const char *str, char *reply) {
+    Result result = Result::success;
+    if (1 < strlen(str)) {
+        result = Result::error;
+        float crankLength = (float)atof(str);
+        if (10 < crankLength && crankLength < 2000) {
+            board.power.crankLength = crankLength;
+            board.power.saveSettings();
+            result = Result::success;
+        }
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%f", replyTmp, board.power.crankLength);
+    return result;
+}
+
+API::Result API::commandReverseStrain(const char *str, char *reply) {
+    bool newValue = false;  // disable by default
+    if (0 < strlen(str)) {
+        if (0 == strcmp("true", str) || 0 == strcmp("1", str)) {
+            newValue = true;
+        }
+        board.power.reverseStrain = newValue;
+        board.power.saveSettings();
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
+             replyTmp, (int)board.power.reverseStrain,
+             board.power.reverseStrain ? "true" : "false");
+    return Result::success;
+}
+
+API::Result API::commandDoublePower(const char *str, char *reply) {
+    bool newValue = false;  // disable by default
+    if (0 < strlen(str)) {
+        if (0 == strcmp("true", str) || 0 == strcmp("1", str)) {
+            newValue = true;
+        }
+        board.power.reportDouble = newValue;
+        board.power.saveSettings();
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
+             replyTmp, (int)board.power.reportDouble,
+             board.power.reportDouble ? "true" : "false");
+    return Result::success;
+}
+
+API::Result API::commandSleepDelay(const char *str, char *reply) {
+    Result result = Result::success;
+    if (1 < strlen(str)) {
+        result = Result::error;
+        ulong sleepDelay = (ulong)atoi(str);
+        if (SLEEP_DELAY_MIN < sleepDelay) {
+            board.sleepDelay = sleepDelay;
+            board.saveSettings();
+            result = Result::success;
+        }
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%ld", replyTmp, board.sleepDelay);
+    return result;
 }
 
 bool API::isAlNumStr(const char *str) {

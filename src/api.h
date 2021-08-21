@@ -9,19 +9,6 @@
 
 class API {
    public:
-    enum Result {
-        success,
-        error,
-        unknownCommand,
-        commandTooLong,
-        argTooLong,
-        stringInvalid,
-        passkeyInvalid,
-        secureApiInvalid,
-        calibrationFailed,
-        tareFailed
-    };
-
     enum Command {
         invalid,
         wifi,
@@ -37,7 +24,24 @@ class API {
         wifiApPassword,
         wifiStaEnabled,
         wifiStaSSID,
-        wifiStaPassword
+        wifiStaPassword,
+        crankLength,
+        reverseStrain,
+        doublePower,
+        sleepDelay
+    };
+
+    enum Result {
+        success,
+        error,
+        unknownCommand,
+        commandTooLong,
+        argTooLong,
+        stringInvalid,
+        passkeyInvalid,
+        secureApiInvalid,
+        calibrationFailed,
+        tareFailed
     };
 
     const char *tag = "[API]";
@@ -57,6 +61,10 @@ class API {
     Result commandWifiStaEnabled(const char *str, char *reply);
     Result commandWifiStaSSID(const char *str, char *reply);
     Result commandWifiStaPassword(const char *str, char *reply);
+    Result commandCrankLength(const char *str, char *reply);
+    Result commandReverseStrain(const char *str, char *reply);
+    Result commandDoublePower(const char *str, char *reply);
+    Result commandSleepDelay(const char *str, char *reply);
 
     const char *resultStr(Result r) {
         switch (r) {
@@ -116,6 +124,14 @@ class API {
                 return "wifiStaSSID";
             case wifiStaPassword:
                 return "wifiStaPassword";
+            case crankLength:
+                return "crankLength";
+            case reverseStrain:
+                return "reverseStrain";
+            case doublePower:
+                return "doublePower";
+            case sleepDelay:
+                return "sleepDelay";
         }
         return "unknown";
     }
@@ -149,6 +165,14 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::wifiStaSSID))) return Command::wifiStaSSID;
         if (atoi(str) == Command::wifiStaPassword ||
             0 == strcmp(str, commandCodeToStr(Command::wifiStaPassword))) return Command::wifiStaPassword;
+        if (atoi(str) == Command::crankLength ||
+            0 == strcmp(str, commandCodeToStr(Command::crankLength))) return Command::crankLength;
+        if (atoi(str) == Command::reverseStrain ||
+            0 == strcmp(str, commandCodeToStr(Command::reverseStrain))) return Command::reverseStrain;
+        if (atoi(str) == Command::doublePower ||
+            0 == strcmp(str, commandCodeToStr(Command::doublePower))) return Command::doublePower;
+        if (atoi(str) == Command::sleepDelay ||
+            0 == strcmp(str, commandCodeToStr(Command::sleepDelay))) return Command::sleepDelay;
         return Command::invalid;
     }
 

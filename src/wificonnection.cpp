@@ -84,7 +84,7 @@ void WifiConnection::printSTASettings() {
 };
 
 void WifiConnection::applySettings() {
-    Serial.println("[Wifi] Applying settings, connection might need to be reset");
+    Serial.println("[Wifi] Applying settings, connections will be reset");
     Serial.flush();
     delay(1000);
     wifi_mode_t oldWifiMode = WiFi.getMode();
