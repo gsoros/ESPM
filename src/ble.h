@@ -5,6 +5,7 @@
 #include <NimBLEDevice.h>
 #include <CircularBuffer.h>
 
+#include "definitions.h"
 #include "ble_constants.h"
 #include "haspreferences.h"
 #include "task.h"
@@ -16,28 +17,28 @@ class BLE : public Task,
             public BLEServerCallbacks,
             public BLECharacteristicCallbacks {
    public:
-    char deviceName[32] = "ESPM";  // advertised device name
-    bool enabled = true;           // whether bluetooth is enabled
-    BLEServer *server;             // pointer to the ble server
-    BLEUUID disUUID;               // device information service uuid
-    BLEService *dis;               // device information service
-    BLECharacteristic *diChar;     // device information characteristic
-    BLEUUID cpsUUID;               // cycling power service uuid
-    BLEService *cps;               // cycling power service
-    BLECharacteristic *cpmChar;    // cycling power measurement characteristic
-    BLEUUID cscsUUID;              // cycling speed and cadence service uuid
-    BLEService *cscs;              // cycling speed and cadence service
-    BLECharacteristic *cscmChar;   // cycling speed and cadence measurement characteristic
-    BLEUUID blsUUID;               // battery level service uuid
-    BLEService *bls;               // battery level service
-    BLECharacteristic *blChar;     // battery level characteristic
-    BLEUUID wssUUID;               // weight scale service uuid
-    BLEService *wss;               // weight scale service
-    BLECharacteristic *wmChar;     // weight measurement characteristic
-    BLEUUID asUUID;                // api service uuid
-    BLEService *as;                // api service
-    BLECharacteristic *apiChar;    // api characteristic
-    BLEAdvertising *advertising;   // pointer to advertising
+    char deviceName[SETTINGS_STR_LENGTH] = HOSTNAME;  // advertised device name
+    bool enabled = true;                              // whether bluetooth is enabled
+    BLEServer *server;                                // pointer to the ble server
+    BLEUUID disUUID;                                  // device information service uuid
+    BLEService *dis;                                  // device information service
+    BLECharacteristic *diChar;                        // device information characteristic
+    BLEUUID cpsUUID;                                  // cycling power service uuid
+    BLEService *cps;                                  // cycling power service
+    BLECharacteristic *cpmChar;                       // cycling power measurement characteristic
+    BLEUUID cscsUUID;                                 // cycling speed and cadence service uuid
+    BLEService *cscs;                                 // cycling speed and cadence service
+    BLECharacteristic *cscmChar;                      // cycling speed and cadence measurement characteristic
+    BLEUUID blsUUID;                                  // battery level service uuid
+    BLEService *bls;                                  // battery level service
+    BLECharacteristic *blChar;                        // battery level characteristic
+    BLEUUID wssUUID;                                  // weight scale service uuid
+    BLEService *wss;                                  // weight scale service
+    BLECharacteristic *wmChar;                        // weight measurement characteristic
+    BLEUUID asUUID;                                   // api service uuid
+    BLEService *as;                                   // api service
+    BLECharacteristic *apiChar;                       // api characteristic
+    BLEAdvertising *advertising;                      // pointer to advertising
 
     uint8_t lastBatteryLevel = 0;
     unsigned long lastPowerNotification = 0;

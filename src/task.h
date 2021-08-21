@@ -4,11 +4,12 @@
 #include "xtensa/core-macros.h"
 #include <Arduino.h>
 #include "splitstream.h"
+#include "definitions.h"
 
 class Task {
    public:
     TaskHandle_t taskHandle = NULL;
-    char taskName[32];
+    char taskName[SETTINGS_STR_LENGTH];
     uint16_t taskFreq = 10;     // desired task frequency in Hz
     uint32_t taskStack = 4096;  // task stack size in bytes
     uint8_t taskPriority = 1;

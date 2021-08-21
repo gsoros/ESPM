@@ -46,7 +46,8 @@ class Board : public HasPreferences,
     Led led;
 
     bool sleepEnabled = true;
-    char hostName[32] = HOSTNAME;
+    ulong sleepDelay = SLEEP_DELAY_DEFAULT;
+    char hostName[SETTINGS_STR_LENGTH] = HOSTNAME;
 
     void setup() {
         setCpuFrequencyMhz(80);  // no wifi/bt below 80MHz
@@ -73,18 +74,72 @@ class Board : public HasPreferences,
 
     void startTasks() {
 #ifdef FEATURE_SERIAL
-        wifiSerial.taskStart("WifiSerial Task", 10);
+        startTask("wifiSerial");
 #endif
         // wifi.taskStart("Wifi Task", 1); // Wifi task is empty
-        ble.taskStart("BLE Task", 10);
-        battery.taskStart("Battery Task", 1);
-        mpu.taskStart("MPU Task", 125);
-        strain.taskStart("Strain Task", 90);
-        power.taskStart("Power Task", 10);
-        ota.taskStart("OTA Task", 10, 8192);
-        status.taskStart("Status Task", 10);
-        led.taskStart("Led Task", 10);
+        startTask("ble");
+        startTask("battery");
+        startTask("mpu");
+        startTask("strain");
+        startTask("power");
+        startTask("ota");
+        startTask("status");
+        startTask("led");
         taskStart("Board Task", 1);
+    }
+
+    void startTask(const char *taskName) {
+        if (strcmp("wifiSerial", taskName) == 0) {
+            wifiSerial.taskStart("WifiSerial Task", 10);
+            return;
+        }
+        if (strcmp("ble", taskName) == 0) {
+            ble.taskStart("BLE Task", 10);
+            return;
+        }
+        if (strcmp("battery", taskName) == 0) {
+            battery.taskStart("Battery Task", 1);
+            return;
+        }
+        if (strcmp("mpu", taskName) == 0) {
+            mpu.taskStart("MPU Task", 125);
+            return;
+        }
+        if (strcmp("strain", taskName) == 0) {
+            strain.taskStart("Strain Task", 90);
+            return;
+        }
+        if (strcmp("power", taskName) == 0) {
+            power.taskStart("Power Task", 10);
+            return;
+        }
+        if (strcmp("ota", taskName) == 0) {
+            ota.taskStart("OTA Task", 10, 8192);
+            return;
+        }
+        if (strcmp("status", taskName) == 0) {
+            status.taskStart("Status Task", 10);
+            return;
+        }
+        if (strcmp("led", taskName) == 0) {
+            led.taskStart("Led Task", 10);
+            return;
+        }
+        log_e("unknown task: %s", taskName);
+    }
+
+    void stopTask(const char *taskName) {
+        if (strcmp("ota", taskName) == 0) {
+            ota.off();
+            return;
+        }
+        log_e("unknown task: %s", taskName);
+    }
+
+    void restartTask(const char *taskName) {
+        Serial.printf("[Board] Restarting task %s\n", taskName);
+        stopTask(taskName);
+        startTask(taskName);
     }
 
     void loop() {
@@ -102,11 +157,12 @@ class Board : public HasPreferences,
 
     bool loadSettings() {
         if (!preferencesStartLoad()) return false;
-        char tmpHostName[32];
+        char tmpHostName[SETTINGS_STR_LENGTH];
         strncpy(tmpHostName, preferences->getString("hostName", hostName).c_str(), 32);
         if (1 < strlen(tmpHostName)) {
             strncpy(hostName, tmpHostName, 32);
         }
+        sleepDelay = preferences->getULong("sleepDelay", sleepDelay);
         preferencesEnd();
         return true;
     }
@@ -114,6 +170,7 @@ class Board : public HasPreferences,
     void saveSettings() {
         if (!preferencesStartSave()) return;
         preferences->putString("hostName", hostName);
+        preferences->putULong("sleepDelay", sleepDelay);
         preferencesEnd();
     }
 
@@ -125,7 +182,7 @@ class Board : public HasPreferences,
         if (!sleepEnabled) return -1;
         if (0 == t) t = millis();
         if (0 == mpu.lastMovement || t <= mpu.lastMovement) return -1;
-        const long tSleep = mpu.lastMovement + _sleepDelay - t;
+        const long tSleep = mpu.lastMovement + sleepDelay - t;
         return tSleep > 0 ? tSleep : 0;  // return 0 if it's past our bedtime
     }
 
@@ -171,12 +228,17 @@ class Board : public HasPreferences,
     float getStrain(bool clearBuffer = false) { return strain.value(clearBuffer); }
     float getLiveStrain() { return strain.liveValue(); }
     float getPower(bool clearBuffer = false) { return power.power(clearBuffer); }
-    void setSleepDelay(const ulong delay) { _sleepDelay = delay; }
+    void setSleepDelay(const ulong delay) {
+        if (delay < SLEEP_DELAY_MIN) {
+            Serial.printf("[Board] sleep delay too short");
+            return;
+        }
+        sleepDelay = delay;
+    }
 
    private:
-    ulong _sleepDelay = 5 * 60 * 1000;             // 5m
-    const ulong _sleepCountdownAfter = 30 * 1000;  // 30s
-    const ulong _sleepCountdownEvery = 2000;       // 2s
+    const ulong _sleepCountdownAfter = SLEEP_COUNTDOWN_AFTER;
+    const ulong _sleepCountdownEvery = SLEEP_COUNTDOWN_EVERY;
     ulong _lastSleepCountdown = 0;
 };
 

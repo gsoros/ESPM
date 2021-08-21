@@ -110,7 +110,7 @@ void BLE::startCpService() {
     BLEDescriptor *cpmDesc = cpmChar->createDescriptor(
         BLEUUID(CYCLING_POWER_MEASUREMENT_DESC_UUID),
         NIMBLE_PROPERTY::READ);
-    char s[32];
+    char s[SETTINGS_STR_LENGTH];
     strncpy(s, cadenceInCpm ? "Power and cadence measurement" : "Power measurement", sizeof(s));
     cpmDesc->setValue((uint8_t *)s, strlen(s));
 
@@ -173,7 +173,7 @@ void BLE::startCscService() {
     BLEDescriptor *cscmDesc = cscmChar->createDescriptor(
         BLEUUID(CSC_MEASUREMENT_DESC_UUID),
         NIMBLE_PROPERTY::READ);
-    char s[32] = "Cadence measurement";
+    char s[SETTINGS_STR_LENGTH] = "Cadence measurement";
     cscmDesc->setValue((uint8_t *)s, strlen(s));
 
     cscmChar->setCallbacks(this);
@@ -201,7 +201,7 @@ void BLE::startBlService() {
     BLEDescriptor *blDesc = blChar->createDescriptor(
         BLEUUID(BATTERY_LEVEL_DESC_UUID),
         NIMBLE_PROPERTY::READ);
-    char s[32] = "Percentage";
+    char s[SETTINGS_STR_LENGTH] = "Percentage";
     blDesc->setValue((uint8_t *)s, strlen(s));
     bls->start();
     advertising->addServiceUUID(blsUUID);
@@ -237,7 +237,7 @@ void BLE::startWsService() {
     BLEDescriptor *wmDesc = wmChar->createDescriptor(
         BLEUUID(WEIGHT_MEASUREMENT_DESC_UUID),
         NIMBLE_PROPERTY::READ);
-    char s[32] = "Can be enabled in API";
+    char s[SETTINGS_STR_LENGTH] = "Can be enabled in API";
     wmDesc->setValue((uint8_t *)s, strlen(s));
 
     wmChar->setCallbacks(this);
@@ -247,7 +247,7 @@ void BLE::startWsService() {
 
 void BLE::startApiService() {
     Serial.println("[BLE] Starting APIS");
-    char s[32] = "";
+    char s[SETTINGS_STR_LENGTH] = "";
     asUUID = BLEUUID(API_SERVICE_UUID);
     as = server->createService(asUUID);
 

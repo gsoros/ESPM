@@ -8,6 +8,7 @@ void OTA::setup(const char *hostName, uint16_t port) {
     ArduinoOTA.setHostname(hostName);  // Hostname defaults to esp3232-[MAC]
     ArduinoOTA.setPort(port);          // Port defaults to 3232
     ArduinoOTA.setTimeout(5000);       // for choppy WiFi
+    ArduinoOTA.setMdnsEnabled(true);
 
     // ArduinoOTA.setPassword("admin");// No authentication by default
     // Password can be set with it's md5 value as well
@@ -62,5 +63,6 @@ void OTA::loop() {
 
 void OTA::off() {
     Serial.println("[OTA] Shutting down");
+    ArduinoOTA.end();
     taskStop();
 }

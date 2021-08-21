@@ -29,6 +29,7 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
     Serial.printf("%s commandStr=%s argStr=%s\n", tag, commandStr, argStr);
 
     Command command = parseCommandStr(commandStr);
+    //Serial.printf("%s command=%d\n", tag, (int)command);
 
     // by default echo back the commandCode:commandStr= so client can
     // verify that this is a response to the correct command
@@ -59,10 +60,18 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandCalibrateStrain(argStr, reply);
     if (Command::tare == command)
         return commandTare(argStr, reply);
+    if (Command::wifiApEnabled == command)
+        return commandWifiApEnabled(argStr, reply);
     if (Command::wifiApSSID == command)
         return commandWifiApSSID(argStr, reply);
     if (Command::wifiApPassword == command)
         return commandWifiApPassword(argStr, reply);
+    if (Command::wifiStaEnabled == command)
+        return commandWifiStaEnabled(argStr, reply);
+    if (Command::wifiStaSSID == command)
+        return commandWifiStaSSID(argStr, reply);
+    if (Command::wifiStaPassword == command)
+        return commandWifiStaPassword(argStr, reply);
     return Result::unknownCommand;
 }
 

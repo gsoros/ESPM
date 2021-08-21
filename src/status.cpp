@@ -138,7 +138,7 @@ void Status::print() {
     [d]eep sleep
 */
 void Status::handleInput(const char input) {
-    char tmpStr[32] = "";
+    char tmpStr[SETTINGS_STR_LENGTH] = "";
     float tmpF = 0.0;
     char menu[8];
     strncpy(menu, &input, 1);
@@ -330,7 +330,7 @@ void Status::handleInput(const char input) {
                         Serial.print("Enter deep sleep delay in minutes and press [Enter]: ");
                         getStr(tmpStr, 32);
                         board.setSleepDelay(atof(tmpStr) * 60 * 1000);
-                        // sleep delay is not saved
+                        board.saveSettings();
                         menu[1] = '\0';
                         break;
                     case 'x':
