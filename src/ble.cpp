@@ -39,8 +39,10 @@ void BLE::setup(const char *deviceName, Preferences *p) {
 void BLE::loop() {
     if (!enabled) return;
     const ulong t = millis();
-    if (lastPowerNotification < t - 1000) notifyCp(t);
-    if (lastCadenceNotification < t - 1500) notifyCsc(t);
+    if (powerNotificationReady || lastPowerNotification < t - 1000)
+        notifyCp(t);
+    if (cadenceNotificationReady || lastCadenceNotification < t - 1500)
+        notifyCsc(t);
     if (lastBatteryLevel != board.battery.level) notifyBl(t);
     if (!advertising->isAdvertising()) startAdvertising();
     if (wmCharUpdateEnabled && lastWmNotification < t - 200) {
@@ -273,13 +275,16 @@ void BLE::onCrankEvent(const ulong t, const uint16_t revolutions) {
     if (crankRevs < revolutions) {
         crankRevs = revolutions;
         lastCrankEventTime = (uint16_t)(t * 1.024);
-        notifyCsc(t);
+        cadenceNotificationReady = true;
+        //notifyCsc(t);
     }
-    notifyCp(t);
+    powerNotificationReady = true;
+    //notifyCp(t);
 }
 
 // notify Cycling Power service
 void BLE::notifyCp(const ulong t) {
+    powerNotificationReady = false;
     if (!enabled) {
         Serial.println("[BLE] Not enabled, not notifying CP");
         return;
@@ -311,6 +316,7 @@ void BLE::notifyCp(const ulong t) {
 
 // notify Cycling Speed and Cadence service
 void BLE::notifyCsc(const ulong t) {
+    cadenceNotificationReady = false;
     if (!enabled) {
         Serial.println("[BLE] Not enabled, not notifying SCS");
         return;

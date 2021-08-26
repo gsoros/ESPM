@@ -49,9 +49,12 @@ void MPU::loop() {
         return;
     if (!device->update())
         return;
-    // RPM calculation, TODO not really needed anymore
-    const ulong t = millis();
+
     float angle = device->getYaw() + 180.0;  // -180...180 -> 0...360
+    const ulong t = millis();
+
+    /*
+    // RPM calculation, TODO not really needed anymore
     float newRpm = 0.0;
     if (0 < _previousTime && !_rpmBuf.isEmpty()) {
         ushort dT = t - _previousTime;  // ms
@@ -83,6 +86,8 @@ void MPU::loop() {
         }
         _dataReady = true;
     }
+    */
+
     // Crank event detection
     if ((_previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= _previousAngle)) {
         if (!_halfRevolution) {

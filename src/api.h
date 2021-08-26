@@ -29,6 +29,7 @@ class API {
         reverseStrain,
         doublePower,
         sleepDelay
+        // sleep
     };
 
     enum Result {

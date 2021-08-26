@@ -40,9 +40,11 @@ class BLE : public Task,
     BLECharacteristic *apiChar;                       // api characteristic
     BLEAdvertising *advertising;                      // pointer to advertising
 
-    uint8_t lastBatteryLevel = 0;
+    bool powerNotificationReady = false;
     unsigned long lastPowerNotification = 0;
+    bool cadenceNotificationReady = false;
     unsigned long lastCadenceNotification = 0;
+    uint8_t lastBatteryLevel = 0;
     unsigned long lastBatteryNotification = 0;
     bool wmCharUpdateEnabled = false;  // enables weight measurement value updates and notifications
     unsigned long lastWmNotification = 0;
