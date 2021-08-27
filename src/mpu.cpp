@@ -90,6 +90,7 @@ void MPU::loop() {
 
     // Crank event detection
     if ((_previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= _previousAngle)) {
+        lastMovement = t;
         if (!_halfRevolution) {
             if (0 < lastCrankEventTime) {
                 ulong tDiff = t - lastCrankEventTime;
