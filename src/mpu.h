@@ -23,10 +23,7 @@ class MPU : public Task, public HasPreferences {
     ulong lastMovement = 0;
     uint16_t revolutions = 0;
     ulong lastCrankEventTime = 0;
-
-    struct Quaternion {
-        float x, y, z, w;
-    };
+    int lastHallValue = 0;
 
     void setup(const uint8_t sdaPin,
                const uint8_t sclPin,
@@ -39,9 +36,8 @@ class MPU : public Task, public HasPreferences {
 
     void loop();
 
-    float rpm(bool unsetDataReadyFlag = false);
-    bool dataReady();
-    Quaternion quaternion();
+    int hall();
+
     void enableWomSleep(void);
     void calibrateAccelGyro();
     void calibrateMag();
@@ -55,9 +51,6 @@ class MPU : public Task, public HasPreferences {
    private:
     ulong _previousTime = 0;
     float _previousAngle = 0.0;
-    CircularBuffer<float, MPU_RINGBUF_SIZE> _rpmBuf;
-    float _rpm = 0.0;  // average rpm of the ring buffer
-    bool _dataReady = false;
     bool _halfRevolution = false;
 
     float _prefGetValidFloat(const char *key, const float_t defaultValue);

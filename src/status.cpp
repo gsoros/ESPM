@@ -77,7 +77,7 @@ void Status::setFreq(float freq) {
 }
 
 void Status::printHeader() {
-    Serial.println("[Status] [Key] Rpm Strain Power Voltage Sleep");
+    Serial.println("[Status] [Key] Hall Strain Power Voltage Sleep");
 }
 
 void Status::print() {
@@ -87,8 +87,8 @@ void Status::print() {
         return;
     if (lastOutput < t - statusDelay) {
         Serial.printf(
-            "[Status] %d %d %d %.2f %.2f\n",
-            (int)board.getRpm(),
+            "%d %d %d %.2f %.2f\n",
+            board.mpu.lastHallValue,
             (int)board.getLiveStrain(),
             (int)board.getPower(),  // not emptying the buffer
             board.battery.voltage,

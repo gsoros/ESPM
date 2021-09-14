@@ -236,7 +236,6 @@ class Board : public HasPreferences,
         ESP.restart();
     }
 
-    float getRpm(bool unsetDataReadyFlag = false) { return mpu.rpm(unsetDataReadyFlag); }
     float getStrain(bool clearBuffer = false) { return strain.value(clearBuffer); }
     float getLiveStrain() { return strain.liveValue(); }
     float getPower(bool clearBuffer = false) { return power.power(clearBuffer); }

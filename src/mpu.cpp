@@ -1,6 +1,8 @@
 #include "board.h"
 #include "mpu.h"
 
+#include "driver/adc.h"
+
 void MPU::setup(const uint8_t sdaPin,
                 const uint8_t sclPin,
                 Preferences *p) {
@@ -12,86 +14,77 @@ void MPU::setup(const uint8_t sdaPin,
                 const char *preferencesNS,
                 uint8_t mpuAddress) {
     preferencesSetup(p, preferencesNS);
-    Wire.begin(sdaPin, sclPin);
-    vTaskDelay(100);
-    device = new MPU9250();
-    //device->verbose(true);
-    MPU9250Setting s;
-    s.skip_mag = true;  // compass not needed
-    s.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_125HZ;
-    //s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_10HZ;
-    //s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_3600HZ;
-    //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_10HZ;
-    //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_420HZ;
-    //s.mag_output_bits = MAG_OUTPUT_BITS::M14BITS;
-    if (!device->setup(mpuAddress, s))
-        Serial.println("[MPU] Setup error");
-    //device->selectFilter(QuatFilterSel::MAHONY);
-    device->selectFilter(QuatFilterSel::NONE);
-    //device->selectFilter(QuatFilterSel::MADGWICK);
-    //device->setMagneticDeclination(5 + 19 / 60);  // 5° 19'
-    loadCalibration();
-    //printCalibration();
+    if (MOVEMENT_DETECTION_METHOD == MD_MPU) {
+        Wire.begin(sdaPin, sclPin);
+        vTaskDelay(100);
+        device = new MPU9250();
+        //device->verbose(true);
+        MPU9250Setting s;
+        s.skip_mag = true;  // compass not needed
+        s.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_125HZ;
+        //s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_10HZ;
+        //s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_3600HZ;
+        //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_10HZ;
+        //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_420HZ;
+        //s.mag_output_bits = MAG_OUTPUT_BITS::M14BITS;
+        if (!device->setup(mpuAddress, s))
+            Serial.println("[MPU] Setup error");
+        //device->selectFilter(QuatFilterSel::MAHONY);
+        device->selectFilter(QuatFilterSel::NONE);
+        //device->selectFilter(QuatFilterSel::MADGWICK);
+        //device->setMagneticDeclination(5 + 19 / 60);  // 5° 19'
+        loadCalibration();
+        //printCalibration();
+    } else {  // MOVEMENT_DETECTION_METHOD == MD_HALL
+        adc1_config_width(ADC_WIDTH_BIT_12);
+    }
     updateEnabled = true;
     lastMovement = millis();
 }
 
 void MPU::loop() {
-    if (accelGyroNeedsCalibration) {
-        calibrateAccelGyro();
-        accelGyroNeedsCalibration = false;
-    }
-    if (magNeedsCalibration) {
-        calibrateMag();
-        magNeedsCalibration = false;
-    }
-    if (!updateEnabled)
-        return;
-    if (!device->update())
-        return;
-
-    float angle = device->getYaw() + 180.0;  // -180...180 -> 0...360
     const ulong t = millis();
 
-    /*
-    // RPM calculation, TODO not really needed anymore
-    float newRpm = 0.0;
-    if (0 < _previousTime && !_rpmBuf.isEmpty()) {
-        ushort dT = t - _previousTime;  // ms
-        if (0 < dT) {
-            float dA = angle - _previousAngle;  // deg
-            // roll over zero deg, will fail when spinning faster than 180 deg/dT
-            if (-360 < dA && dA <= -180) {
-                dA += 360;
-            }
-            newRpm = dA / dT / 0.006;             // 1 deg/ms / .006 = 1 rpm
-            if (newRpm < -200 || 200 < newRpm) {  // remove value > 200 rpm
-                log_d("[MPU] invalid rpm %f", newRpm);
-                newRpm = 0.0;
-            }
-            if (-1 < newRpm && newRpm < 1) {  // remove noise from yaw drift at rest
-                newRpm = 0.0;
-            }
+    if (MOVEMENT_DETECTION_METHOD == MD_MPU) {
+        if (accelGyroNeedsCalibration) {
+            calibrateAccelGyro();
+            accelGyroNeedsCalibration = false;
         }
-    }
-    _rpmBuf.push(newRpm);
-    if (_rpmBuf.size()) {
-        float avg = 0.0;
-        for (decltype(_rpmBuf)::index_t i = 0; i < _rpmBuf.size(); i++) {
-            avg += _rpmBuf[i] / _rpmBuf.size();
+        if (magNeedsCalibration) {
+            calibrateMag();
+            magNeedsCalibration = false;
         }
-        _rpm = avg;
-        if (avg < -1 || 1 < avg) {
-            lastMovement = t;
-        }
-        _dataReady = true;
-    }
-    */
+        if (!updateEnabled)
+            return;
+        if (!device->update())
+            return;
 
-    // Crank event detection
-    if ((_previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= _previousAngle)) {
-        lastMovement = t;
-        if (!_halfRevolution) {
+        float angle = device->getYaw() + 180.0;  // -180...180 -> 0...360
+
+        if ((_previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= _previousAngle)) {
+            lastMovement = t;
+            if (!_halfRevolution) {
+                if (0 < lastCrankEventTime) {
+                    ulong tDiff = t - lastCrankEventTime;
+                    if (300 < tDiff) {  // 300 ms = 200 RPM
+                        revolutions++;
+                        Serial.printf("[MPU] Crank event #%d dt: %ldms\n", revolutions, tDiff);
+                        board.power.onCrankEvent(tDiff);
+                        board.ble.onCrankEvent(t, revolutions);
+                    } else {
+                        //Serial.printf("[MPU] Crank event skip, dt too small: %ldms\n", tDiff);
+                    }
+                }
+                lastCrankEventTime = t;
+            }
+            _halfRevolution = !_halfRevolution;
+        }
+        _previousTime = t;
+        _previousAngle = angle;
+    } else {  // MOVEMENT_DETECTION_METHOD == MD_HALL
+        //_hallBuf.push(hall_sensor_read() + HALL_DEFAULT_OFFSET);
+        if (HALL_DEFAULT_THRESHOLD < abs(hall())) {
+            lastMovement = t;
             if (0 < lastCrankEventTime) {
                 ulong tDiff = t - lastCrankEventTime;
                 if (300 < tDiff) {  // 300 ms = 200 RPM
@@ -105,28 +98,16 @@ void MPU::loop() {
             }
             lastCrankEventTime = t;
         }
-        _halfRevolution = !_halfRevolution;
     }
-    _previousTime = t;
-    _previousAngle = angle;
 }
 
-float MPU::rpm(bool unsetDataReadyFlag) {
-    if (unsetDataReadyFlag) _dataReady = false;
-    return _rpm;
-}
-
-bool MPU::dataReady() {
-    return _dataReady;
-}
-
-MPU::Quaternion MPU::quaternion() {
-    Quaternion q;
-    q.x = device->getQuaternionX();
-    q.y = device->getQuaternionY();
-    q.z = device->getQuaternionZ();
-    q.w = device->getQuaternionW();
-    return q;
+int MPU::hall() {
+    float avg = 0.0;
+    for (int i = 0; i < HALL_DEFAULT_SAMPLES; i++) {
+        avg += hall_sensor_read() / HALL_DEFAULT_SAMPLES;
+    }
+    lastHallValue = (int)avg + HALL_DEFAULT_OFFSET;
+    return lastHallValue;
 }
 
 // Enable wake-on-motion and go to sleep

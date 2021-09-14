@@ -12,7 +12,7 @@
 #define SLEEP_COUNTDOWN_AFTER 30 * 1000    // 30s
 #define SLEEP_COUNTDOWN_EVERY 2000         // 2s
 ;                                          //
-#define MPU_RINGBUF_SIZE 16                // 128 ms smoothing @ 125 sps
+#define MPU_RINGBUF_SIZE 16                // 128 ms smoothing @ 125 sps // TODO unused
 #define STRAIN_RINGBUF_SIZE 512            // 80 sps @ 10 rpm = 480 samples/rev
 #define POWER_RINGBUF_SIZE 2               // 3 sec smoothing @ 100 rpm
 #define WIFISERIAL_RINGBUF_RX_SIZE 256     //
@@ -34,5 +34,11 @@
 #define HX711_IGN_HIGH_SAMPLE 1            // adds extra sample(s) to the dataset and ignores peak high/low sample, value must be 0 or 1.
 #define HX711_IGN_LOW_SAMPLE 1             //
 #define HX711_SCK_DELAY 1                  // microsecond delay after writing sck pin high or low. This delay could be required for faster mcu's.
-
+;
+#define MD_HALL 0                          // use built-in hall sensor to detect crank revolutions
+#define MD_MPU 1                           // use MPU to detect crank revolutions
+#define MOVEMENT_DETECTION_METHOD MD_HALL  // use built-in hall effect sensor to detect crank revolutions
+#define HALL_DEFAULT_THRESHOLD 10          // hall effect sensor default sensitivity threshold
+#define HALL_DEFAULT_OFFSET -89            // hall effect sensor default calibration offset
+#define HALL_DEFAULT_SAMPLES 10            // # of samples for hall measurement averaging
 #endif
