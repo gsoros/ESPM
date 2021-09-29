@@ -200,7 +200,6 @@ void MOTION::printHallCalibration() {
 }
 
 void MOTION::loadCalibration() {
-    log_i("[MOTION] loadCalibration");
     if (!preferencesStartLoad()) return;
     detectionMethod = preferences->getInt("method", detectionMethod);
     detectionMethod = detectionMethod == MDM_MPU ? MDM_MPU : MDM_HALL;
@@ -228,7 +227,6 @@ void MOTION::loadCalibration() {
             _prefGetValidFloat("msZ", 1));
     }
     hallOffset = preferences->getInt("hallO", hallOffset);
-    log_i("[MOTION] Loaded hallOffset = %d", hallOffset);
     hallThreshold = preferences->getInt("hallT", hallThreshold);
     preferencesEnd();
     printCalibration();
@@ -251,10 +249,7 @@ void MOTION::saveCalibration() {
         _prefPutValidFloat("msZ", device->getMagScaleZ());
         preferences->putBool("calibrated", true);
     }
-    size_t written = 0;
-    written = preferences->putInt("hallO", (int32_t)hallOffset);
-    log_i("[MOTION] saving %d for %s in %s: %d", hallOffset, "hallO", preferencesNS, written);
-    log_i("[MOTION] savedValue = %d", preferences->getInt("hallO", hallOffset));
+    preferences->putInt("hallO", (int32_t)hallOffset);
     preferences->putInt("hallT", (int32_t)hallThreshold);
     preferences->putInt("method", (int32_t)detectionMethod);
     preferencesEnd();
