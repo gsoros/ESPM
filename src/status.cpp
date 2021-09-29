@@ -2,7 +2,7 @@
 #include "board.h"
 
 #include "battery.h"
-#include "mpu.h"
+#include "motion.h"
 #include "power.h"
 #include "strain.h"
 #include "wificonnection.h"
@@ -88,7 +88,7 @@ void Status::print() {
     if (lastOutput < t - statusDelay) {
         Serial.printf(
             "%d %d %d %.2f %.2f\n",
-            board.mpu.lastHallValue,
+            board.motion.lastHallValue,
             (int)board.getLiveStrain(),
             (int)board.getPower(),  // not emptying the buffer
             board.battery.voltage,
@@ -103,6 +103,8 @@ void Status::print() {
         [m]ag
         [b]attery
         [s]train
+        [h]all offset
+        ha[l]l threshold
         set [c]rank length
         toggle [r]everse strain
         toggle r[e]verse mpu
@@ -140,6 +142,7 @@ void Status::print() {
 void Status::handleInput(const char input) {
     char tmpStr[SETTINGS_STR_LENGTH] = "";
     float tmpF = 0.0;
+    int tmpI = 0;
     char menu[8];
     strncpy(menu, &input, 1);
     menu[1] = '\0';
@@ -148,15 +151,15 @@ void Status::handleInput(const char input) {
             case 'c':  // calibrate
                 switch (menu[1]) {
                     case 'a':
-                        board.mpu.calibrateAccelGyro();
-                        board.mpu.saveCalibration();
-                        board.mpu.printAccelGyroCalibration();
+                        board.motion.calibrateAccelGyro();
+                        board.motion.saveCalibration();
+                        board.motion.printAccelGyroCalibration();
                         menu[1] = '\0';
                         break;
                     case 'm':
-                        board.mpu.calibrateMag();
-                        board.mpu.saveCalibration();
-                        board.mpu.printMagCalibration();
+                        board.motion.calibrateMag();
+                        board.motion.saveCalibration();
+                        board.motion.printMagCalibration();
                         menu[1] = '\0';
                         break;
                     case 'b':
@@ -179,6 +182,41 @@ void Status::handleInput(const char input) {
                         } else
                             Serial.println("Invalid value.");
                         board.strain.printCalibration();
+                        menu[1] = '\0';
+                        break;
+                    case 'h':
+                        board.motion.printCalibration();
+                        Serial.print("Enter hall offset and press [Enter]: ");
+                        getStr(tmpStr, sizeof tmpStr);
+                        tmpI = atoi(tmpStr);
+                        board.motion.setHallOffset(tmpI);
+                        board.motion.saveCalibration();
+                        board.motion.printCalibration();
+                        menu[1] = '\0';
+                        break;
+                    case 'l':
+                        board.motion.printCalibration();
+                        Serial.print("Enter hall threshold and press [Enter]: ");
+                        getStr(tmpStr, sizeof tmpStr);
+                        tmpI = atoi(tmpStr);
+                        board.motion.setHallThreshold(tmpI);
+                        board.motion.saveCalibration();
+                        board.motion.printCalibration();
+                        menu[1] = '\0';
+                        break;
+                    case 'o':
+                        board.motion.printCalibration();
+                        Serial.print("Enter [m] for MPU or [h] for Hall effect sensor and press [Enter]: ");
+                        getStr(tmpStr, sizeof tmpStr);
+                        if (0 == strcmp(tmpStr, "m")) {
+                            board.motion.setMovementDetectionMethod(MDM_MPU);
+                            board.motion.saveCalibration();
+                        } else if (0 == strcmp(tmpStr, "h")) {
+                            board.motion.setMovementDetectionMethod(MDM_HALL);
+                            board.motion.saveCalibration();
+                        } else
+                            Serial.print("Invalid input\n");
+                        board.motion.printCalibration();
                         menu[1] = '\0';
                         break;
                     case 'c':
@@ -211,7 +249,7 @@ void Status::handleInput(const char input) {
                         menu[1] = '\0';
                         break;
                     case 'p':
-                        board.mpu.printCalibration();
+                        board.motion.printCalibration();
                         board.strain.printCalibration();
                         board.battery.printCalibration();
                         board.power.printSettings();
@@ -221,7 +259,7 @@ void Status::handleInput(const char input) {
                         strncpy(menu, " ", 2);
                         break;
                     default:
-                        Serial.print("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, set [c]rank length, toggle [r]everse strain, toggle r[e]verse MPU, toggle [d]ouble power, [p]rint calibration or e[x]it\n");
+                        Serial.print("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, [h]all offset, ha[l]l threshold, m[o]vement detection method, set [c]rank length, toggle [r]everse strain, toggle r[e]verse MPU, toggle [d]ouble power, [p]rint calibration or e[x]it\n");
                         menu[1] = getChar();
                         menu[2] = '\0';
                 }

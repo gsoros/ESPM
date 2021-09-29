@@ -1,7 +1,7 @@
 #ifndef DEFINITIONS_H___
 #define DEFINITIONS_H___
 
-//#define NO_GLOBAL_SERIAL               // defined in compile flags
+//#define NO_GLOBAL_SERIAL                  // defined in compile flags
 ;                                          //
 ;                                          // #define DISABLE_SLEEP // for testing
 ;                                          //
@@ -34,10 +34,10 @@
 #define HX711_IGN_HIGH_SAMPLE 1            // adds extra sample(s) to the dataset and ignores peak high/low sample, value must be 0 or 1.
 #define HX711_IGN_LOW_SAMPLE 1             //
 #define HX711_SCK_DELAY 1                  // microsecond delay after writing sck pin high or low. This delay could be required for faster mcu's.
-;
-#define MD_HALL 0                          // use built-in hall sensor to detect crank revolutions
-#define MD_MPU 1                           // use MPU to detect crank revolutions
-#define MOVEMENT_DETECTION_METHOD MD_HALL  // use built-in hall effect sensor to detect crank revolutions
+;                                          //
+#define MDM_HALL 0                         // use built-in hall sensor to detect crank revolutions
+#define MDM_MPU 1                          // use MPU to detect crank revolutions
+#define MOTION_DETECTION_METHOD MDM_HALL   // method of detecting crank revolutions
 #define HALL_DEFAULT_THRESHOLD 10          // hall effect sensor default sensitivity threshold
 #define HALL_DEFAULT_OFFSET -89            // hall effect sensor default calibration offset
 #define HALL_DEFAULT_SAMPLES 10            // # of samples for hall measurement averaging

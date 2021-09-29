@@ -1,6 +1,6 @@
 #include "power.h"
 #include "board.h"
-#include "mpu.h"
+#include "motion.h"
 #include "strain.h"
 
 void Power::setup(Preferences *p) {

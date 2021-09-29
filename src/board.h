@@ -14,7 +14,7 @@
 #endif
 #include "haspreferences.h"
 #include "task.h"
-#include "mpu.h"
+#include "motion.h"
 #include "strain.h"
 #include "power.h"
 #include "ble.h"
@@ -38,7 +38,7 @@ class Board : public HasPreferences,
     BLE ble;
     API api;
     Battery battery;
-    MPU mpu;
+    MOTION motion;
     Strain strain;
     Power power;
     OTA ota;
@@ -65,7 +65,7 @@ class Board : public HasPreferences,
 #endif
         ble.setup(hostName, preferences);
         battery.setup(preferences);
-        mpu.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
+        motion.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
         strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
         power.setup(preferences);
         //ota.setup(hostName); // Wifi will setup and start OTA
@@ -79,7 +79,7 @@ class Board : public HasPreferences,
         // wifi.taskStart("Wifi Task", 1); // Wifi task is empty
         startTask("ble");
         startTask("battery");
-        startTask("mpu");
+        startTask("motion");
         startTask("strain");
         startTask("power");
         //startTask("ota");
@@ -105,8 +105,8 @@ class Board : public HasPreferences,
             battery.taskStart("Battery Task", 1);
             return;
         }
-        if (strcmp("mpu", taskName) == 0) {
-            mpu.taskStart("MPU Task", 125);
+        if (strcmp("motion", taskName) == 0) {
+            motion.taskStart("Motion Task", 125);
             return;
         }
         if (strcmp("strain", taskName) == 0) {
@@ -193,8 +193,8 @@ class Board : public HasPreferences,
 #endif
         if (!sleepEnabled) return -1;
         if (0 == t) t = millis();
-        if (0 == mpu.lastMovement || t <= mpu.lastMovement) return -1;
-        const long tSleep = mpu.lastMovement + sleepDelay - t;
+        if (0 == motion.lastMovement || t <= motion.lastMovement) return -1;
+        const long tSleep = motion.lastMovement + sleepDelay - t;
         return tSleep > 0 ? tSleep : 0;  // return 0 if it's past our bedtime
     }
 
@@ -213,7 +213,7 @@ class Board : public HasPreferences,
         rtc_gpio_hold_en(MPU_WOM_INT_PIN);
         */
         strain.sleep();
-        mpu.enableWomSleep();
+        motion.enableWomSleep();
         //pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
         ble.setApiValue("Sleep...");
 #ifdef FEATURE_SERIAL

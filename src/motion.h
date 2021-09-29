@@ -1,5 +1,5 @@
-#ifndef MPU_H
-#define MPU_H
+#ifndef MOTION_H
+#define MOTION_H
 
 #include <Arduino.h>
 #include <CircularBuffer.h>
@@ -14,7 +14,7 @@
 #define MPU_RINGBUF_SIZE 16  // circular buffer size
 #endif
 
-class MPU : public Task, public HasPreferences {
+class MOTION : public Task, public HasPreferences {
    public:
     MPU9250 *device;
     bool updateEnabled = false;
@@ -24,6 +24,9 @@ class MPU : public Task, public HasPreferences {
     uint16_t revolutions = 0;
     ulong lastCrankEventTime = 0;
     int lastHallValue = 0;
+    int detectionMethod = MOTION_DETECTION_METHOD;
+    int hallOffset = HALL_DEFAULT_OFFSET;
+    int hallThreshold = HALL_DEFAULT_THRESHOLD;
 
     void setup(const uint8_t sdaPin,
                const uint8_t sclPin,
@@ -38,13 +41,17 @@ class MPU : public Task, public HasPreferences {
 
     int hall();
 
-    void enableWomSleep(void);
+    void enableWomSleep();
     void calibrateAccelGyro();
     void calibrateMag();
     void calibrate();
+    void setMovementDetectionMethod(int method);
+    void setHallOffset(int offset);
+    void setHallThreshold(int threshold);
     void printCalibration();
     void printAccelGyroCalibration();
     void printMagCalibration();
+    void printHallCalibration();
     void loadCalibration();
     void saveCalibration();
 
