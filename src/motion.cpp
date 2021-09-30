@@ -119,6 +119,7 @@ int MOTION::hall() {
 
 // Enable wake-on-motion and go to sleep
 void MOTION::enableWomSleep(void) {
+    // Todo enable waking on hall sensor (https://esp32.com/viewtopic.php?t=4608)
     if (detectionMethod != MDM_MPU) return;
     Serial.println("[MOTION] Enabling W-O-M sleep");
     updateEnabled = false;
