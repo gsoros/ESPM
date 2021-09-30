@@ -80,6 +80,8 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandDoublePower(argStr, reply);
     if (Command::sleepDelay == command)
         return commandSleepDelay(argStr, reply);
+    if (Command::hallChar == command)
+        return commandHallChar(argStr, reply);
     return Result::unknownCommand;
 }
 
@@ -368,6 +370,22 @@ API::Result API::commandSleepDelay(const char *str, char *reply) {
     strncpy(replyTmp, reply, sizeof(replyTmp));
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%ld", replyTmp, board.sleepDelay);
     return result;
+}
+
+API::Result API::commandHallChar(const char *str, char *reply) {
+    bool newValue = false;  // disable by default
+    if (0 < strlen(str)) {
+        if (0 == strcmp("true", str) || 0 == strcmp("1", str)) {
+            newValue = true;
+        }
+        board.ble.hallCharUpdateEnabled = newValue;
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
+             replyTmp, (int)board.ble.hallCharUpdateEnabled,
+             board.ble.hallCharUpdateEnabled ? "true" : "false");
+    return Result::success;
 }
 
 bool API::isAlNumStr(const char *str) {

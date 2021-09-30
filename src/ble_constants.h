@@ -112,4 +112,7 @@
 #define API_CHAR_UUID "da34811a-03c0-4efe-a266-ed014e181b65"
 #define API_DESC_UUID ((uint16_t)0x2901)
 
+#define HALL_CHAR_UUID "e43fb4d4-1dc7-4ecd-9409-fb9d65dc7187"
+#define HALL_DESC_UUID ((uint16_t)0x2901)
+
 #endif

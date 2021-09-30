@@ -49,6 +49,10 @@ void BLE::loop() {
         setWmValue(board.strain.liveValue());
         lastWmNotification = t;
     }
+    if (hallCharUpdateEnabled && lastHallNotification < t - 200) {
+        setHallValue(board.motion.lastHallValue);
+        lastHallNotification = t;
+    }
 }
 
 // Start Device Information service
@@ -267,6 +271,21 @@ void BLE::startApiService() {
     strncpy(s, "ESPM API v0.1", 32);
     apiDesc->setValue((uint8_t *)s, strlen(s));
 
+    // api char for reading hall effect sensor measurements
+    hallChar = as->createCharacteristic(
+        BLEUUID(HALL_CHAR_UUID),
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
+    hallChar->setCallbacks(this);
+    uint8_t bytes[2];
+    bytes[0] = 0 & 0xff;
+    bytes[1] = (0 >> 8) & 0xff;
+    hallChar->setValue((uint8_t *)bytes, 2);  // set initial value
+    BLEDescriptor *hallDesc = hallChar->createDescriptor(
+        BLEUUID(HALL_DESC_UUID),
+        NIMBLE_PROPERTY::READ);
+    strncpy(s, "Hall Effect Sensor reading", 32);
+    hallDesc->setValue((uint8_t *)s, strlen(s));
+
     as->start();
     advertising->addServiceUUID(asUUID);
 }
@@ -389,6 +408,16 @@ void BLE::setWmValue(float value) {
     wmChar->notify();
 }
 
+// Set Hall Effect Sensor Measurement char value
+void BLE::setHallValue(int value) {
+    if (!enabled) return;
+    uint8_t bytes[2];
+    bytes[0] = value & 0xff;
+    bytes[1] = (value >> 8) & 0xff;
+    hallChar->setValue((uint8_t *)bytes, 2);
+    hallChar->notify();
+}
+
 const char *BLE::characteristicStr(BLECharacteristic *c) {
     if (c == nullptr) return "unknown characteristic";
     if (cpmChar != nullptr && cpmChar->getHandle() == c->getHandle()) return "CPM";
@@ -396,6 +425,7 @@ const char *BLE::characteristicStr(BLECharacteristic *c) {
     if (blChar != nullptr && blChar->getHandle() == c->getHandle()) return "BL";
     if (apiChar != nullptr && apiChar->getHandle() == c->getHandle()) return "API";
     if (wmChar != nullptr && wmChar->getHandle() == c->getHandle()) return "WM";
+    if (hallChar != nullptr && hallChar->getHandle() == c->getHandle()) return "HALL";
     return c->getUUID().toString().c_str();
 }
 
@@ -517,6 +547,11 @@ void BLE::setPasskey(uint32_t newPasskey) {
 // Set the "update enabled" flag on the Weight Measurement char
 void BLE::setWmCharUpdateEnabled(bool state) {
     wmCharUpdateEnabled = state;
+}
+
+// Set the "update enabled" flag on the Hall char
+void BLE::setHallCharUpdateEnabled(bool state) {
+    hallCharUpdateEnabled = state;
 }
 
 void BLE::loadSettings() {

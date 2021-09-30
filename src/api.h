@@ -11,24 +11,25 @@ class API {
    public:
     enum Command {
         invalid,
-        wifi,
-        hostName,
-        reboot,
-        passkey,
-        secureApi,
-        weightService,
-        calibrateStrain,
-        tare,
-        wifiApEnabled,
-        wifiApSSID,
-        wifiApPassword,
-        wifiStaEnabled,
-        wifiStaSSID,
-        wifiStaPassword,
-        crankLength,
-        reverseStrain,
-        doublePower,
-        sleepDelay
+        wifi,             // enable wifi
+        hostName,         // set host name
+        reboot,           // reboot
+        passkey,          // secure api passkey
+        secureApi,        // enable secure api
+        weightService,    // enable weight scale service
+        calibrateStrain,  // calibrate strain measurement to known weight
+        tare,             // tare weight measurement
+        wifiApEnabled,    // enable wifi ap
+        wifiApSSID,       // set wifi ap ssid
+        wifiApPassword,   // set wifi ap password
+        wifiStaEnabled,   // enable wifi sta
+        wifiStaSSID,      // set wifi sta ssid
+        wifiStaPassword,  // set wifi sta password
+        crankLength,      // set crank length
+        reverseStrain,    // reverse strain measurement
+        doublePower,      // double power readings
+        sleepDelay,       // sleep delay
+        hallChar          // enable hall characteristic updates
         // sleep
     };
 
@@ -66,6 +67,7 @@ class API {
     Result commandReverseStrain(const char *str, char *reply);
     Result commandDoublePower(const char *str, char *reply);
     Result commandSleepDelay(const char *str, char *reply);
+    Result commandHallChar(const char *str, char *reply);
 
     const char *resultStr(Result r) {
         switch (r) {
@@ -133,6 +135,8 @@ class API {
                 return "doublePower";
             case sleepDelay:
                 return "sleepDelay";
+            case hallChar:
+                return "hallChar";
         }
         return "unknown";
     }
@@ -174,6 +178,8 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::doublePower))) return Command::doublePower;
         if (atoi(str) == Command::sleepDelay ||
             0 == strcmp(str, commandCodeToStr(Command::sleepDelay))) return Command::sleepDelay;
+        if (atoi(str) == Command::hallChar ||
+            0 == strcmp(str, commandCodeToStr(Command::hallChar))) return Command::hallChar;
         return Command::invalid;
     }
 

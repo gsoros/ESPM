@@ -38,6 +38,7 @@ class BLE : public Task,
     BLEUUID asUUID;                                   // api service uuid
     BLEService *as;                                   // api service
     BLECharacteristic *apiChar;                       // api characteristic
+    BLECharacteristic *hallChar;                      // hall effect sensor measurement characteristic
     BLEAdvertising *advertising;                      // pointer to advertising
 
     bool powerNotificationReady = false;
@@ -46,8 +47,10 @@ class BLE : public Task,
     unsigned long lastCadenceNotification = 0;
     uint8_t lastBatteryLevel = 0;
     unsigned long lastBatteryNotification = 0;
-    bool wmCharUpdateEnabled = false;  // enables weight measurement value updates and notifications
+    bool wmCharUpdateEnabled = false;    // enables weight measurement value updates and notifications
+    bool hallCharUpdateEnabled = false;  // enables hall measurement value updates and notifications
     unsigned long lastWmNotification = 0;
+    unsigned long lastHallNotification = 0;
 
     bool cadenceInCpm = true;       // whether to include cadence data in CPM
     bool cscServiceActive = false;  // whether CSC service should be active
@@ -85,6 +88,7 @@ class BLE : public Task,
     void handleApiCommand(const char *command);
     void setApiValue(const char *value);
     void setWmValue(float value);
+    void setHallValue(int value);
     const char *characteristicStr(BLECharacteristic *c);
     void stop();
 
@@ -102,6 +106,7 @@ class BLE : public Task,
     void setSecureApi(bool state);
     void setPasskey(uint32_t newPasskey);
     void setWmCharUpdateEnabled(bool state);
+    void setHallCharUpdateEnabled(bool state);
     void loadSettings();
     void saveSettings();
     void printSettings();
