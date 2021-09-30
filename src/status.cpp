@@ -104,7 +104,8 @@ void Status::print() {
         [b]attery
         [s]train
         [h]all offset
-        ha[l]l threshold
+        ha[l]l low threshold
+        hall h[i]gh threshold
         set [c]rank length
         toggle [r]everse strain
         toggle r[e]verse mpu
@@ -196,7 +197,17 @@ void Status::handleInput(const char input) {
                         break;
                     case 'l':
                         board.motion.printCalibration();
-                        Serial.print("Enter hall threshold and press [Enter]: ");
+                        Serial.print("Enter hall low threshold and press [Enter]: ");
+                        getStr(tmpStr, sizeof tmpStr);
+                        tmpI = atoi(tmpStr);
+                        board.motion.setHallThresLow(tmpI);
+                        board.motion.saveCalibration();
+                        board.motion.printCalibration();
+                        menu[1] = '\0';
+                        break;
+                    case 'i':
+                        board.motion.printCalibration();
+                        Serial.print("Enter hall high threshold and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
                         tmpI = atoi(tmpStr);
                         board.motion.setHallThreshold(tmpI);
@@ -259,7 +270,7 @@ void Status::handleInput(const char input) {
                         strncpy(menu, " ", 2);
                         break;
                     default:
-                        Serial.print("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, [h]all offset, ha[l]l threshold, m[o]vement detection method, set [c]rank length, toggle [r]everse strain, toggle r[e]verse MPU, toggle [d]ouble power, [p]rint calibration or e[x]it\n");
+                        Serial.print("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, [h]all offset, ha[l]l low threshold, hall h[i]gh threshold, m[o]vement detection method, set [c]rank length, toggle [r]everse strain, toggle r[e]verse MPU, toggle [d]ouble power, [p]rint calibration or e[x]it\n");
                         menu[1] = getChar();
                         menu[2] = '\0';
                 }

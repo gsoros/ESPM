@@ -27,6 +27,7 @@ class MOTION : public Task, public HasPreferences {
     int detectionMethod = MOTION_DETECTION_METHOD;
     int hallOffset = HALL_DEFAULT_OFFSET;
     int hallThreshold = HALL_DEFAULT_THRESHOLD;
+    int hallThresLow = HALL_DEFAULT_THRES_LOW;
 
     void setup(const uint8_t sdaPin,
                const uint8_t sclPin,
@@ -48,6 +49,7 @@ class MOTION : public Task, public HasPreferences {
     void setMovementDetectionMethod(int method);
     void setHallOffset(int offset);
     void setHallThreshold(int threshold);
+    void setHallThresLow(int threshold);
     void printCalibration();
     void printAccelGyroCalibration();
     void printMagCalibration();

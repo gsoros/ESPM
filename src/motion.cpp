@@ -82,8 +82,12 @@ void MOTION::loop() {
         _previousTime = t;
         _previousAngle = angle;
     } else {  // detectionMethod == MDM_HALL
-        //_hallBuf.push(hall_sensor_read() + HALL_DEFAULT_OFFSET);
-        if (hallThreshold < abs(hall())) {
+        if (!_halfRevolution) {
+            if (abs(hall()) < hallThresLow) {
+                _halfRevolution = true;
+            }
+        } else if (hallThreshold < abs(hall())) {
+            _halfRevolution = false;
             lastMovement = t;
             if (0 < lastCrankEventTime) {
                 ulong tDiff = t - lastCrankEventTime;
@@ -157,6 +161,10 @@ void MOTION::setHallThreshold(int threshold) {
     hallThreshold = threshold;
 }
 
+void MOTION::setHallThresLow(int threshold) {
+    hallThresLow = threshold;
+}
+
 void MOTION::printCalibration() {
     printAccelGyroCalibration();
     printMagCalibration();
@@ -194,8 +202,9 @@ void MOTION::printMagCalibration() {
 }
 
 void MOTION::printHallCalibration() {
-    Serial.printf("Hall offset: %d\nHall threshold: %d\n",
+    Serial.printf("Hall offset: %d\nHall low threshold: %d\nHall high threshold: %d\n",
                   hallOffset,
+                  hallThresLow,
                   hallThreshold);
 }
 
@@ -228,6 +237,7 @@ void MOTION::loadCalibration() {
     }
     hallOffset = preferences->getInt("hallO", hallOffset);
     hallThreshold = preferences->getInt("hallT", hallThreshold);
+    hallThresLow = preferences->getInt("hallTL", hallThresLow);
     preferencesEnd();
     printCalibration();
 }
@@ -251,6 +261,7 @@ void MOTION::saveCalibration() {
     }
     preferences->putInt("hallO", (int32_t)hallOffset);
     preferences->putInt("hallT", (int32_t)hallThreshold);
+    preferences->putInt("hallTL", (int32_t)hallThresLow);
     preferences->putInt("method", (int32_t)detectionMethod);
     preferencesEnd();
 }

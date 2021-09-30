@@ -38,7 +38,8 @@
 #define MDM_HALL 0                         // use built-in hall sensor to detect crank revolutions
 #define MDM_MPU 1                          // use MPU to detect crank revolutions
 #define MOTION_DETECTION_METHOD MDM_HALL   // method of detecting crank revolutions
-#define HALL_DEFAULT_THRESHOLD 10          // hall effect sensor default sensitivity threshold
-#define HALL_DEFAULT_OFFSET -89            // hall effect sensor default calibration offset
+#define HALL_DEFAULT_THRESHOLD 10          // hall effect sensor default high threshold
+#define HALL_DEFAULT_THRES_LOW 2           // hall effect sensor default low threshold
+#define HALL_DEFAULT_OFFSET -100           // hall effect sensor default calibration offset
 #define HALL_DEFAULT_SAMPLES 10            // # of samples for hall measurement averaging
 #endif
