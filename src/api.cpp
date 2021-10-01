@@ -82,6 +82,12 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandSleepDelay(argStr, reply);
     if (Command::hallChar == command)
         return commandHallChar(argStr, reply);
+    if (Command::hallOffset == command)
+        return commandHallOffset(argStr, reply);
+    if (Command::hallThreshold == command)
+        return commandHallThreshold(argStr, reply);
+    if (Command::hallThresLow == command)
+        return commandHallThresLow(argStr, reply);
     return Result::unknownCommand;
 }
 
@@ -385,6 +391,39 @@ API::Result API::commandHallChar(const char *str, char *reply) {
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
              replyTmp, (int)board.ble.hallCharUpdateEnabled,
              board.ble.hallCharUpdateEnabled ? "true" : "false");
+    return Result::success;
+}
+
+API::Result API::commandHallOffset(const char *str, char *reply) {
+    if (0 < strlen(str)) {
+        board.motion.hallOffset = atoi(str);
+        board.motion.saveCalibration();
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, board.motion.hallOffset);
+    return Result::success;
+}
+
+API::Result API::commandHallThreshold(const char *str, char *reply) {
+    if (0 < strlen(str)) {
+        board.motion.hallThreshold = atoi(str);
+        board.motion.saveCalibration();
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, board.motion.hallThreshold);
+    return Result::success;
+}
+
+API::Result API::commandHallThresLow(const char *str, char *reply) {
+    if (0 < strlen(str)) {
+        board.motion.hallThreshold = atoi(str);
+        board.motion.saveCalibration();
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, board.motion.hallThresLow);
     return Result::success;
 }
 

@@ -29,7 +29,10 @@ class API {
         reverseStrain,    // reverse strain measurement
         doublePower,      // double power readings
         sleepDelay,       // sleep delay
-        hallChar          // enable hall characteristic updates
+        hallChar,         // enable hall characteristic updates
+        hallOffset,       // hall sensor reading offset
+        hallThreshold,    // hall sensor reading high threshold
+        hallThresLow      // hall sensor reding low threshold
         // sleep
     };
 
@@ -68,6 +71,9 @@ class API {
     Result commandDoublePower(const char *str, char *reply);
     Result commandSleepDelay(const char *str, char *reply);
     Result commandHallChar(const char *str, char *reply);
+    Result commandHallOffset(const char *str, char *reply);
+    Result commandHallThreshold(const char *str, char *reply);
+    Result commandHallThresLow(const char *str, char *reply);
 
     const char *resultStr(Result r) {
         switch (r) {
@@ -137,6 +143,12 @@ class API {
                 return "sleepDelay";
             case hallChar:
                 return "hallChar";
+            case hallOffset:
+                return "hallOffset";
+            case hallThreshold:
+                return "hallThreshold";
+            case hallThresLow:
+                return "hallThresLow";
         }
         return "unknown";
     }
@@ -180,6 +192,12 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::sleepDelay))) return Command::sleepDelay;
         if (atoi(str) == Command::hallChar ||
             0 == strcmp(str, commandCodeToStr(Command::hallChar))) return Command::hallChar;
+        if (atoi(str) == Command::hallOffset ||
+            0 == strcmp(str, commandCodeToStr(Command::hallOffset))) return Command::hallOffset;
+        if (atoi(str) == Command::hallThreshold ||
+            0 == strcmp(str, commandCodeToStr(Command::hallThreshold))) return Command::hallThreshold;
+        if (atoi(str) == Command::hallThresLow ||
+            0 == strcmp(str, commandCodeToStr(Command::hallThresLow))) return Command::hallThresLow;
         return Command::invalid;
     }
 

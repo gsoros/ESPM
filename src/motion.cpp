@@ -113,6 +113,16 @@ int MOTION::hall() {
         avg += hall_sensor_read() / HALL_DEFAULT_SAMPLES;
         delayMicroseconds(3);
     }
+    /*
+    int value;
+    Serial.print("[MOTION] hall() ");
+    for (int i = 0; i < HALL_DEFAULT_SAMPLES; i++) {
+        value = hall_sensor_read();
+        avg += value / HALL_DEFAULT_SAMPLES;
+        Serial.printf("%d ", value + hallOffset);
+    }
+    Serial.println();
+    */
     lastHallValue = (int)avg + hallOffset;
     return lastHallValue;
 }
