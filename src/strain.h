@@ -19,6 +19,8 @@ class Strain : public Task, public HasPreferences {
     HX711_ADC *device;
     gpio_num_t doutPin;
     gpio_num_t sckPin;
+    int mdmStrainThreshold = MDM_STRAIN_DEFAULT_THRESHOLD;
+    int mdmStrainThresLow = MDM_STRAIN_DEFAULT_THRES_LOW;
 
     void setup(const gpio_num_t doutPin,
                const gpio_num_t sckPin,
@@ -31,6 +33,8 @@ class Strain : public Task, public HasPreferences {
     float liveValue();
     bool dataReady();
     void sleep();
+    void setMdmStrainThreshold(int threshold);
+    void setMdmStrainThresLow(int threshold);
     int calibrateTo(float knownMass);  // calibrate to a known mass in kg
     void printCalibration();
     void loadCalibration();
@@ -39,6 +43,7 @@ class Strain : public Task, public HasPreferences {
 
    private:
     CircularBuffer<float, STRAIN_RINGBUF_SIZE> _measurementBuf;
+    bool _halfRevolution = false;
 };
 
 #endif

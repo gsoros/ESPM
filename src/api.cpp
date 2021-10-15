@@ -88,6 +88,12 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandHallThreshold(argStr, reply);
     if (Command::hallThresLow == command)
         return commandHallThresLow(argStr, reply);
+    if (Command::strainThreshold == command)
+        return commandStrainThreshold(argStr, reply);
+    if (Command::strainThresLow == command)
+        return commandStrainThresLow(argStr, reply);
+    if (Command::motionDetectionMethod == command)
+        return commandMotionDetectionMethod(argStr, reply);
     return Result::unknownCommand;
 }
 
@@ -407,7 +413,7 @@ API::Result API::commandHallOffset(const char *str, char *reply) {
 
 API::Result API::commandHallThreshold(const char *str, char *reply) {
     if (0 < strlen(str)) {
-        board.motion.hallThreshold = atoi(str);
+        board.motion.setHallThreshold(atoi(str));
         board.motion.saveCalibration();
     }
     char replyTmp[API_REPLY_MAXLENGTH];
@@ -418,13 +424,54 @@ API::Result API::commandHallThreshold(const char *str, char *reply) {
 
 API::Result API::commandHallThresLow(const char *str, char *reply) {
     if (0 < strlen(str)) {
-        board.motion.hallThreshold = atoi(str);
+        board.motion.setHallThresLow(atoi(str));
         board.motion.saveCalibration();
     }
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, board.motion.hallThresLow);
     return Result::success;
+}
+
+API::Result API::commandStrainThreshold(const char *str, char *reply) {
+    if (0 < strlen(str)) {
+        board.strain.setMdmStrainThreshold(atoi(str));
+        board.strain.saveCalibration();
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, board.strain.mdmStrainThreshold);
+    return Result::success;
+}
+
+API::Result API::commandStrainThresLow(const char *str, char *reply) {
+    if (0 < strlen(str)) {
+        board.strain.setMdmStrainThresLow(atoi(str));
+        board.strain.saveCalibration();
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, board.strain.mdmStrainThresLow);
+    return Result::success;
+}
+
+API::Result API::commandMotionDetectionMethod(const char *str, char *reply) {
+    Result result = Result::error;
+    if (0 < strlen(str)) {
+        int tmpI = atoi(str);
+        if (tmpI == MDM_HALL || tmpI == MDM_MPU || tmpI == MDM_STRAIN) {
+            board.setMotionDetectionMethod(tmpI);
+            board.saveSettings();
+            result = Result::success;
+        }
+        else
+            result = Result::argInvalid;
+    } else
+        result = Result::success;
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, board.motionDetectionMethod);
+    return result;
 }
 
 bool API::isAlNumStr(const char *str) {

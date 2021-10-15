@@ -11,28 +11,31 @@ class API {
    public:
     enum Command {
         invalid,
-        wifi,             // enable wifi
-        hostName,         // set host name
-        reboot,           // reboot
-        passkey,          // secure api passkey
-        secureApi,        // enable secure api
-        weightService,    // enable weight scale service
-        calibrateStrain,  // calibrate strain measurement to known weight
-        tare,             // tare weight measurement
-        wifiApEnabled,    // enable wifi ap
-        wifiApSSID,       // set wifi ap ssid
-        wifiApPassword,   // set wifi ap password
-        wifiStaEnabled,   // enable wifi sta
-        wifiStaSSID,      // set wifi sta ssid
-        wifiStaPassword,  // set wifi sta password
-        crankLength,      // set crank length
-        reverseStrain,    // reverse strain measurement
-        doublePower,      // double power readings
-        sleepDelay,       // sleep delay
-        hallChar,         // enable hall characteristic updates
-        hallOffset,       // hall sensor reading offset
-        hallThreshold,    // hall sensor reading high threshold
-        hallThresLow      // hall sensor reding low threshold
+        wifi,                  // enable wifi
+        hostName,              // set host name
+        reboot,                // reboot
+        passkey,               // secure api passkey
+        secureApi,             // enable secure api
+        weightService,         // enable weight scale service
+        calibrateStrain,       // calibrate strain measurement to known weight
+        tare,                  // tare weight measurement
+        wifiApEnabled,         // enable wifi ap
+        wifiApSSID,            // set wifi ap ssid
+        wifiApPassword,        // set wifi ap password
+        wifiStaEnabled,        // enable wifi sta
+        wifiStaSSID,           // set wifi sta ssid
+        wifiStaPassword,       // set wifi sta password
+        crankLength,           // set crank length
+        reverseStrain,         // reverse strain measurement
+        doublePower,           // double power readings
+        sleepDelay,            // sleep delay
+        hallChar,              // enable hall characteristic updates
+        hallOffset,            // hall sensor reading offset
+        hallThreshold,         // hall sensor high threshold
+        hallThresLow,          // hall sensor low threshold
+        strainThreshold,       // strain motion detection high threshold
+        strainThresLow,        // strain motion detection low threshold
+        motionDetectionMethod  // select motion detection method
         // sleep
     };
 
@@ -46,7 +49,8 @@ class API {
         passkeyInvalid,
         secureApiInvalid,
         calibrationFailed,
-        tareFailed
+        tareFailed,
+        argInvalid
     };
 
     const char *tag = "[API]";
@@ -74,6 +78,9 @@ class API {
     Result commandHallOffset(const char *str, char *reply);
     Result commandHallThreshold(const char *str, char *reply);
     Result commandHallThresLow(const char *str, char *reply);
+    Result commandStrainThreshold(const char *str, char *reply);
+    Result commandStrainThresLow(const char *str, char *reply);
+    Result commandMotionDetectionMethod(const char *str, char *reply);
 
     const char *resultStr(Result r) {
         switch (r) {
@@ -97,6 +104,8 @@ class API {
                 return "Calibration failed";
             case tareFailed:
                 return "Tare failed";
+            case argInvalid:
+                return "Invalid argument";
         }
         return "Unknown error";
     }
@@ -149,6 +158,12 @@ class API {
                 return "hallThreshold";
             case hallThresLow:
                 return "hallThresLow";
+            case strainThreshold:
+                return "strainThreshold";
+            case strainThresLow:
+                return "strainThresLow";
+            case motionDetectionMethod:
+                return "motionDetectionMethod";
         }
         return "unknown";
     }
@@ -198,6 +213,12 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::hallThreshold))) return Command::hallThreshold;
         if (atoi(str) == Command::hallThresLow ||
             0 == strcmp(str, commandCodeToStr(Command::hallThresLow))) return Command::hallThresLow;
+        if (atoi(str) == Command::strainThreshold ||
+            0 == strcmp(str, commandCodeToStr(Command::strainThreshold))) return Command::strainThreshold;
+        if (atoi(str) == Command::strainThresLow ||
+            0 == strcmp(str, commandCodeToStr(Command::strainThresLow))) return Command::strainThresLow;
+        if (atoi(str) == Command::motionDetectionMethod ||
+            0 == strcmp(str, commandCodeToStr(Command::motionDetectionMethod))) return Command::motionDetectionMethod;
         return Command::invalid;
     }
 

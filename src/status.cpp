@@ -106,6 +106,8 @@ void Status::print() {
         [h]all offset
         ha[l]l low threshold
         hall h[i]gh threshold
+        s[t]rain md low threshold
+        strai[n] md high threshold
         set [c]rank length
         toggle [r]everse strain
         toggle r[e]verse mpu
@@ -215,16 +217,39 @@ void Status::handleInput(const char input) {
                         board.motion.printCalibration();
                         menu[1] = '\0';
                         break;
+                    case 't':
+                        board.motion.printCalibration();
+                        Serial.print("Enter strain md low threshold and press [Enter]: ");
+                        getStr(tmpStr, sizeof tmpStr);
+                        tmpI = atoi(tmpStr);
+                        board.strain.setMdmStrainThresLow(tmpI);
+                        board.strain.saveCalibration();
+                        board.motion.printCalibration();
+                        menu[1] = '\0';
+                        break;
+                    case 'n':
+                        board.motion.printCalibration();
+                        Serial.print("Enter strain md high threshold and press [Enter]: ");
+                        getStr(tmpStr, sizeof tmpStr);
+                        tmpI = atoi(tmpStr);
+                        board.strain.setMdmStrainThreshold(tmpI);
+                        board.strain.saveCalibration();
+                        board.motion.printCalibration();
+                        menu[1] = '\0';
+                        break;
                     case 'o':
                         board.motion.printCalibration();
-                        Serial.print("Enter [m] for MPU or [h] for Hall effect sensor and press [Enter]: ");
+                        Serial.print("Enter [s] for Strain, [m] for MPU or [h] for Hall effect sensor and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
-                        if (0 == strcmp(tmpStr, "m")) {
-                            board.motion.setMovementDetectionMethod(MDM_MPU);
-                            board.motion.saveCalibration();
+                        if (0 == strcmp(tmpStr, "s")) {
+                            board.setMotionDetectionMethod(MDM_STRAIN);
+                            board.saveSettings();
+                        } else if (0 == strcmp(tmpStr, "m")) {
+                            board.setMotionDetectionMethod(MDM_MPU);
+                            board.saveSettings();
                         } else if (0 == strcmp(tmpStr, "h")) {
-                            board.motion.setMovementDetectionMethod(MDM_HALL);
-                            board.motion.saveCalibration();
+                            board.setMotionDetectionMethod(MDM_HALL);
+                            board.saveSettings();
                         } else
                             Serial.print("Invalid input\n");
                         board.motion.printCalibration();
@@ -270,7 +295,7 @@ void Status::handleInput(const char input) {
                         strncpy(menu, " ", 2);
                         break;
                     default:
-                        Serial.print("Calibrate [a]ccel/gyro, [m]ag, [b]attery, [s]train, [h]all offset, ha[l]l low threshold, hall h[i]gh threshold, m[o]vement detection method, set [c]rank length, toggle [r]everse strain, toggle r[e]verse MPU, toggle [d]ouble power, [p]rint calibration or e[x]it\n");
+                        Serial.print("Calibrate [a]ccel/gyro\n[m]ag\n[b]attery\n[s]train\n[h]all offset\nha[l]l low threshold\nhall h[i]gh threshold\ns[t]rain md low threshold\nstrai[n] md high threshold\nm[o]vement detection method\nset [c]rank length\ntoggle [r]everse strain\ntoggle r[e]verse MPU\ntoggle [d]ouble power\n[p]rint calibration\ne[x]it\n");
                         menu[1] = getChar();
                         menu[2] = '\0';
                 }

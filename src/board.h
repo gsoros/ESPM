@@ -38,7 +38,7 @@ class Board : public HasPreferences,
     BLE ble;
     API api;
     Battery battery;
-    MOTION motion;
+    Motion motion;
     Strain strain;
     Power power;
     OTA ota;
@@ -48,6 +48,7 @@ class Board : public HasPreferences,
     bool sleepEnabled = true;
     ulong sleepDelay = SLEEP_DELAY_DEFAULT;
     char hostName[SETTINGS_STR_LENGTH] = HOSTNAME;
+    int motionDetectionMethod = MOTION_DETECTION_METHOD;
 
     void setup() {
         setCpuFrequencyMhz(80);  // no wifi/bt below 80MHz
@@ -79,7 +80,8 @@ class Board : public HasPreferences,
         // wifi.taskStart("Wifi Task", 1); // Wifi task is empty
         startTask("ble");
         startTask("battery");
-        startTask("motion");
+        if (motionDetectionMethod == MDM_HALL || motionDetectionMethod == MDM_MPU)
+            startTask("motion");
         startTask("strain");
         startTask("power");
         //startTask("ota");
@@ -90,7 +92,7 @@ class Board : public HasPreferences,
 
     void startTask(const char *taskName) {
         if (strcmp("wifiSerial", taskName) == 0) {
-            if (WiFi.getMode() == WIFI_MODE_NULL) {
+            if (WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL) {
                 Serial.printf("[Board] Wifi disabled, not starting WifiSerial task\n");
                 return;
             }
@@ -145,6 +147,10 @@ class Board : public HasPreferences,
             wifiSerial.off();
             return;
         }
+        if (strcmp("motion", taskName) == 0) {
+            motion.taskStop();
+            return;
+        }
         log_e("unknown task: %s", taskName);
     }
 
@@ -175,6 +181,7 @@ class Board : public HasPreferences,
             strncpy(hostName, tmpHostName, 32);
         }
         sleepDelay = preferences->getULong("sleepDelay", sleepDelay);
+        motionDetectionMethod = preferences->getInt("mdm", motionDetectionMethod);
         preferencesEnd();
         return true;
     }
@@ -183,6 +190,7 @@ class Board : public HasPreferences,
         if (!preferencesStartSave()) return;
         preferences->putString("hostName", hostName);
         preferences->putULong("sleepDelay", sleepDelay);
+        preferences->putInt("mdm", motionDetectionMethod);
         preferencesEnd();
     }
 
@@ -245,6 +253,15 @@ class Board : public HasPreferences,
             return;
         }
         sleepDelay = delay;
+    }
+
+    void setMotionDetectionMethod(int method) {
+        int prevMDM = motionDetectionMethod;
+        motionDetectionMethod = method;
+        if ((prevMDM == MDM_HALL || prevMDM == MDM_MPU) && (method != MDM_HALL && method != MDM_MPU))
+            stopTask("motion");
+        else if ((prevMDM != MDM_HALL && prevMDM != MDM_MPU) && (method == MDM_HALL || method == MDM_MPU))
+            startTask("motion");
     }
 
    private:

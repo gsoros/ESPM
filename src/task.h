@@ -46,8 +46,10 @@ class Task {
     }
 
     void taskStop() {
-        if (NULL != taskHandle)
+        if (NULL != taskHandle) {
+            Serial.printf("[Task] Stopping %s\n", taskName);
             vTaskDelete(taskHandle);
+        }
         taskHandle = NULL;
     }
 
