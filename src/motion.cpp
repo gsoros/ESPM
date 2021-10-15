@@ -33,7 +33,7 @@ void Motion::setup(const uint8_t sdaPin,
         device->selectFilter(QuatFilterSel::NONE);
         //device->selectFilter(QuatFilterSel::MADGWICK);
         //device->setMagneticDeclination(5 + 19 / 60);  // 5° 19'
-    } else {  // board.motionDetectionMethod == MDM_HALL
+    } else if (board.motionDetectionMethod == MDM_HALL) {
         adc1_config_width(ADC_WIDTH_BIT_12);
     }
     loadCalibration();

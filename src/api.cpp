@@ -457,14 +457,14 @@ API::Result API::commandStrainThresLow(const char *str, char *reply) {
 
 API::Result API::commandMotionDetectionMethod(const char *str, char *reply) {
     Result result = Result::error;
+    Serial.printf("[API] commandMotionDetectionMethod(\"%s\")\n", str);
     if (0 < strlen(str)) {
         int tmpI = atoi(str);
         if (tmpI == MDM_HALL || tmpI == MDM_MPU || tmpI == MDM_STRAIN) {
             board.setMotionDetectionMethod(tmpI);
             board.saveSettings();
             result = Result::success;
-        }
-        else
+        } else
             result = Result::argInvalid;
     } else
         result = Result::success;

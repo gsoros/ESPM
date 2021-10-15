@@ -57,20 +57,56 @@ class Board : public HasPreferences,
 #endif
         preferencesSetup(&boardPreferences, "BOARD");
         loadSettings();
-        led.setup();
-        wifi.setup(preferences);
+        setupTask("led");
+        setupTask("wifi");
 #ifdef FEATURE_SERIAL
         //wifiSerial.setup(); // Wifi will setup and start WifiSerial
-        Serial.setup(&hwSerial, &wifiSerial, true, true);
-        while (!hwSerial) vTaskDelay(10);
+        setupTask("serial");
 #endif
-        ble.setup(hostName, preferences);
-        battery.setup(preferences);
-        motion.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
-        strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
-        power.setup(preferences);
+        setupTask("ble");
+        setupTask("battery");
+        setupTask("motion");
+        setupTask("strain");
+        setupTask("power");
         //ota.setup(hostName); // Wifi will setup and start OTA
-        status.setup();
+        setupTask("status");
+    }
+
+    void setupTask(const char *taskName) {
+        if (strcmp("led", taskName) == 0) {
+            led.setup();
+            return;
+        }
+        if (strcmp("wifi", taskName) == 0) {
+            wifi.setup(preferences);
+            return;
+        }
+        if (strcmp("serial", taskName) == 0) {
+            Serial.setup(&hwSerial, &wifiSerial, true, true);
+            while (!hwSerial) vTaskDelay(10);
+            return;
+        }
+        if (strcmp("ble", taskName) == 0) {
+            ble.setup(hostName, preferences);
+            return;
+        }
+        if (strcmp("battery", taskName) == 0) {
+            battery.setup(preferences);
+            return;
+        }
+        if (strcmp("strain", taskName) == 0) {
+            strain.setup(STRAIN_DOUT_PIN, STRAIN_SCK_PIN, preferences);
+            return;
+        }
+        if (strcmp("power", taskName) == 0) {
+            power.setup(preferences);
+            return;
+        }
+        if (strcmp("status", taskName) == 0) {
+            status.setup();
+            return;
+        }
+        log_e("unknown task: %s", taskName);
     }
 
     void startTasks() {
@@ -258,10 +294,12 @@ class Board : public HasPreferences,
     void setMotionDetectionMethod(int method) {
         int prevMDM = motionDetectionMethod;
         motionDetectionMethod = method;
-        if ((prevMDM == MDM_HALL || prevMDM == MDM_MPU) && (method != MDM_HALL && method != MDM_MPU))
+        if ((prevMDM == MDM_HALL || prevMDM == MDM_MPU) && (method != MDM_HALL && method != MDM_MPU)) {
             stopTask("motion");
-        else if ((prevMDM != MDM_HALL && prevMDM != MDM_MPU) && (method == MDM_HALL || method == MDM_MPU))
+        } else if ((prevMDM != MDM_HALL && prevMDM != MDM_MPU) && (method == MDM_HALL || method == MDM_MPU)) {
+            setupTask("motion");
             startTask("motion");
+        }
     }
 
    private:

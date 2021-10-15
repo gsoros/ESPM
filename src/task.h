@@ -39,6 +39,8 @@ class Task {
         BaseType_t err = xTaskCreatePinnedToCore(_taskLoop, taskName, stack, this, priority, &taskHandle, 1);
         if (pdPASS != err)
             log_e("Failed to start task %s, error %d", taskName, err);
+        else
+            Serial.printf("[Task] Started %s\n", name);
     }
 
     bool taskRunning() {
