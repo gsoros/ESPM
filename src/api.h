@@ -11,32 +11,32 @@ class API {
    public:
     enum Command {
         invalid,
-        wifi,                  // enable wifi
-        hostName,              // set host name
-        reboot,                // reboot
-        passkey,               // secure api passkey
-        secureApi,             // enable secure api
-        weightService,         // enable weight scale service
-        calibrateStrain,       // calibrate strain measurement to known weight
-        tare,                  // tare weight measurement
-        wifiApEnabled,         // enable wifi ap
-        wifiApSSID,            // set wifi ap ssid
-        wifiApPassword,        // set wifi ap password
-        wifiStaEnabled,        // enable wifi sta
-        wifiStaSSID,           // set wifi sta ssid
-        wifiStaPassword,       // set wifi sta password
-        crankLength,           // set crank length
-        reverseStrain,         // reverse strain measurement
-        doublePower,           // double power readings
-        sleepDelay,            // sleep delay
-        hallChar,              // enable hall characteristic updates
-        hallOffset,            // hall sensor reading offset
-        hallThreshold,         // hall sensor high threshold
-        hallThresLow,          // hall sensor low threshold
-        strainThreshold,       // strain motion detection high threshold
-        strainThresLow,        // strain motion detection low threshold
-        motionDetectionMethod  // select motion detection method
-        // sleep
+        wifi,                   // enable wifi
+        hostName,               // set host name
+        reboot,                 // reboot
+        passkey,                // secure api passkey
+        secureApi,              // enable secure api
+        weightService,          // enable weight scale service
+        calibrateStrain,        // calibrate strain measurement to known weight
+        tare,                   // tare weight measurement
+        wifiApEnabled,          // enable wifi ap
+        wifiApSSID,             // set wifi ap ssid
+        wifiApPassword,         // set wifi ap password
+        wifiStaEnabled,         // enable wifi sta
+        wifiStaSSID,            // set wifi sta ssid
+        wifiStaPassword,        // set wifi sta password
+        crankLength,            // set crank length
+        reverseStrain,          // reverse strain measurement
+        doublePower,            // double power readings
+        sleepDelay,             // sleep delay
+        hallChar,               // enable hall characteristic updates
+        hallOffset,             // hall sensor reading offset
+        hallThreshold,          // hall sensor high threshold
+        hallThresLow,           // hall sensor low threshold
+        strainThreshold,        // strain motion detection high threshold
+        strainThresLow,         // strain motion detection low threshold
+        motionDetectionMethod,  // select motion detection method
+        sleep                   // put esp to deep sleep
     };
 
     enum Result {
@@ -81,6 +81,7 @@ class API {
     Result commandStrainThreshold(const char *str, char *reply);
     Result commandStrainThresLow(const char *str, char *reply);
     Result commandMotionDetectionMethod(const char *str, char *reply);
+    Result commandSleep(const char *str, char *reply);
 
     const char *resultStr(Result r) {
         switch (r) {
@@ -164,6 +165,8 @@ class API {
                 return "strainThresLow";
             case motionDetectionMethod:
                 return "motionDetectionMethod";
+            case sleep:
+                return "sleep";
         }
         return "unknown";
     }
@@ -219,6 +222,8 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::strainThresLow))) return Command::strainThresLow;
         if (atoi(str) == Command::motionDetectionMethod ||
             0 == strcmp(str, commandCodeToStr(Command::motionDetectionMethod))) return Command::motionDetectionMethod;
+        if (atoi(str) == Command::sleep ||
+            0 == strcmp(str, commandCodeToStr(Command::sleep))) return Command::sleep;
         return Command::invalid;
     }
 

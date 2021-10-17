@@ -94,6 +94,8 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandStrainThresLow(argStr, reply);
     if (Command::motionDetectionMethod == command)
         return commandMotionDetectionMethod(argStr, reply);
+    if (Command::sleep == command)
+        return commandSleep(argStr, reply);
     return Result::unknownCommand;
 }
 
@@ -471,6 +473,15 @@ API::Result API::commandMotionDetectionMethod(const char *str, char *reply) {
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, board.motionDetectionMethod);
+    return result;
+}
+
+API::Result API::commandSleep(const char *str, char *reply) {
+    Serial.println("[API] commandSleep()");
+    Result result = board.deepSleep() == 0 ? Result::success : Result::error;
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, (int)result);
     return result;
 }
 

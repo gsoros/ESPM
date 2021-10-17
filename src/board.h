@@ -242,11 +242,11 @@ class Board : public HasPreferences,
         return tSleep > 0 ? tSleep : 0;  // return 0 if it's past our bedtime
     }
 
-    void deepSleep() {
+    int deepSleep() {
 #ifdef DISABLE_SLEEP
-        return;
+        return 1;
 #endif
-        if (!sleepEnabled) return;
+        if (!sleepEnabled) return 1;
         Serial.println("[Board] Preparing for deep sleep");
         /*
         rtc_gpio_init(MPU_WOM_INT_PIN);
@@ -270,6 +270,7 @@ class Board : public HasPreferences,
         delay(500);
         esp_sleep_enable_ext0_wakeup(MPU_WOM_INT_PIN, HIGH);
         esp_deep_sleep_start();
+        return 0;
     }
 
     void reboot() {
