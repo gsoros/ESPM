@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
+#include <CircularBuffer.h>
 
 #include "definitions.h"
 #include "haspreferences.h"
@@ -10,6 +11,10 @@
 
 #ifndef BATTERY_PIN
 #define BATTERY_PIN GPIO_NUM_35
+#endif
+
+#ifndef BATTERY_RINGBUF_SIZE
+#define BATTERY_RINGBUF_SIZE 10  // circular buffer size
 #endif
 
 class Battery : public Task, public HasPreferences {
@@ -28,6 +33,9 @@ class Battery : public Task, public HasPreferences {
     void calibrateTo(float realVoltage);
     void saveCalibration();
     void printCalibration();
+
+   private:
+    CircularBuffer<float, BATTERY_RINGBUF_SIZE> _voltageBuf;
 };
 
 #endif

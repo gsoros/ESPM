@@ -236,8 +236,10 @@ class Board : public HasPreferences,
         return -1;
 #endif
         if (!sleepEnabled) return -1;
+        if (0 == sleepDelay) return -1;
         if (0 == t) t = millis();
-        if (0 == motion.lastMovement || t <= motion.lastMovement) return -1;
+        // if (0 == motion.lastMovement) return -1;
+        if (t <= motion.lastMovement) return -1;
         const long tSleep = motion.lastMovement + sleepDelay - t;
         return tSleep > 0 ? tSleep : 0;  // return 0 if it's past our bedtime
     }

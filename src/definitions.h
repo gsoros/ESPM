@@ -17,6 +17,7 @@
 #define POWER_RINGBUF_SIZE 2                // 3 sec smoothing @ 100 rpm
 #define WIFISERIAL_RINGBUF_RX_SIZE 256      //
 #define WIFISERIAL_RINGBUF_TX_SIZE 1024     // largest string to be printed should fit
+#define BATTERY_RINGBUF_SIZE 10             //
 ;                                           //
 #define HOSTNAME "ESPM"                     // default host name, used by wifiserial, ble and ota mdns
 ;                                           //
@@ -33,7 +34,7 @@
 #define HX711_SAMPLES 64                    // number of samples in moving average dataset, value must be 1, 2, 4, 8, 16, 32, 64 or 128.
 #define HX711_IGN_HIGH_SAMPLE 1             // adds extra sample(s) to the dataset and ignores peak high/low sample, value must be 0 or 1.
 #define HX711_IGN_LOW_SAMPLE 1              //
-#define HX711_SCK_DELAY 1                   // microsecond delay after writing sck pin high or low. This delay could be required for faster mcu's.
+#define HX711_SCK_DELAY 1                   // microsecond delay after writing sck pin high or low. This delay could be required for faster MCUs.
 ;                                           //
 #define MDM_HALL 0                          // use built-in hall sensor to detect crank revolutions
 #define MDM_MPU 1                           // use MPU to detect crank revolutions

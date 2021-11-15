@@ -12,7 +12,10 @@ void Battery::loop() {
 }
 
 int Battery::calculateLevel() {
-    float voltageTmp = voltage;
+    float voltageTmp = 0.0;
+    for (decltype(_voltageBuf)::index_t i = 0; i < _voltageBuf.size(); i++) {
+        voltageTmp += _voltageBuf[i] / _voltageBuf.size();
+    }
     if (voltageTmp < 3.2F)
         voltageTmp = 3.2;
     else if (voltageTmp > 4.2F)
@@ -44,6 +47,7 @@ float Battery::measureVoltage(bool useCorrection) {
         100.0;  // double division
     //log_i("Batt pin measured: (%d) = %fV\n", sum / samples, pinVoltage);
     voltage = pinVoltage * corrF;
+    _voltageBuf.push(voltage);
     return useCorrection ? voltage : pinVoltage;
 }
 
