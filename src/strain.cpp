@@ -25,7 +25,9 @@ void Strain::setup(const gpio_num_t doutPin,
 void Strain::loop() {
     if (1 != device->update())  // 1: data ready; 2: tare complete
         return;
-    _measurementBuf.push(device->getData());
+    float weightMeasurement = device->getData();
+    if (weightMeasurement < 0) weightMeasurement = 0;  // ignore negative torque
+    _measurementBuf.push(weightMeasurement);
     if (board.motionDetectionMethod == MDM_STRAIN) {
         if (!_halfRevolution) {
             if (_measurementBuf.last() <= mdmStrainThresLow) {
