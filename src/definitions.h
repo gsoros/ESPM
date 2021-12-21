@@ -55,4 +55,7 @@
 #define NTM_ABS 3                           // use the absolute value of negative torque readings
 #define NTM_MAX 4                           // marks the high limit
 #define NEGATIVE_TORQUE_METHOD NTM_ZERO     // method of dealing with negative torque readings
+;
+#define CRANK_EVENT_MIN_MS 400              // 400 ms = 150 RPM
+;
 #endif

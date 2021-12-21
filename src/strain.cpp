@@ -37,7 +37,7 @@ void Strain::loop() {
             board.motion.lastMovement = t;
             if (0 < board.motion.lastCrankEventTime) {
                 ulong tDiff = t - board.motion.lastCrankEventTime;
-                if (400 < tDiff) {  // 400 ms = 150 RPM
+                if (CRANK_EVENT_MIN_MS < tDiff) {
                     board.motion.revolutions++;
                     Serial.printf("[STRAIN] Crank event #%d dt: %ldms\n", board.motion.revolutions, tDiff);
                     board.power.onCrankEvent(tDiff);

@@ -308,7 +308,7 @@ void BLE::notifyCp(const ulong t) {
         Serial.println("[BLE] Not enabled, not notifying CP");
         return;
     }
-    if (t - 300 < lastPowerNotification) return;
+    if (t - CRANK_EVENT_MIN_MS < lastPowerNotification) return;
     lastPowerNotification = t;
     power = (uint16_t)board.getPower();
     if (cadenceInCpm) {
@@ -342,7 +342,7 @@ void BLE::notifyCsc(const ulong t) {
     }
     if (!cscServiceActive) return;
     if (cscmChar == nullptr) return;
-    if (t - 400 < lastCadenceNotification) return;  // 400 ms = 150 RPM
+    if (t - CRANK_EVENT_MIN_MS < lastCadenceNotification) return;
     lastCadenceNotification = t;
     bufCadence[0] = cadenceFlags & 0xff;
     bufCadence[1] = crankRevs & 0xff;

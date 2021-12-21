@@ -66,7 +66,7 @@ void Motion::loop() {
             if (!_halfRevolution) {
                 if (0 < lastCrankEventTime) {
                     ulong tDiff = t - lastCrankEventTime;
-                    if (300 < tDiff) {  // 300 ms = 200 RPM
+                    if (CRANK_EVENT_MIN_MS < tDiff) {
                         revolutions++;
                         Serial.printf("[MOTION] Crank event #%d dt: %ldms\n", revolutions, tDiff);
                         board.power.onCrankEvent(tDiff);
@@ -91,7 +91,7 @@ void Motion::loop() {
             lastMovement = t;
             if (0 < lastCrankEventTime) {
                 ulong tDiff = t - lastCrankEventTime;
-                if (300 < tDiff) {  // 300 ms = 200 RPM
+                if (CRANK_EVENT_MIN_MS < tDiff) {
                     revolutions++;
                     Serial.printf("[MOTION] Crank event #%d dt: %ldms\n", revolutions, tDiff);
                     board.power.onCrankEvent(tDiff);
