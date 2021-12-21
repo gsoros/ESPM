@@ -342,7 +342,7 @@ void BLE::notifyCsc(const ulong t) {
     }
     if (!cscServiceActive) return;
     if (cscmChar == nullptr) return;
-    if (t - 300 < lastCadenceNotification) return;
+    if (t - 400 < lastCadenceNotification) return;  // 400 ms = 150 RPM
     lastCadenceNotification = t;
     bufCadence[0] = cadenceFlags & 0xff;
     bufCadence[1] = crankRevs & 0xff;

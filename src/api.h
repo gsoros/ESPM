@@ -36,7 +36,8 @@ class API {
         strainThreshold,        // strain motion detection high threshold
         strainThresLow,         // strain motion detection low threshold
         motionDetectionMethod,  // select motion detection method
-        sleep                   // put esp to deep sleep
+        sleep,                  // put esp to deep sleep
+        negativeTorqueMethod    // method for dealing with negative torque readings
     };
 
     enum Result {
@@ -82,6 +83,7 @@ class API {
     Result commandStrainThresLow(const char *str, char *reply);
     Result commandMotionDetectionMethod(const char *str, char *reply);
     Result commandSleep(const char *str, char *reply);
+    Result commandNegativeTorqueMethod(const char *str, char *reply);
 
     const char *resultStr(Result r) {
         switch (r) {
@@ -167,6 +169,8 @@ class API {
                 return "motionDetectionMethod";
             case sleep:
                 return "sleep";
+            case negativeTorqueMethod:
+                return "negativeTorqueMethod";
         }
         return "unknown";
     }
@@ -224,6 +228,8 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::motionDetectionMethod))) return Command::motionDetectionMethod;
         if (atoi(str) == Command::sleep ||
             0 == strcmp(str, commandCodeToStr(Command::sleep))) return Command::sleep;
+        if (atoi(str) == Command::negativeTorqueMethod ||
+            0 == strcmp(str, commandCodeToStr(Command::negativeTorqueMethod))) return Command::negativeTorqueMethod;
         return Command::invalid;
     }
 

@@ -96,6 +96,8 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandMotionDetectionMethod(argStr, reply);
     if (Command::sleep == command)
         return commandSleep(argStr, reply);
+    if (Command::negativeTorqueMethod == command)
+        return commandNegativeTorqueMethod(argStr, reply);
     return Result::unknownCommand;
 }
 
@@ -462,7 +464,7 @@ API::Result API::commandMotionDetectionMethod(const char *str, char *reply) {
     Serial.printf("[API] commandMotionDetectionMethod(\"%s\")\n", str);
     if (0 < strlen(str)) {
         int tmpI = atoi(str);
-        if (tmpI == MDM_HALL || tmpI == MDM_MPU || tmpI == MDM_STRAIN) {
+        if (0 <= tmpI && tmpI < MDM_MAX) {
             board.setMotionDetectionMethod(tmpI);
             board.saveSettings();
             result = Result::success;
@@ -482,6 +484,25 @@ API::Result API::commandSleep(const char *str, char *reply) {
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, (int)result);
+    return result;
+}
+
+API::Result API::commandNegativeTorqueMethod(const char *str, char *reply) {
+    Result result = Result::error;
+    Serial.printf("[API] commandNegativeTorqueMethod(\"%s\")\n", str);
+    if (0 < strlen(str)) {
+        int tmpI = atoi(str);
+        if (0 <= tmpI && tmpI < NTM_MAX) {
+            board.strain.negativeTorqueMethod = tmpI;
+            board.strain.saveCalibration();
+            result = Result::success;
+        } else
+            result = Result::argInvalid;
+    } else
+        result = Result::success;
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, board.strain.negativeTorqueMethod);
     return result;
 }
 

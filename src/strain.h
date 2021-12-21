@@ -21,6 +21,7 @@ class Strain : public Task, public HasPreferences {
     gpio_num_t sckPin;
     int mdmStrainThreshold = MDM_STRAIN_DEFAULT_THRESHOLD;
     int mdmStrainThresLow = MDM_STRAIN_DEFAULT_THRES_LOW;
+    uint8_t negativeTorqueMethod;
 
     void setup(const gpio_num_t doutPin,
                const gpio_num_t sckPin,

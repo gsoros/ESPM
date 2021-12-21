@@ -39,11 +39,20 @@
 #define MDM_HALL 0                          // use built-in hall sensor to detect crank revolutions
 #define MDM_MPU 1                           // use MPU to detect crank revolutions
 #define MDM_STRAIN 2                        // use strain gauge to detect crank revolutions
+#define MDM_MAX 3                           // marks the high limit
 #define MOTION_DETECTION_METHOD MDM_STRAIN  // method of detecting crank revolutions
 #define MDM_STRAIN_DEFAULT_THRESHOLD 10     // strain motion detection default high threshold
 #define MDM_STRAIN_DEFAULT_THRES_LOW 2      // strain motion detection default low threshold
+;                                           //
 #define HALL_DEFAULT_THRESHOLD 10           // hall effect sensor default high threshold
 #define HALL_DEFAULT_THRES_LOW 2            // hall effect sensor default low threshold
 #define HALL_DEFAULT_OFFSET -100            // hall effect sensor default calibration offset
 #define HALL_DEFAULT_SAMPLES 10             // # of samples for hall measurement averaging
+;                                           //
+#define NTM_KEEP 0                          // include negative torque readings in the power calculation
+#define NTM_ZERO 1                          // convert negative torque readings to zero
+#define NTM_DISCARD 2                       // discard negative torque readings
+#define NTM_ABS 3                           // use the absolute value of negative torque readings
+#define NTM_MAX 4                           // marks the high limit
+#define NEGATIVE_TORQUE_METHOD NTM_ZERO     // method of dealing with negative torque readings
 #endif

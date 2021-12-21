@@ -32,8 +32,7 @@ class Power : public Task, public HasPreferences {
     CircularBuffer<float, POWER_RINGBUF_SIZE> _powerBuf;
     ulong _lastCrankEventTime = 0;
 
-    float
-    filterNegative(float value, bool reverse = false);
+    float filterNegative(float value, bool reverse = false);
 };
 
 #endif
