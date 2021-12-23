@@ -65,14 +65,14 @@ void Motion::loop() {
             lastMovement = t;
             if (!_halfRevolution) {
                 if (0 < lastCrankEventTime) {
-                    ulong tDiff = t - lastCrankEventTime;
-                    if (CRANK_EVENT_MIN_MS < tDiff) {
+                    ulong dt = t - lastCrankEventTime;
+                    if (CRANK_EVENT_MIN_MS < dt) {
                         revolutions++;
-                        Serial.printf("[MOTION] Crank event #%d dt: %ldms\n", revolutions, tDiff);
-                        board.power.onCrankEvent(tDiff);
+                        Serial.printf("[MOTION] Crank event #%d dt: %ldms\n", revolutions, dt);
+                        board.power.onCrankEvent(dt);
                         board.ble.onCrankEvent(t, revolutions);
                     } else {
-                        //Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", tDiff);
+                        //Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", dt);
                     }
                 }
                 lastCrankEventTime = t;
@@ -81,7 +81,7 @@ void Motion::loop() {
         }
         _previousTime = t;
         _previousAngle = angle;
-    } else {  // board.motionDetectionMethod == MDM_HALL
+    } else if (board.motionDetectionMethod == MDM_HALL) {
         if (!_halfRevolution) {
             if (abs(hall()) < hallThresLow) {
                 _halfRevolution = true;
@@ -90,15 +90,15 @@ void Motion::loop() {
             _halfRevolution = false;
             lastMovement = t;
             if (0 < lastCrankEventTime) {
-                ulong tDiff = t - lastCrankEventTime;
-                if (CRANK_EVENT_MIN_MS < tDiff) {
+                ulong dt = t - lastCrankEventTime;
+                if (CRANK_EVENT_MIN_MS < dt) {
                     revolutions++;
-                    Serial.printf("[MOTION] Crank event #%d dt: %ldms\n", revolutions, tDiff);
-                    board.power.onCrankEvent(tDiff);
+                    Serial.printf("[MOTION] Crank event #%d dt: %ldms\n", revolutions, dt);
+                    board.power.onCrankEvent(dt);
                     board.ble.onCrankEvent(t, revolutions);
                     lastCrankEventTime = t;
                 } else {
-                    //Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", tDiff);
+                    //Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", dt);
                 }
             } else {
                 lastCrankEventTime = t;

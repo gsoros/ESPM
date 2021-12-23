@@ -286,6 +286,7 @@ class Board : public HasPreferences,
     float getStrain(bool clearBuffer = false) { return strain.value(clearBuffer); }
     float getLiveStrain() { return strain.liveValue(); }
     float getPower(bool clearBuffer = false) { return power.power(clearBuffer); }
+
     void setSleepDelay(const ulong delay) {
         if (delay < SLEEP_DELAY_MIN) {
             Serial.printf("[Board] sleep delay too short");

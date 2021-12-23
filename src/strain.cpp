@@ -36,11 +36,11 @@ void Strain::loop() {
             ulong t = millis();
             board.motion.lastMovement = t;
             if (0 < board.motion.lastCrankEventTime) {
-                ulong tDiff = t - board.motion.lastCrankEventTime;
-                if (CRANK_EVENT_MIN_MS < tDiff) {
+                ulong dt = t - board.motion.lastCrankEventTime;
+                if (CRANK_EVENT_MIN_MS < dt) {
                     board.motion.revolutions++;
-                    Serial.printf("[STRAIN] Crank event #%d dt: %ldms\n", board.motion.revolutions, tDiff);
-                    board.power.onCrankEvent(tDiff);
+                    Serial.printf("[STRAIN] Crank event #%d dt: %ldms\n", board.motion.revolutions, dt);
+                    board.power.onCrankEvent(dt);
                     board.ble.onCrankEvent(t, board.motion.revolutions);
                     board.motion.lastCrankEventTime = t;
                 } else {
