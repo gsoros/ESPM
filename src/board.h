@@ -102,6 +102,11 @@ class Board : public HasPreferences,
             power.setup(preferences);
             return;
         }
+        if (strcmp("motion", taskName) == 0) {
+            if (motionDetectionMethod == MDM_HALL || motionDetectionMethod == MDM_MPU)
+                motion.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
+            return;
+        }
         if (strcmp("status", taskName) == 0) {
             status.setup();
             return;

@@ -9,7 +9,7 @@ void Power::setup(Preferences *p) {
 }
 
 void Power::loop() {
-    if (_lastCrankEventTime < millis() - 1000) {
+    if (_lastCrankEventTime < millis() - POWER_ZERO_DELAY_MS) {
         _powerBuf.push(0.0);
     }
 }

@@ -21,7 +21,10 @@ class Strain : public Task, public HasPreferences {
     gpio_num_t sckPin;
     int mdmStrainThreshold = MDM_STRAIN_DEFAULT_THRESHOLD;
     int mdmStrainThresLow = MDM_STRAIN_DEFAULT_THRES_LOW;
-    uint8_t negativeTorqueMethod;
+    uint8_t negativeTorqueMethod = NEGATIVE_TORQUE_METHOD;
+    bool autoTare = AUTO_TARE;
+    ulong autoTareDelayMs = AUTO_TARE_DELAY_MS;
+    uint16_t autoTareRangeG = AUTO_TARE_RANGE_G;
 
     void setup(const gpio_num_t doutPin,
                const gpio_num_t sckPin,
@@ -45,6 +48,7 @@ class Strain : public Task, public HasPreferences {
    private:
     CircularBuffer<float, STRAIN_RINGBUF_SIZE> _measurementBuf;
     bool _halfRevolution = false;
+    ulong _lastAutoTare = 0;
 };
 
 #endif

@@ -55,7 +55,13 @@
 #define NTM_ABS 3                           // use the absolute value of negative torque readings
 #define NTM_MAX 4                           // marks the high limit
 #define NEGATIVE_TORQUE_METHOD NTM_ZERO     // method of dealing with negative torque readings
-;
+;                                           //
 #define CRANK_EVENT_MIN_MS 400              // 400 ms = 150 RPM
-;
+;                                           //
+#define POWER_ZERO_DELAY_MS 2000            // push zero power values after the last crank event (2000 ms = 30 RPM)
+;                                           //
+#define AUTO_TARE 1                         // enable auto tare by default
+#define AUTO_TARE_DELAY_MS 3000             // auto tare after 3 secs of inactivity
+#define AUTO_TARE_RANGE_G 1000              // buffer values must within this range (1 kg) for auto tare
+;                                           //
 #endif

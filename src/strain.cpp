@@ -14,7 +14,8 @@ void Strain::setup(const gpio_num_t doutPin,
     Serial.print("[STRAIN] Starting HX711, waiting for tare...");
     ulong stabilizingTime = 1000 / 80;  // 80 sps
     device->start(stabilizingTime, false);
-    device->tare();
+    //device->tare();
+    device->tareNoDelay();
     Serial.println(" done.");
     if (device->getTareTimeoutFlag()) {
         Serial.println("[Strain] HX711 tare timeout");
@@ -26,6 +27,7 @@ void Strain::loop() {
     if (1 != device->update())  // 1: data ready; 2: tare complete
         return;
     _measurementBuf.push(device->getData());
+    ulong t = millis();
     if (board.motionDetectionMethod == MDM_STRAIN) {
         if (!_halfRevolution) {
             if (_measurementBuf.last() <= mdmStrainThresLow) {
@@ -33,7 +35,6 @@ void Strain::loop() {
             }
         } else if (mdmStrainThreshold <= _measurementBuf.last()) {
             _halfRevolution = false;
-            ulong t = millis();
             board.motion.lastMovement = t;
             if (0 < board.motion.lastCrankEventTime) {
                 ulong dt = t - board.motion.lastCrankEventTime;
@@ -48,6 +49,25 @@ void Strain::loop() {
                 }
             } else {
                 board.motion.lastCrankEventTime = t;
+            }
+        }
+    }
+    if (autoTare) {  // auto tare enabled
+        ulong cutoff = t - autoTareDelayMs;
+        if (board.motion.lastCrankEventTime < cutoff && _lastAutoTare < cutoff) {
+            float min = 1000.0;
+            float max = -1000.0;
+            for (decltype(_measurementBuf)::index_t i = 0; i < _measurementBuf.size(); i++) {
+                if (_measurementBuf[i] < min) min = _measurementBuf[i];
+                if (max < _measurementBuf[i]) max = _measurementBuf[i];
+            }
+            _lastAutoTare = t;
+            if (abs(max - min) < autoTareRangeG / 1000.0) {
+                Serial.print("[STRAIN] Auto tare\n");
+                device->tareNoDelay();
+                //_lastAutoTare = t;
+            } else {
+                Serial.printf("[STRAIN] Auto tare range too large: %fkg > %dg\n", max - min, autoTareRangeG);
             }
         }
     }
@@ -141,6 +161,9 @@ void Strain::loadCalibration() {
     mdmStrainThreshold = preferences->getInt("mdmSThres", mdmStrainThreshold);
     mdmStrainThresLow = preferences->getInt("mdmSThresL", mdmStrainThresLow);
     negativeTorqueMethod = (uint8_t)preferences->getUInt("negTorqMeth", NEGATIVE_TORQUE_METHOD);
+    //autoTare = preferences->getBool("autoTare", AUTO_TARE);
+    //autoTareDelayMs = preferences->getULong("ATDelayMs", AUTO_TARE_DELAY_MS);
+    //autoTareRangeG = preferences->getUShort("ATRangeG", AUTO_TARE_RANGE_G);
     if (!preferences->getBool("calibrated", false)) {
         preferencesEnd();
         log_e("[Strain] Device has not yet been calibrated");
@@ -155,6 +178,9 @@ void Strain::saveCalibration() {
     preferences->putInt("mdmSThres", mdmStrainThreshold);
     preferences->putInt("mdmSThresL", mdmStrainThresLow);
     preferences->putUInt("negTorqMeth", (uint32_t)negativeTorqueMethod);
+    preferences->putBool("autoTare", autoTare);
+    preferences->putULong("ATDelayMs", autoTareDelayMs);
+    preferences->putUShort("ATRangeG", autoTareRangeG);
     preferences->putBool("calibrated", true);
     preferences->putFloat("calibration", device->getCalFactor());
     preferencesEnd();
