@@ -14,7 +14,8 @@
 #define STRAIN_RINGBUF_SIZE 512  // circular buffer size
 #endif
 
-class Strain : public Task, public HasPreferences {
+class Strain : public Task,
+               public HasPreferences {
    public:
     HX711_ADC *device;
     gpio_num_t doutPin;
@@ -25,11 +26,13 @@ class Strain : public Task, public HasPreferences {
     bool autoTare = AUTO_TARE;
     ulong autoTareDelayMs = AUTO_TARE_DELAY_MS;
     uint16_t autoTareRangeG = AUTO_TARE_RANGE_G;
+    uint16_t autoTareSamples = AUTO_TARE_DELAY_MS / 1000 * STRAIN_TASK_FREQ;
 
-    void setup(const gpio_num_t doutPin,
-               const gpio_num_t sckPin,
-               Preferences *p,
-               const char *preferencesNS = "STRAIN");
+    void
+    setup(const gpio_num_t doutPin,
+          const gpio_num_t sckPin,
+          Preferences *p,
+          const char *preferencesNS = "STRAIN");
 
     void loop();
 
@@ -40,9 +43,9 @@ class Strain : public Task, public HasPreferences {
     void setMdmStrainThreshold(int threshold);
     void setMdmStrainThresLow(int threshold);
     int calibrateTo(float knownMass);  // calibrate to a known mass in kg
-    void printCalibration();
-    void loadCalibration();
-    void saveCalibration();
+    void printSettings();
+    void loadSettings();
+    void saveSettings();
     void tare();
 
    private:

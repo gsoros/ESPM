@@ -36,8 +36,8 @@ void Motion::setup(const uint8_t sdaPin,
     } else if (board.motionDetectionMethod == MDM_HALL) {
         adc1_config_width(ADC_WIDTH_BIT_12);
     }
-    loadCalibration();
-    //printCalibration();
+    loadSettings();
+    //printSettings();
     updateEnabled = true;
     lastMovement = millis();
 }
@@ -156,8 +156,8 @@ void Motion::calibrateMag() {
 void Motion::calibrate() {
     device->calibrateAccelGyro();
     device->calibrateMag();
-    printCalibration();
-    saveCalibration();
+    printSettings();
+    saveSettings();
 }
 
 void Motion::setHallOffset(int offset) {
@@ -172,7 +172,7 @@ void Motion::setHallThresLow(int threshold) {
     hallThresLow = threshold;
 }
 
-void Motion::printCalibration() {
+void Motion::printSettings() {
     printAccelGyroCalibration();
     printMagCalibration();
     printMDCalibration();
@@ -225,7 +225,7 @@ void Motion::printMDCalibration() {
                   board.strain.mdmStrainThreshold);
 }
 
-void Motion::loadCalibration() {
+void Motion::loadSettings() {
     if (!preferencesStartLoad()) return;
     if (board.motionDetectionMethod == MDM_MPU) {
         if (!preferences->getBool("calibrated", false)) {
@@ -254,10 +254,10 @@ void Motion::loadCalibration() {
     hallThreshold = preferences->getInt("hallT", hallThreshold);
     hallThresLow = preferences->getInt("hallTL", hallThresLow);
     preferencesEnd();
-    printCalibration();
+    printSettings();
 }
 
-void Motion::saveCalibration() {
+void Motion::saveSettings() {
     if (!preferencesStartSave()) return;
     if (board.motionDetectionMethod == MDM_MPU) {
         _prefPutValidFloat("abX", device->getAccBiasX());

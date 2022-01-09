@@ -137,27 +137,27 @@ class Board : public HasPreferences,
                 Serial.printf("[Board] Wifi disabled, not starting WifiSerial task\n");
                 return;
             }
-            wifiSerial.taskStart("WifiSerial Task", 10);
+            wifiSerial.taskStart("WifiSerial Task", WIFISERIAL_TASK_FREQ);
             return;
         }
         if (strcmp("ble", taskName) == 0) {
-            ble.taskStart("BLE Task", 10);
+            ble.taskStart("BLE Task", BLE_TASK_FREQ);
             return;
         }
         if (strcmp("battery", taskName) == 0) {
-            battery.taskStart("Battery Task", 1);
+            battery.taskStart("Battery Task", BATTERY_TASK_FREQ);
             return;
         }
         if (strcmp("motion", taskName) == 0) {
-            motion.taskStart("Motion Task", 125);
+            motion.taskStart("Motion Task", MOTION_TASK_FREQ);
             return;
         }
         if (strcmp("strain", taskName) == 0) {
-            strain.taskStart("Strain Task", 90);
+            strain.taskStart("Strain Task", STRAIN_TASK_FREQ);
             return;
         }
         if (strcmp("power", taskName) == 0) {
-            power.taskStart("Power Task", 10);
+            power.taskStart("Power Task", POWER_TASK_FREQ);
             return;
         }
         if (strcmp("ota", taskName) == 0) {
@@ -165,15 +165,15 @@ class Board : public HasPreferences,
                 Serial.printf("[Board] Wifi disabled, not starting OTA task\n");
                 return;
             }
-            ota.taskStart("OTA Task", 10, 8192);
+            ota.taskStart("OTA Task", OTA_TASK_FREQ, 8192);
             return;
         }
         if (strcmp("status", taskName) == 0) {
-            status.taskStart("Status Task", 10);
+            status.taskStart("Status Task", STATUS_TASK_FREQ);
             return;
         }
         if (strcmp("led", taskName) == 0) {
-            led.taskStart("Led Task", 10);
+            led.taskStart("Led Task", LED_TASK_FREQ);
             return;
         }
         log_e("unknown task: %s", taskName);

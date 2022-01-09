@@ -29,10 +29,10 @@ class Battery : public Task, public HasPreferences {
     int calculateLevel();
     float measureVoltage();
     float measureVoltage(bool useCorrection);
-    void loadCalibration();
+    void loadSettings();
     void calibrateTo(float realVoltage);
-    void saveCalibration();
-    void printCalibration();
+    void saveSettings();
+    void printSettings();
 
    private:
     CircularBuffer<float, BATTERY_RINGBUF_SIZE> _voltageBuf;

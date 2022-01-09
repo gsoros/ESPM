@@ -155,90 +155,90 @@ void Status::handleInput(const char input) {
                 switch (menu[1]) {
                     case 'a':
                         board.motion.calibrateAccelGyro();
-                        board.motion.saveCalibration();
+                        board.motion.saveSettings();
                         board.motion.printAccelGyroCalibration();
                         menu[1] = '\0';
                         break;
                     case 'm':
                         board.motion.calibrateMag();
-                        board.motion.saveCalibration();
+                        board.motion.saveSettings();
                         board.motion.printMagCalibration();
                         menu[1] = '\0';
                         break;
                     case 'b':
-                        board.battery.printCalibration();
+                        board.battery.printSettings();
                         Serial.print("Enter measured battery voltage and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
                         board.battery.calibrateTo(atof(tmpStr));
-                        board.battery.saveCalibration();
-                        board.battery.printCalibration();
+                        board.battery.saveSettings();
+                        board.battery.printSettings();
                         menu[1] = '\0';
                         break;
                     case 's':
-                        board.strain.printCalibration();
+                        board.strain.printSettings();
                         Serial.print("Enter known mass in Kg and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
                         tmpF = atof(tmpStr);
                         if (1 < tmpF && tmpF < 1000) {
                             board.strain.calibrateTo(tmpF);
-                            board.strain.saveCalibration();
+                            board.strain.saveSettings();
                         } else
                             Serial.println("Invalid value.");
-                        board.strain.printCalibration();
+                        board.strain.printSettings();
                         menu[1] = '\0';
                         break;
                     case 'h':
-                        board.motion.printCalibration();
+                        board.motion.printSettings();
                         Serial.print("Enter hall offset and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
                         tmpI = atoi(tmpStr);
                         board.motion.setHallOffset(tmpI);
-                        board.motion.saveCalibration();
-                        board.motion.printCalibration();
+                        board.motion.saveSettings();
+                        board.motion.printSettings();
                         menu[1] = '\0';
                         break;
                     case 'l':
-                        board.motion.printCalibration();
+                        board.motion.printSettings();
                         Serial.print("Enter hall low threshold and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
                         tmpI = atoi(tmpStr);
                         board.motion.setHallThresLow(tmpI);
-                        board.motion.saveCalibration();
-                        board.motion.printCalibration();
+                        board.motion.saveSettings();
+                        board.motion.printSettings();
                         menu[1] = '\0';
                         break;
                     case 'i':
-                        board.motion.printCalibration();
+                        board.motion.printSettings();
                         Serial.print("Enter hall high threshold and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
                         tmpI = atoi(tmpStr);
                         board.motion.setHallThreshold(tmpI);
-                        board.motion.saveCalibration();
-                        board.motion.printCalibration();
+                        board.motion.saveSettings();
+                        board.motion.printSettings();
                         menu[1] = '\0';
                         break;
                     case 't':
-                        board.motion.printCalibration();
+                        board.motion.printSettings();
                         Serial.print("Enter strain md low threshold and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
                         tmpI = atoi(tmpStr);
                         board.strain.setMdmStrainThresLow(tmpI);
-                        board.strain.saveCalibration();
-                        board.motion.printCalibration();
+                        board.strain.saveSettings();
+                        board.motion.printSettings();
                         menu[1] = '\0';
                         break;
                     case 'n':
-                        board.motion.printCalibration();
+                        board.motion.printSettings();
                         Serial.print("Enter strain md high threshold and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
                         tmpI = atoi(tmpStr);
                         board.strain.setMdmStrainThreshold(tmpI);
-                        board.strain.saveCalibration();
-                        board.motion.printCalibration();
+                        board.strain.saveSettings();
+                        board.motion.printSettings();
                         menu[1] = '\0';
                         break;
                     case 'o':
-                        board.motion.printCalibration();
+                        board.motion.printSettings();
                         Serial.print("Enter [s] for Strain, [m] for MPU or [h] for Hall effect sensor and press [Enter]: ");
                         getStr(tmpStr, sizeof tmpStr);
                         if (0 == strcmp(tmpStr, "s")) {
@@ -252,7 +252,7 @@ void Status::handleInput(const char input) {
                             board.saveSettings();
                         } else
                             Serial.print("Invalid input\n");
-                        board.motion.printCalibration();
+                        board.motion.printSettings();
                         menu[1] = '\0';
                         break;
                     case 'c':
@@ -285,9 +285,9 @@ void Status::handleInput(const char input) {
                         menu[1] = '\0';
                         break;
                     case 'p':
-                        board.motion.printCalibration();
-                        board.strain.printCalibration();
-                        board.battery.printCalibration();
+                        board.motion.printSettings();
+                        board.strain.printSettings();
+                        board.battery.printSettings();
                         board.power.printSettings();
                         menu[1] = '\0';
                         break;

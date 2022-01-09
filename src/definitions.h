@@ -1,11 +1,22 @@
 #ifndef DEFINITIONS_H___
 #define DEFINITIONS_H___
 
-//#define NO_GLOBAL_SERIAL                  // defined in compile flags
+;                                           //#define NO_GLOBAL_SERIAL // defined in compile flags
 ;                                           //
-;                                           // #define DISABLE_SLEEP // for testing
+;                                           //#define DISABLE_SLEEP // for testing
 ;                                           //
 #define SETTINGS_STR_LENGTH 32              // maximum length of settings strings
+;                                           //
+;                                           // task frequencies in Hz
+#define WIFISERIAL_TASK_FREQ 10             //
+#define BLE_TASK_FREQ 10                    //
+#define BATTERY_TASK_FREQ 10                //
+#define MOTION_TASK_FREQ 125                //
+#define STRAIN_TASK_FREQ 90                 //
+#define POWER_TASK_FREQ 90                  //
+#define OTA_TASK_FREQ 10                    //
+#define STATUS_TASK_FREQ 10                 //
+#define LED_TASK_FREQ 10                    //
 ;                                           //
 #define SLEEP_DELAY_DEFAULT 5 * 60 * 1000   // 5m
 #define SLEEP_DELAY_MIN 1 * 60 * 1000       // 1m

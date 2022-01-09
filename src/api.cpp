@@ -223,7 +223,7 @@ API::Result API::commandCalibrateStrain(const char *str, char *reply) {
     knownMass = (float)atof(str);
     if (1 < knownMass && knownMass < 1000) {
         if (0 == board.strain.calibrateTo(knownMass)) {
-            board.strain.saveCalibration();
+            board.strain.saveSettings();
             result = Result::success;
         }
     }
@@ -407,7 +407,7 @@ API::Result API::commandHallChar(const char *str, char *reply) {
 API::Result API::commandHallOffset(const char *str, char *reply) {
     if (0 < strlen(str)) {
         board.motion.hallOffset = atoi(str);
-        board.motion.saveCalibration();
+        board.motion.saveSettings();
     }
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
@@ -418,7 +418,7 @@ API::Result API::commandHallOffset(const char *str, char *reply) {
 API::Result API::commandHallThreshold(const char *str, char *reply) {
     if (0 < strlen(str)) {
         board.motion.setHallThreshold(atoi(str));
-        board.motion.saveCalibration();
+        board.motion.saveSettings();
     }
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
@@ -429,7 +429,7 @@ API::Result API::commandHallThreshold(const char *str, char *reply) {
 API::Result API::commandHallThresLow(const char *str, char *reply) {
     if (0 < strlen(str)) {
         board.motion.setHallThresLow(atoi(str));
-        board.motion.saveCalibration();
+        board.motion.saveSettings();
     }
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
@@ -440,7 +440,7 @@ API::Result API::commandHallThresLow(const char *str, char *reply) {
 API::Result API::commandStrainThreshold(const char *str, char *reply) {
     if (0 < strlen(str)) {
         board.strain.setMdmStrainThreshold(atoi(str));
-        board.strain.saveCalibration();
+        board.strain.saveSettings();
     }
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
@@ -451,7 +451,7 @@ API::Result API::commandStrainThreshold(const char *str, char *reply) {
 API::Result API::commandStrainThresLow(const char *str, char *reply) {
     if (0 < strlen(str)) {
         board.strain.setMdmStrainThresLow(atoi(str));
-        board.strain.saveCalibration();
+        board.strain.saveSettings();
     }
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
@@ -494,7 +494,7 @@ API::Result API::commandNegativeTorqueMethod(const char *str, char *reply) {
         int tmpI = atoi(str);
         if (0 <= tmpI && tmpI < NTM_MAX) {
             board.strain.negativeTorqueMethod = tmpI;
-            board.strain.saveCalibration();
+            board.strain.saveSettings();
             result = Result::success;
         } else
             result = Result::argInvalid;

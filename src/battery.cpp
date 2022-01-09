@@ -3,7 +3,7 @@
 
 void Battery::setup(Preferences *p) {
     preferencesSetup(p, "Battery");
-    this->loadCalibration();
+    this->loadSettings();
 }
 
 void Battery::loop() {
@@ -51,7 +51,7 @@ float Battery::measureVoltage(bool useCorrection) {
     return useCorrection ? voltage : pinVoltage;
 }
 
-void Battery::loadCalibration() {
+void Battery::loadSettings() {
     if (!preferencesStartLoad()) return;
     if (!preferences->getBool("calibrated", false)) {
         Serial.println("[Battery] Not calibrated");
@@ -69,13 +69,13 @@ void Battery::calibrateTo(float realVoltage) {
     corrF = realVoltage / measuredVoltage;
 }
 
-void Battery::saveCalibration() {
+void Battery::saveSettings() {
     if (!preferencesStartSave()) return;
     preferences->putFloat("corrF", corrF);
     preferences->putBool("calibrated", true);
     preferencesEnd();
 }
 
-void Battery::printCalibration() {
+void Battery::printSettings() {
     Serial.printf("[Battery] Correction factor: %f\n", corrF);
 }

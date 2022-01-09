@@ -20,7 +20,7 @@ void Strain::setup(const gpio_num_t doutPin,
     if (device->getTareTimeoutFlag()) {
         Serial.println("[Strain] HX711 tare timeout");
     }
-    loadCalibration();
+    loadSettings();
 }
 
 void Strain::loop() {
@@ -52,12 +52,14 @@ void Strain::loop() {
             }
         }
     }
-    if (autoTare) {  // auto tare enabled
+    if (autoTare && autoTareDelayMs < t) {
         ulong cutoff = t - autoTareDelayMs;
-        if (board.motion.lastCrankEventTime < cutoff && _lastAutoTare < cutoff) {
+        if (board.motion.lastCrankEventTime < cutoff && _lastAutoTare < cutoff && 0 < _measurementBuf.size()) {
             float min = 1000.0;
             float max = -1000.0;
-            for (decltype(_measurementBuf)::index_t i = 0; i < _measurementBuf.size(); i++) {
+            int16_t firstSample = _measurementBuf.size() - autoTareSamples;
+            if (firstSample < 0) firstSample = 0;
+            for (decltype(_measurementBuf)::index_t i = _measurementBuf.size() - 1; firstSample < i; i--) {
                 if (_measurementBuf[i] < min) min = _measurementBuf[i];
                 if (max < _measurementBuf[i]) max = _measurementBuf[i];
             }
@@ -152,18 +154,19 @@ int Strain::calibrateTo(float knownMass) {
     return 0;
 }
 
-void Strain::printCalibration() {
+void Strain::printSettings() {
     Serial.printf("[Strain] Calibration factor: %f\n", device->getCalFactor());
 }
 
-void Strain::loadCalibration() {
+void Strain::loadSettings() {
     if (!preferencesStartLoad()) return;
     mdmStrainThreshold = preferences->getInt("mdmSThres", mdmStrainThreshold);
     mdmStrainThresLow = preferences->getInt("mdmSThresL", mdmStrainThresLow);
-    negativeTorqueMethod = (uint8_t)preferences->getUInt("negTorqMeth", NEGATIVE_TORQUE_METHOD);
-    //autoTare = preferences->getBool("autoTare", AUTO_TARE);
-    //autoTareDelayMs = preferences->getULong("ATDelayMs", AUTO_TARE_DELAY_MS);
-    //autoTareRangeG = preferences->getUShort("ATRangeG", AUTO_TARE_RANGE_G);
+    negativeTorqueMethod = (uint8_t)preferences->getUInt("negTorqMeth", negativeTorqueMethod);
+    // TODO implement auto tare settings api
+    //autoTare = preferences->getBool("autoTare", autoTare);
+    //autoTareDelayMs = preferences->getULong("ATDelayMs", autoTareDelayMs);
+    //autoTareRangeG = preferences->getUShort("ATRangeG", autoTareRangeG);
     if (!preferences->getBool("calibrated", false)) {
         preferencesEnd();
         log_e("[Strain] Device has not yet been calibrated");
@@ -173,7 +176,7 @@ void Strain::loadCalibration() {
     preferencesEnd();
 }
 
-void Strain::saveCalibration() {
+void Strain::saveSettings() {
     if (!preferencesStartSave()) return;
     preferences->putInt("mdmSThres", mdmStrainThreshold);
     preferences->putInt("mdmSThresL", mdmStrainThresLow);

@@ -48,12 +48,12 @@ class Motion : public Task, public HasPreferences {
     void setHallOffset(int offset);
     void setHallThreshold(int threshold);
     void setHallThresLow(int threshold);
-    void printCalibration();
+    void printSettings();
     void printAccelGyroCalibration();
     void printMagCalibration();
     void printMDCalibration();
-    void loadCalibration();
-    void saveCalibration();
+    void loadSettings();
+    void saveSettings();
 
    private:
     ulong _previousTime = 0;
