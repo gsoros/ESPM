@@ -10,7 +10,7 @@
 ;                                           // task frequencies in Hz
 #define WIFISERIAL_TASK_FREQ 10             //
 #define BLE_TASK_FREQ 10                    //
-#define BATTERY_TASK_FREQ 10                //
+#define BATTERY_TASK_FREQ 1                 //
 #define MOTION_TASK_FREQ 125                //
 #define STRAIN_TASK_FREQ 90                 //
 #define POWER_TASK_FREQ 90                  //

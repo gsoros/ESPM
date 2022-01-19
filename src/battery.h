@@ -17,6 +17,14 @@
 #define BATTERY_RINGBUF_SIZE 10  // circular buffer size
 #endif
 
+#ifndef BATTERY_EMPTY
+#define BATTERY_EMPTY 3.2
+#endif
+
+#ifndef BATTERY_FULL
+#define BATTERY_FULL 4.1
+#endif
+
 class Battery : public Task, public HasPreferences {
    public:
     float corrF = 1.0;

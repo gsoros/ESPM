@@ -17,10 +17,12 @@ int Battery::calculateLevel() {
         voltageTmp += _voltageBuf[i] / _voltageBuf.size();
     }
     if (voltageTmp < 3.2F)
-        voltageTmp = 3.2;
+        voltageTmp = 3.2F;
     else if (voltageTmp > 4.2F)
-        voltageTmp = 4.2;
-    level = map(voltageTmp * 1000, 3200, 4200, 0, 100000) / 1000;
+        voltageTmp = 4.2F;
+    level = map(voltageTmp * 1000, BATTERY_EMPTY * 1000, BATTERY_FULL * 1000, 0, 100000) / 1000;
+    if (100 < level)
+        level = 100;
     return level;
 }
 
