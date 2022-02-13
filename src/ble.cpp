@@ -19,9 +19,9 @@ void BLE::setup(const char *deviceName, Preferences *p) {
     server->setCallbacks(this);
     advertising = server->getAdvertising();
     advertising->setAppearance(APPEARANCE_CYCLING_POWER_SENSOR);
-    //advertising->setManufacturerData("G");
-    //advertising->setScanResponse(false);
-    //advertising->setMinPreferred(0x0);
+    // advertising->setManufacturerData("G");
+    // advertising->setScanResponse(false);
+    // advertising->setMinPreferred(0x0);
 
     startDiService();
     startCpService();
@@ -46,7 +46,11 @@ void BLE::loop() {
     if (lastBatteryLevel != board.battery.level) notifyBl(t);
     if (!advertising->isAdvertising()) startAdvertising();
     if (wmCharUpdateEnabled && lastWmNotification < t - 200) {
-        setWmValue(board.strain.liveValue());
+        if (board.motion.lastCrankEventTime < t - 1000)
+            setWmValue(board.strain.liveValue());
+        else
+            setWmValue(0.0);
+
         lastWmNotification = t;
     }
     if (hallCharUpdateEnabled && lastHallNotification < t - 200) {
@@ -89,7 +93,7 @@ void BLE::startCpService() {
     // This is incorrect
     // TODO find out how to set the bytes
     uint32_t powerFeature = (uint32_t)0x00;
-    if (cadenceInCpm) { 
+    if (cadenceInCpm) {
         powerFeature = powerFeature | CPF_CRANK_REVOLUTION_DATA_SUPPORTED;
     }
     cpfChar->setValue((uint8_t *)&powerFeature, 4);
@@ -125,7 +129,7 @@ void BLE::startCpService() {
 
     /*
     BLECharacteristic *cpChar = cps->createCharacteristic(
-        BLEUUID(SC_CONTROL_POINT_CHAR_UUID), 
+        BLEUUID(SC_CONTROL_POINT_CHAR_UUID),
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE
     );
     bufControlPoint[0] = SC_CONTROL_POINT_OP_SET_CUMULATIVE_VALUE;
@@ -165,7 +169,7 @@ void BLE::startCscService() {
     );
     cscfChar->setCallbacks(this);
     bufSpeedCadenceFeature[0] = 0x00;
-    //bufSpeedCadenceFeature[1] = 0b00000010;
+    // bufSpeedCadenceFeature[1] = 0b00000010;
     bufSpeedCadenceFeature[1] = CSCF_CRANK_REVOLUTION_DATA_SUPPORTED && 0xff;
     cscfChar->setValue((uint8_t *)&bufSpeedCadenceFeature, 2);
 
@@ -173,7 +177,7 @@ void BLE::startCscService() {
     cscmChar = cscs->createCharacteristic(
         BLEUUID(CSC_MEASUREMENT_CHAR_UUID),
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
-        //NIMBLE_PROPERTY::INDICATE
+        // NIMBLE_PROPERTY::INDICATE
     );
 
     BLEDescriptor *cscmDesc = cscmChar->createDescriptor(
@@ -237,7 +241,7 @@ void BLE::startWsService() {
     wmChar = wss->createCharacteristic(
         BLEUUID(WEIGHT_MEASUREMENT_CHAR_UUID),
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
-        //NIMBLE_PROPERTY::INDICATE
+        // NIMBLE_PROPERTY::INDICATE
     );
 
     BLEDescriptor *wmDesc = wmChar->createDescriptor(
@@ -295,10 +299,10 @@ void BLE::onCrankEvent(const ulong t, const uint16_t revolutions) {
         crankRevs = revolutions;
         lastCrankEventTime = (uint16_t)(t * 1.024);
         cadenceNotificationReady = true;
-        //notifyCsc(t);
+        // notifyCsc(t);
     }
     powerNotificationReady = true;
-    //notifyCp(t);
+    // notifyCp(t);
 }
 
 // notify Cycling Power service
@@ -329,7 +333,7 @@ void BLE::notifyCp(const ulong t) {
     } else {
         cpmChar->setValue((uint8_t *)&bufPower, 4);
     }
-    //Serial.printf("[BLE] Notifying power %d\n", power);
+    // Serial.printf("[BLE] Notifying power %d\n", power);
     cpmChar->notify();
 }
 
@@ -350,7 +354,7 @@ void BLE::notifyCsc(const ulong t) {
     bufCadence[3] = lastCrankEventTime & 0xff;
     bufCadence[4] = (lastCrankEventTime >> 8) & 0xff;
     cscmChar->setValue((uint8_t *)&bufCadence, 5);
-    //Serial.printf("[BLE] Notifying cadence #%d ts %d\n", crankRevs, t);
+    // Serial.printf("[BLE] Notifying cadence #%d ts %d\n", crankRevs, t);
     cscmChar->notify();
 }
 
@@ -395,6 +399,8 @@ void BLE::setApiValue(const char *value) {
 // Set Weight Measurement char value
 void BLE::setWmValue(float value) {
     if (!enabled) return;
+    if (lastWmValue == value) return;
+    lastWmValue = value;
     uint8_t flags;
     flags = (uint8_t)0;  // Measurement Units: SI; no additional fields present
     uint16_t measurement;
@@ -436,15 +442,15 @@ void BLE::stop() {
     server->stopAdvertising();
     enabled = false;
     delay(100);  // give the BLE stack a chance to clear packets
-    //BLEDevice::deinit(true);  // TODO never returns
+    // BLEDevice::deinit(true);  // TODO never returns
 }
 
 void BLE::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
     Serial.printf("[BLE] Client connected, ID: %d Address: %s\n",
                   desc->conn_handle,
                   BLEAddress(desc->peer_ota_addr).toString().c_str());
-    //NimBLEDevice::startSecurity(desc->conn_handle);
-    // save client handle so we can gracefully disconnect them
+    // NimBLEDevice::startSecurity(desc->conn_handle);
+    //  save client handle so we can gracefully disconnect them
     bool savedClientHandle = false;
     for (decltype(_clients)::index_t i = 0; i < _clients.size(); i++)
         if (_clients[i] == desc->conn_handle)
@@ -486,7 +492,7 @@ void BLE::onWrite(BLECharacteristic *c) {
 };
 
 void BLE::onNotify(BLECharacteristic *pCharacteristic){
-    //Serial.printf("[BLE] Sending notification: %d\n", pCharacteristic->getValue<int>());
+    // Serial.printf("[BLE] Sending notification: %d\n", pCharacteristic->getValue<int>());
 };
 
 void BLE::onSubscribe(BLECharacteristic *c, ble_gap_conn_desc *desc, uint16_t subValue) {

@@ -29,7 +29,7 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
     Serial.printf("%s commandStr=%s argStr=%s\n", tag, commandStr, argStr);
 
     Command command = parseCommandStr(commandStr);
-    //Serial.printf("%s command=%d\n", tag, (int)command);
+    // Serial.printf("%s command=%d\n", tag, (int)command);
 
     // by default echo back the commandCode:commandStr= so client can
     // verify that this is a response to the correct command
@@ -98,6 +98,12 @@ API::Result API::handleCommand(const char *commandWithArg, char *reply) {
         return commandSleep(argStr, reply);
     if (Command::negativeTorqueMethod == command)
         return commandNegativeTorqueMethod(argStr, reply);
+    if (Command::autoTare == command)
+        return commandAutoTare(argStr, reply);
+    if (Command::autoTareDelayMs == command)
+        return commandAutoTareDelayMs(argStr, reply);
+    if (Command::autoTareRangeG == command)
+        return commandAutoTareRangeG(argStr, reply);
     return Result::unknownCommand;
 }
 
@@ -111,7 +117,7 @@ API::Result API::commandWifi(const char *str, char *reply) {
         }
         board.wifi.setEnabled(newValue);
     }
-    //get wifi
+    // get wifi
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
@@ -168,8 +174,8 @@ API::Result API::commandPasskey(const char *str, char *reply) {
         board.ble.setPasskey(keyI);
     }
     // get passkey
-    //itoa(board.ble.passkey, keyS, 10);
-    //strncat(reply, keyS, API_REPLY_MAXLENGTH - strlen(reply));
+    // itoa(board.ble.passkey, keyS, 10);
+    // strncat(reply, keyS, API_REPLY_MAXLENGTH - strlen(reply));
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, (int)board.ble.passkey);
@@ -191,7 +197,7 @@ API::Result API::commandSecureApi(const char *str, char *reply) {
         }
         board.ble.setSecureApi((bool)newValue);
     }
-    //get secureApi
+    // get secureApi
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
     snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
@@ -506,11 +512,57 @@ API::Result API::commandNegativeTorqueMethod(const char *str, char *reply) {
     return result;
 }
 
+API::Result API::commandAutoTare(const char *str, char *reply) {
+    Serial.printf("[API] commandAutoTare(\"%s\")\n", str);
+    if (0 < strlen(str)) {
+        int tmpI = atoi(str);
+        if (0 == strcmp("true", str) || 1 == tmpI)
+            board.strain.setAutoTare(true);
+        else if (0 == strcmp("false", str) || 0 == tmpI)
+            board.strain.setAutoTare(false);
+        board.strain.saveSettings();
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s", replyTmp, (int)board.strain.getAutoTare(), board.strain.getAutoTare() ? "true" : "false");
+    return Result::success;
+}
+
+API::Result API::commandAutoTareDelayMs(const char *str, char *reply) {
+    Serial.printf("[API] commandAutoTareDelayMs(\"%s\")\n", str);
+    if (0 < strlen(str)) {
+        int tmpI = atoi(str);
+        if (10 < tmpI && tmpI < 10000) {
+            board.strain.setAutoTareDelayMs(tmpI);
+            board.strain.saveSettings();
+        }
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%lu", replyTmp, board.strain.getAutoTareDelayMs());
+    return Result::success;
+}
+
+API::Result API::commandAutoTareRangeG(const char *str, char *reply) {
+    Serial.printf("[API] commandAutoTareRangeG(\"%s\")\n", str);
+    if (0 < strlen(str)) {
+        int tmpI = atoi(str);
+        if (10 < tmpI && tmpI < 10000) {
+            board.strain.setAutoTareRangeG(tmpI);
+            board.strain.saveSettings();
+        }
+    }
+    char replyTmp[API_REPLY_MAXLENGTH];
+    strncpy(replyTmp, reply, sizeof(replyTmp));
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, (int)board.strain.getAutoTareRangeG());
+    return Result::success;
+}
+
 bool API::isAlNumStr(const char *str) {
     int len = strlen(str);
     int cnt = 0;
     while (*str != '\0' && cnt < len) {
-        //Serial.printf("%s isAlNumStr(%c): %d\n", tag, *str, isalnum(*str));
+        // Serial.printf("%s isAlNumStr(%c): %d\n", tag, *str, isalnum(*str));
         if (!isalnum(*str)) return false;
         str++;
         cnt++;

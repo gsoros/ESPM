@@ -14,12 +14,13 @@ void Strain::setup(const gpio_num_t doutPin,
     Serial.print("[STRAIN] Starting HX711, waiting for tare...");
     ulong stabilizingTime = 1000 / 80;  // 80 sps
     device->start(stabilizingTime, false);
-    //device->tare();
+    // device->tare();
     device->tareNoDelay();
     Serial.println(" done.");
     if (device->getTareTimeoutFlag()) {
         Serial.println("[Strain] HX711 tare timeout");
     }
+    setAutoTareDelayMs(AUTO_TARE_DELAY_MS);
     loadSettings();
 }
 
@@ -45,7 +46,7 @@ void Strain::loop() {
                     board.ble.onCrankEvent(t, board.motion.revolutions);
                     board.motion.lastCrankEventTime = t;
                 } else {
-                    //Serial.printf("[STRAIN] Crank event skip, dt too small: %ldms\n", tDiff);
+                    // Serial.printf("[STRAIN] Crank event skip, dt too small: %ldms\n", tDiff);
                 }
             } else {
                 board.motion.lastCrankEventTime = t;
@@ -163,10 +164,9 @@ void Strain::loadSettings() {
     mdmStrainThreshold = preferences->getInt("mdmSThres", mdmStrainThreshold);
     mdmStrainThresLow = preferences->getInt("mdmSThresL", mdmStrainThresLow);
     negativeTorqueMethod = (uint8_t)preferences->getUInt("negTorqMeth", negativeTorqueMethod);
-    // TODO implement auto tare settings api
-    //autoTare = preferences->getBool("autoTare", autoTare);
-    //autoTareDelayMs = preferences->getULong("ATDelayMs", autoTareDelayMs);
-    //autoTareRangeG = preferences->getUShort("ATRangeG", autoTareRangeG);
+    setAutoTare(preferences->getBool("autoTare", autoTare));
+    setAutoTareDelayMs(preferences->getULong("ATDelayMs", autoTareDelayMs));
+    setAutoTareRangeG(preferences->getUShort("ATRangeG", autoTareRangeG));
     if (!preferences->getBool("calibrated", false)) {
         preferencesEnd();
         log_e("[Strain] Device has not yet been calibrated");
@@ -191,4 +191,32 @@ void Strain::saveSettings() {
 
 void Strain::tare() {
     device->tare();
+}
+
+bool Strain::getAutoTare() {
+    return autoTare;
+}
+
+void Strain::setAutoTare(bool val) {
+    autoTare = val;
+    Serial.printf("[STRAIN] autoTare=%d\n", autoTare);
+}
+
+ulong Strain::getAutoTareDelayMs() {
+    return autoTareDelayMs;
+}
+
+void Strain::setAutoTareDelayMs(ulong val) {
+    autoTareDelayMs = val;
+    autoTareSamples = val / 1000 * STRAIN_TASK_FREQ;
+    Serial.printf("[STRAIN] autoTareDelayMs=%lu autoTareSamples=%d\n", autoTareDelayMs, autoTareSamples);
+}
+
+uint16_t Strain::getAutoTareRangeG() {
+    return autoTareRangeG;
+}
+
+void Strain::setAutoTareRangeG(uint16_t val) {
+    autoTareRangeG = val;
+    Serial.printf("[STRAIN] autoTareRangeG=%d\n", autoTareRangeG);
 }

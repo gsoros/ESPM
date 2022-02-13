@@ -23,10 +23,6 @@ class Strain : public Task,
     int mdmStrainThreshold = MDM_STRAIN_DEFAULT_THRESHOLD;
     int mdmStrainThresLow = MDM_STRAIN_DEFAULT_THRES_LOW;
     uint8_t negativeTorqueMethod = NEGATIVE_TORQUE_METHOD;
-    bool autoTare = AUTO_TARE;
-    ulong autoTareDelayMs = AUTO_TARE_DELAY_MS;
-    uint16_t autoTareRangeG = AUTO_TARE_RANGE_G;
-    uint16_t autoTareSamples = AUTO_TARE_DELAY_MS / 1000 * STRAIN_TASK_FREQ;
 
     void
     setup(const gpio_num_t doutPin,
@@ -47,10 +43,20 @@ class Strain : public Task,
     void loadSettings();
     void saveSettings();
     void tare();
+    bool getAutoTare();
+    void setAutoTare(bool val);
+    ulong getAutoTareDelayMs();
+    void setAutoTareDelayMs(ulong val);
+    uint16_t getAutoTareRangeG();
+    void setAutoTareRangeG(uint16_t val);
 
    private:
     CircularBuffer<float, STRAIN_RINGBUF_SIZE> _measurementBuf;
     bool _halfRevolution = false;
+    bool autoTare = AUTO_TARE;
+    ulong autoTareDelayMs;
+    uint16_t autoTareRangeG = AUTO_TARE_RANGE_G;
+    uint16_t autoTareSamples;
     ulong _lastAutoTare = 0;
 };
 

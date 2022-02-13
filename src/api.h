@@ -37,7 +37,10 @@ class API {
         strainThresLow,         // strain motion detection low threshold
         motionDetectionMethod,  // select motion detection method
         sleep,                  // put esp to deep sleep
-        negativeTorqueMethod    // method for dealing with negative torque readings
+        negativeTorqueMethod,   // method for dealing with negative torque readings
+        autoTare,               // enable automatic tare function
+        autoTareDelayMs,        // set delay for autoTare after last crank event
+        autoTareRangeG          // set minimum weight range for autoTare
     };
 
     enum Result {
@@ -84,8 +87,12 @@ class API {
     Result commandMotionDetectionMethod(const char *str, char *reply);
     Result commandSleep(const char *str, char *reply);
     Result commandNegativeTorqueMethod(const char *str, char *reply);
+    Result commandAutoTare(const char *str, char *reply);
+    Result commandAutoTareDelayMs(const char *str, char *reply);
+    Result commandAutoTareRangeG(const char *str, char *reply);
 
-    const char *resultStr(Result r) {
+    const char *
+    resultStr(Result r) {
         switch (r) {
             case success:
                 return "OK";
@@ -171,6 +178,12 @@ class API {
                 return "sleep";
             case negativeTorqueMethod:
                 return "negativeTorqueMethod";
+            case autoTare:
+                return "autoTare";
+            case autoTareDelayMs:
+                return "autoTareDelayMs";
+            case autoTareRangeG:
+                return "autoTareRangeG";
         }
         return "unknown";
     }
@@ -230,6 +243,12 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::sleep))) return Command::sleep;
         if (atoi(str) == Command::negativeTorqueMethod ||
             0 == strcmp(str, commandCodeToStr(Command::negativeTorqueMethod))) return Command::negativeTorqueMethod;
+        if (atoi(str) == Command::autoTare ||
+            0 == strcmp(str, commandCodeToStr(Command::autoTare))) return Command::autoTare;
+        if (atoi(str) == Command::autoTareDelayMs ||
+            0 == strcmp(str, commandCodeToStr(Command::autoTareDelayMs))) return Command::autoTareDelayMs;
+        if (atoi(str) == Command::autoTareRangeG ||
+            0 == strcmp(str, commandCodeToStr(Command::autoTareRangeG))) return Command::autoTareRangeG;
         return Command::invalid;
     }
 

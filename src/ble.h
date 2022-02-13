@@ -50,6 +50,7 @@ class BLE : public Task,
     bool wmCharUpdateEnabled = false;    // enables weight measurement value updates and notifications
     bool hallCharUpdateEnabled = false;  // enables hall measurement value updates and notifications
     unsigned long lastWmNotification = 0;
+    float lastWmValue = 0.0;
     unsigned long lastHallNotification = 0;
 
     bool cadenceInCpm = true;       // whether to include cadence data in CPM
