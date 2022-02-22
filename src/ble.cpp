@@ -291,7 +291,13 @@ void BLE::startApiService() {
     hallDesc->setValue((uint8_t *)s, strlen(s));
 
     as->start();
-    advertising->addServiceUUID(asUUID);
+
+    // this UUID will not fit in the advertisement packet, add it to the scan response
+    BLEAdvertisementData responseData;
+    responseData.setCompleteServices(asUUID);
+    advertising->setScanResponseData(responseData);
+
+    // advertising->addServiceUUID(asUUID);
 }
 
 void BLE::onCrankEvent(const ulong t, const uint16_t revolutions) {
