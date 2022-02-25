@@ -10,13 +10,16 @@
 #include "haspreferences.h"
 #include "task.h"
 
+#ifndef BLE_CHAR_VALUE_MAXLENGTH
 #define BLE_CHAR_VALUE_MAXLENGTH 128
+#endif
 
 class BLE : public Task,
             public HasPreferences,
             public BLEServerCallbacks,
             public BLECharacteristicCallbacks {
    public:
+    uint32_t taskStack = 4096;                        // task stack size in bytes
     char deviceName[SETTINGS_STR_LENGTH] = HOSTNAME;  // advertised device name
     bool enabled = true;                              // whether bluetooth is enabled
     BLEServer *server;                                // pointer to the ble server

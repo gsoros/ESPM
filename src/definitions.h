@@ -6,6 +6,7 @@
 ;                                           //#define DISABLE_SLEEP // for testing
 ;                                           //
 #define SETTINGS_STR_LENGTH 32              // maximum length of settings strings
+#define BLE_CHAR_VALUE_MAXLENGTH 256        // maximum number of bytes written to ble characteristic values
 ;                                           //
 ;                                           // task frequencies in Hz
 #define WIFISERIAL_TASK_FREQ 10             //

@@ -381,7 +381,8 @@ void BLE::notifyBl(const ulong t) {
 // response format: responseCode:responseStr;commandCode:commandStr=[arg]
 void BLE::handleApiCommand(const char *command) {
     char reply[API_REPLY_MAXLENGTH] = "";
-    API::Result result = board.api.handleCommand(command, reply);
+    char value[API_VALUE_MAXLENGTH] = "";
+    API::Result result = board.api.handleCommand(command, reply, value);
     char response[BLE_CHAR_VALUE_MAXLENGTH] = "";
     snprintf(response, sizeof(response), "%d:%s;%s",
              (int)result, board.api.resultStr(result), reply);

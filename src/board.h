@@ -48,7 +48,7 @@ class Board : public HasPreferences,
     bool sleepEnabled = true;
     ulong sleepDelay = SLEEP_DELAY_DEFAULT;
     char hostName[SETTINGS_STR_LENGTH] = HOSTNAME;
-    int motionDetectionMethod = MOTION_DETECTION_METHOD;
+    uint8_t motionDetectionMethod = MOTION_DETECTION_METHOD;
 
     void setup() {
         setCpuFrequencyMhz(80);  // no wifi/bt below 80MHz
@@ -60,7 +60,7 @@ class Board : public HasPreferences,
         setupTask("led");
         setupTask("wifi");
 #ifdef FEATURE_SERIAL
-        //wifiSerial.setup(); // Wifi will setup and start WifiSerial
+        // wifiSerial.setup(); // Wifi will setup and start WifiSerial
         setupTask("serial");
 #endif
         setupTask("ble");
@@ -68,7 +68,7 @@ class Board : public HasPreferences,
         setupTask("motion");
         setupTask("strain");
         setupTask("power");
-        //ota.setup(hostName); // Wifi will setup and start OTA
+        // ota.setup(hostName); // Wifi will setup and start OTA
         setupTask("status");
     }
 
@@ -116,7 +116,7 @@ class Board : public HasPreferences,
 
     void startTasks() {
 #ifdef FEATURE_SERIAL
-        //startTask("wifiSerial");
+        // startTask("wifiSerial");
 #endif
         // wifi.taskStart("Wifi Task", 1); // Wifi task is empty
         startTask("ble");
@@ -125,7 +125,7 @@ class Board : public HasPreferences,
             startTask("motion");
         startTask("strain");
         startTask("power");
-        //startTask("ota");
+        // startTask("ota");
         startTask("status");
         startTask("led");
         taskStart("Board Task", 1);
@@ -141,7 +141,7 @@ class Board : public HasPreferences,
             return;
         }
         if (strcmp("ble", taskName) == 0) {
-            ble.taskStart("BLE Task", BLE_TASK_FREQ);
+            ble.taskStart("BLE Task", BLE_TASK_FREQ, ble.taskStack);
             return;
         }
         if (strcmp("battery", taskName) == 0) {
@@ -265,7 +265,7 @@ class Board : public HasPreferences,
         */
         strain.sleep();
         motion.enableWomSleep();
-        //pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
+        // pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
         ble.setApiValue("Sleep...");
 #ifdef FEATURE_SERIAL
         Serial.println("[Board] Entering deep sleep");

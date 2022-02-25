@@ -34,8 +34,8 @@ class Task {
         strncpy(taskName, name, 32);
         taskFreq = freq;
         _taskSetDelayFromFreq();
-        Serial.printf("[Task] Starting %s at %dHz (delay: %dms)\n", name, freq, _xTaskDelay);
-        //xTaskCreate(_taskLoop, taskName, stack, this, priority, &taskHandle);
+        Serial.printf("[Task] Starting %s at %dHz (delay: %dms), stack %d\n", name, freq, _xTaskDelay, stack);
+        // xTaskCreate(_taskLoop, taskName, stack, this, priority, &taskHandle);
         BaseType_t err = xTaskCreatePinnedToCore(_taskLoop, taskName, stack, this, priority, &taskHandle, 1);
         if (pdPASS != err)
             log_e("Failed to start task %s, error %d", taskName, err);

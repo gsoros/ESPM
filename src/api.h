@@ -3,9 +3,10 @@
 
 #include <Arduino.h>
 
-#define API_COMMAND_MAXLENGTH 32
-#define API_ARG_MAXLENGTH 32
-#define API_REPLY_MAXLENGTH 64
+#define API_COMMAND_MAXLENGTH 32  // maximum length of an api command
+#define API_ARG_MAXLENGTH 32      // maximum length of an api argument
+#define API_VALUE_MAXLENGTH 16    // maximum length of a value string returned by an api command
+#define API_REPLY_MAXLENGTH 256   // maximum length of a reply string returned by an api command
 
 class API {
    public:
@@ -40,7 +41,9 @@ class API {
         negativeTorqueMethod,   // method for dealing with negative torque readings
         autoTare,               // enable automatic tare function
         autoTareDelayMs,        // set delay for autoTare after last crank event
-        autoTareRangeG          // set minimum weight range for autoTare
+        autoTareRangeG,         // set minimum weight range for autoTare
+        config,                 // request complete list of configured parameters
+        COMMAND_MAX             // marks the end for iteration
     };
 
     enum Result {
@@ -59,37 +62,38 @@ class API {
 
     const char *tag = "[API]";
 
-    Result handleCommand(const char *commandWithArg, char *reply);
-    Result commandWifi(const char *str, char *reply);
-    Result commandHostName(const char *str, char *reply);
+    Result handleCommand(const char *commandWithArg, char *reply, char *value);
+    Result commandWifi(const char *str, char *reply, char *value);
+    Result commandHostName(const char *str, char *reply, char *value);
     Result commandReboot(const char *str, char *reply);
-    Result commandPasskey(const char *str, char *reply);
-    Result commandSecureApi(const char *str, char *reply);
-    Result commandWeightService(const char *str, char *reply);
+    Result commandPasskey(const char *str, char *reply, char *value);
+    Result commandSecureApi(const char *str, char *reply, char *value);
+    Result commandWeightService(const char *str, char *reply, char *value);
     Result commandCalibrateStrain(const char *str, char *reply);
     Result commandTare(const char *str, char *reply);
-    Result commandWifiApEnabled(const char *str, char *reply);
-    Result commandWifiApSSID(const char *str, char *reply);
-    Result commandWifiApPassword(const char *str, char *reply);
-    Result commandWifiStaEnabled(const char *str, char *reply);
-    Result commandWifiStaSSID(const char *str, char *reply);
-    Result commandWifiStaPassword(const char *str, char *reply);
-    Result commandCrankLength(const char *str, char *reply);
-    Result commandReverseStrain(const char *str, char *reply);
-    Result commandDoublePower(const char *str, char *reply);
-    Result commandSleepDelay(const char *str, char *reply);
-    Result commandHallChar(const char *str, char *reply);
-    Result commandHallOffset(const char *str, char *reply);
-    Result commandHallThreshold(const char *str, char *reply);
-    Result commandHallThresLow(const char *str, char *reply);
-    Result commandStrainThreshold(const char *str, char *reply);
-    Result commandStrainThresLow(const char *str, char *reply);
-    Result commandMotionDetectionMethod(const char *str, char *reply);
+    Result commandWifiApEnabled(const char *str, char *reply, char *value);
+    Result commandWifiApSSID(const char *str, char *reply, char *value);
+    Result commandWifiApPassword(const char *str, char *reply, char *value);
+    Result commandWifiStaEnabled(const char *str, char *reply, char *value);
+    Result commandWifiStaSSID(const char *str, char *reply, char *value);
+    Result commandWifiStaPassword(const char *str, char *reply, char *value);
+    Result commandCrankLength(const char *str, char *reply, char *value);
+    Result commandReverseStrain(const char *str, char *reply, char *value);
+    Result commandDoublePower(const char *str, char *reply, char *value);
+    Result commandSleepDelay(const char *str, char *reply, char *value);
+    Result commandHallChar(const char *str, char *reply, char *value);
+    Result commandHallOffset(const char *str, char *reply, char *value);
+    Result commandHallThreshold(const char *str, char *reply, char *value);
+    Result commandHallThresLow(const char *str, char *reply, char *value);
+    Result commandStrainThreshold(const char *str, char *reply, char *value);
+    Result commandStrainThresLow(const char *str, char *reply, char *value);
+    Result commandMotionDetectionMethod(const char *str, char *reply, char *value);
     Result commandSleep(const char *str, char *reply);
-    Result commandNegativeTorqueMethod(const char *str, char *reply);
-    Result commandAutoTare(const char *str, char *reply);
-    Result commandAutoTareDelayMs(const char *str, char *reply);
-    Result commandAutoTareRangeG(const char *str, char *reply);
+    Result commandNegativeTorqueMethod(const char *str, char *reply, char *value);
+    Result commandAutoTare(const char *str, char *reply, char *value);
+    Result commandAutoTareDelayMs(const char *str, char *reply, char *value);
+    Result commandAutoTareRangeG(const char *str, char *reply, char *value);
+    Result commandConfig(const char *str, char *reply);
 
     const char *
     resultStr(Result r) {
@@ -184,8 +188,12 @@ class API {
                 return "autoTareDelayMs";
             case autoTareRangeG:
                 return "autoTareRangeG";
+            case config:
+                return "config";
+            case COMMAND_MAX:
+                return "invalidCommand";
         }
-        return "unknown";
+        return "unknownCommand";
     }
 
     Command parseCommandStr(const char *str) {
@@ -249,6 +257,8 @@ class API {
             0 == strcmp(str, commandCodeToStr(Command::autoTareDelayMs))) return Command::autoTareDelayMs;
         if (atoi(str) == Command::autoTareRangeG ||
             0 == strcmp(str, commandCodeToStr(Command::autoTareRangeG))) return Command::autoTareRangeG;
+        if (atoi(str) == Command::config ||
+            0 == strcmp(str, commandCodeToStr(Command::config))) return Command::config;
         return Command::invalid;
     }
 

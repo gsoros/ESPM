@@ -98,7 +98,7 @@ void Status::print() {
 }
 
 /*
-    [c]alibrate 
+    [c]alibrate
         [a]ccel/gyro
         [m]ag
         [b]attery
@@ -139,6 +139,7 @@ void Status::print() {
         [h]ostname
         status [f]requency
         sleep [d]elay
+        d[u]mp config
     [r]eboot
     [d]eep sleep
 */
@@ -407,11 +408,19 @@ void Status::handleInput(const char input) {
                         board.saveSettings();
                         menu[1] = '\0';
                         break;
+                    case 'u': {
+                        char reply[API_REPLY_MAXLENGTH] = "";
+                        char value[API_VALUE_MAXLENGTH] = "";
+                        board.api.handleCommand("config", reply, value);
+                        Serial.printf("Config length=%d\n", strlen(reply));
+                        Serial.println(reply);
+                        menu[1] = '\0';
+                    } break;
                     case 'x':
                         strncpy(menu, " ", 2);
                         break;
                     default:
-                        Serial.print("Config: [h]ostname, status [f]requency, sleep [d]elay or e[x]it\n");
+                        Serial.print("Config: [h]ostname, status [f]requency, sleep [d]elay, d[u]mp config or e[x]it\n");
                         menu[1] = getChar();
                         menu[2] = '\0';
                 }
@@ -435,7 +444,8 @@ void Status::handleInput(const char input) {
                         getStr(tmpStr, 6);
                         char reply[API_REPLY_MAXLENGTH];
                         API::Result apiResult;
-                        apiResult = board.api.commandPasskey(tmpStr, reply);
+                        char value[API_VALUE_MAXLENGTH];
+                        apiResult = board.api.commandPasskey(tmpStr, reply, value);
                         Serial.printf("Reply from API: %d:%s\n", apiResult, reply);
                         menu[1] = '\0';
                         break;
@@ -461,7 +471,7 @@ void Status::handleInput(const char input) {
                 Serial.print("NULL received\n");
                 return;
             case 4:  // EOT
-                //Serial.print("Ctrl+D received\n");
+                // Serial.print("Ctrl+D received\n");
                 return;
             default:
                 Serial.print("[c]alibrate, [w]iFi, [b]le, c[o]nfig, [r]eboot or [d]eep sleep\n");
