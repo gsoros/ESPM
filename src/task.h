@@ -3,7 +3,6 @@
 
 #include "xtensa/core-macros.h"
 #include <Arduino.h>
-#include "splitstream.h"
 #include "definitions.h"
 
 class Task {
@@ -34,13 +33,13 @@ class Task {
         strncpy(taskName, name, 32);
         taskFreq = freq;
         _taskSetDelayFromFreq();
-        Serial.printf("[Task] Starting %s at %dHz (delay: %dms), stack %d\n", name, freq, _xTaskDelay, stack);
+        log_i("[Task] Starting %s at %dHz (delay: %dms), stack %d\n", name, freq, _xTaskDelay, stack);
         // xTaskCreate(_taskLoop, taskName, stack, this, priority, &taskHandle);
         BaseType_t err = xTaskCreatePinnedToCore(_taskLoop, taskName, stack, this, priority, &taskHandle, 1);
         if (pdPASS != err)
             log_e("Failed to start task %s, error %d", taskName, err);
         else
-            Serial.printf("[Task] Started %s\n", name);
+            log_i("[Task] Started %s\n", name);
     }
 
     bool taskRunning() {
@@ -49,7 +48,7 @@ class Task {
 
     void taskStop() {
         if (NULL != taskHandle) {
-            Serial.printf("[Task] Stopping %s\n", taskName);
+            log_i("[Task] Stopping %s\n", taskName);
             vTaskDelete(taskHandle);
         }
         taskHandle = NULL;

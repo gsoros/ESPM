@@ -82,8 +82,10 @@ class Board : public HasPreferences,
             return;
         }
         if (strcmp("serial", taskName) == 0) {
+#ifdef FEATURE_SERIAL
             Serial.setup(&hwSerial, &wifiSerial, true, true);
             while (!hwSerial) vTaskDelay(10);
+#endif
             return;
         }
         if (strcmp("ble", taskName) == 0) {
@@ -133,11 +135,13 @@ class Board : public HasPreferences,
 
     void startTask(const char *taskName) {
         if (strcmp("wifiSerial", taskName) == 0) {
+#ifdef FEATURE_SERIAL
             if (WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL) {
                 Serial.printf("[Board] Wifi disabled, not starting WifiSerial task\n");
                 return;
             }
             wifiSerial.taskStart("WifiSerial Task", WIFISERIAL_TASK_FREQ);
+#endif
             return;
         }
         if (strcmp("ble", taskName) == 0) {
@@ -185,7 +189,9 @@ class Board : public HasPreferences,
             return;
         }
         if (strcmp("wifiSerial", taskName) == 0) {
+#ifdef FEATURE_SERIAL
             wifiSerial.off();
+#endif
             return;
         }
         if (strcmp("motion", taskName) == 0) {

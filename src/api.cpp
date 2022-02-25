@@ -600,7 +600,7 @@ API::Result API::commandAutoTareRangeG(const char *str, char *reply, char *value
 
 API::Result API::commandConfig(const char *str, char *reply) {
     Serial.printf("[API] commandConfig(\"%s\")\n", str);
-    char config[API_REPLY_MAXLENGTH];
+    char config[API_REPLY_MAXLENGTH] = "";
     int numSkipped = 5;
     int skippedCommands[numSkipped] = {
         Command::reboot,           // 3
