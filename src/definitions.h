@@ -21,7 +21,7 @@
 ;                                           //
 #define SLEEP_DELAY_DEFAULT 5 * 60 * 1000   // 5m
 #define SLEEP_DELAY_MIN 1 * 60 * 1000       // 1m
-#define SLEEP_COUNTDOWN_AFTER 30 * 1000     // 30s
+#define SLEEP_COUNTDOWN_AFTER 30 * 1000     // 30s countdown on the serial console
 #define SLEEP_COUNTDOWN_EVERY 2000          // 2s
 ;                                           //
 #define MPU_RINGBUF_SIZE 16                 // 128 ms smoothing @ 125 sps // TODO unused
@@ -75,5 +75,11 @@
 #define AUTO_TARE 1                         // enable auto tare by default
 #define AUTO_TARE_DELAY_MS 3000             // auto tare after 3 secs of last crank event
 #define AUTO_TARE_RANGE_G 1000              // buffer values must within this range (1 kg) for auto tare
+;                                           //
+#define WM_OFF 0                            // weight scale measurement characteristic updates disabled
+#define WM_ON 1                             // enabled
+#define WM_WHEN_NO_CRANK 2                  // enabled while there are no crank events
+#define WM_MAX 3                            // marks the high limit
+#define WM_CHAR_MODE WM_WHEN_NO_CRANK       //
 ;                                           //
 #endif

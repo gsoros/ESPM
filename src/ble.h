@@ -50,7 +50,7 @@ class BLE : public Task,
     unsigned long lastCadenceNotification = 0;
     uint8_t lastBatteryLevel = 0;
     unsigned long lastBatteryNotification = 0;
-    bool wmCharUpdateEnabled = false;    // enables weight measurement value updates and notifications
+    int wmCharMode = WM_CHAR_MODE;       // weight measurement char updates and notifications
     bool hallCharUpdateEnabled = false;  // enables hall measurement value updates and notifications
     unsigned long lastWmNotification = 0;
     float lastWmValue = 0.0;
@@ -109,7 +109,7 @@ class BLE : public Task,
     void setCscServiceActive(bool state);
     void setSecureApi(bool state);
     void setPasskey(uint32_t newPasskey);
-    void setWmCharUpdateEnabled(bool state);
+    void setWmCharMode(int mode);
     void setHallCharUpdateEnabled(bool state);
     void loadSettings();
     void saveSettings();

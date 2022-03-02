@@ -45,15 +45,16 @@ void BLE::loop() {
         notifyCsc(t);
     if (lastBatteryLevel != board.battery.level) notifyBl(t);
     if (!advertising->isAdvertising()) startAdvertising();
-    if (wmCharUpdateEnabled && lastWmNotification < t - 200) {
-        if (board.motion.lastCrankEventTime < t - 1000)
+    if (lastWmNotification < t - 500) {
+        if (wmCharMode == WM_ON ||              //
+            (wmCharMode == WM_WHEN_NO_CRANK &&  //
+             board.motion.lastCrankEventTime < t - 1000))
             setWmValue(board.strain.liveValue());
         else
             setWmValue(0.0);
-
         lastWmNotification = t;
     }
-    if (hallCharUpdateEnabled && lastHallNotification < t - 200) {
+    if (hallCharUpdateEnabled && lastHallNotification < t - 300) {
         setHallValue(board.motion.lastHallValue);
         lastHallNotification = t;
     }
@@ -557,9 +558,9 @@ void BLE::setPasskey(uint32_t newPasskey) {
     */
 }
 
-// Set the "update enabled" flag on the Weight Measurement char
-void BLE::setWmCharUpdateEnabled(bool state) {
-    wmCharUpdateEnabled = state;
+// Set the operating mode of the Weight Measurement char
+void BLE::setWmCharMode(int mode) {
+    wmCharMode = mode;
 }
 
 // Set the "update enabled" flag on the Hall char

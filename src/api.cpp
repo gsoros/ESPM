@@ -220,19 +220,17 @@ API::Result API::commandSecureApi(const char *str, char *reply, char *value) {
 API::Result API::commandWeightService(const char *str, char *reply, char *value) {
     // set value
     if (0 < strlen(str)) {
-        bool newValue = false;
-        if (0 == strcmp("true", str) || 0 == strcmp("1", str))
-            newValue = true;
-        board.ble.setWmCharUpdateEnabled(newValue);
-        if (!newValue) board.ble.setWmValue(0.0);
+        uint8_t newValue = (uint8_t)atoi(str);
+        if (0 <= newValue && newValue < WM_MAX)
+            board.ble.setWmCharMode(newValue);
+        if (WM_OFF == newValue) board.ble.setWmValue(0.0);
     }
     // get value
     char replyTmp[API_REPLY_MAXLENGTH];
     strncpy(replyTmp, reply, sizeof(replyTmp));
-    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s", replyTmp,
-             (int)board.ble.wmCharUpdateEnabled,
-             board.ble.wmCharUpdateEnabled ? "true" : "false");
-    strncpy(value, board.ble.wmCharUpdateEnabled ? "1" : "0", API_VALUE_MAXLENGTH);
+    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp,
+             (int)board.ble.wmCharMode);
+    snprintf(value, API_VALUE_MAXLENGTH, "%d", board.ble.wmCharMode);
     return Result::success;
 }
 
