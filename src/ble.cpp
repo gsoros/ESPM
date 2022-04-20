@@ -321,7 +321,13 @@ void BLE::notifyCp(const ulong t) {
     }
     if (t - CRANK_EVENT_MIN_MS < lastPowerNotification) return;
     lastPowerNotification = t;
+    static uint16_t prevPower = 0;
     power = (uint16_t)board.getPower();
+    if (power == prevPower) {
+        // Serial.println("[BLE] Power not changed, not notifying CP");
+        return;
+    }
+    prevPower = power;
     if (cadenceInCpm) {
         bufPower[0] = powerFlagsWithCadence & 0xff;
         bufPower[1] = (powerFlagsWithCadence >> 8) & 0xff;
