@@ -38,6 +38,7 @@ class WifiConnection : public HasPreferences, public Task {
     bool isEnabled();
     bool connected();
     void registerCallbacks();
+    void onEvent(arduino_event_id_t event, arduino_event_info_t info);
 };
 
 #endif

@@ -5,7 +5,7 @@ void WifiSerial::setup() { setup(WIFISERIAL_PORT, WIFISERIAL_MAXCLIENTS); }
 void WifiSerial::setup(uint16_t port, uint8_t maxClients) {
     _server = WiFiServer(port, maxClients);
     if (WiFi.getMode() == WIFI_MODE_NULL) {
-        Serial.printf("[OTA] Wifi is disabled, not starting\n");
+        Serial.printf("[WifiSerial] Wifi is disabled, not starting\n");
         return;
     }
     _server.begin();
@@ -86,7 +86,7 @@ int WifiSerial::read() {
             case 4:
                 print("[WifiSerial] Ctrl-D received, bye.\n");
                 _disconnect = true;
-                //return -1;
+                // return -1;
         }
         return c;
     }

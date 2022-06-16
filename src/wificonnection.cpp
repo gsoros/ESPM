@@ -22,13 +22,13 @@ void WifiConnection::loadSettings() {
     if (!preferencesStartLoad()) return;
     settings.enabled = preferences->getBool("enabled", settings.enabled);
     settings.apEnabled = preferences->getBool("apEnabled", settings.apEnabled);
-    //preferences->getBytes("apSSID", settings.apSSID, 32);
-    //preferences->getBytes("apPassword", settings.apPassword, 32);
+    // preferences->getBytes("apSSID", settings.apSSID, 32);
+    // preferences->getBytes("apPassword", settings.apPassword, 32);
     strncpy(settings.apSSID, preferences->getString("apSSID", settings.apSSID).c_str(), 32);
     strncpy(settings.apPassword, preferences->getString("apPassword", settings.apPassword).c_str(), 32);
     settings.staEnabled = preferences->getBool("staEnabled", settings.staEnabled);
-    //preferences->getBytes("staSSID", settings.staSSID, 32);
-    //preferences->getBytes("staPassword", settings.staPassword, 32);
+    // preferences->getBytes("staSSID", settings.staSSID, 32);
+    // preferences->getBytes("staPassword", settings.staPassword, 32);
     strncpy(settings.staSSID, preferences->getString("staSSID", settings.staSSID).c_str(), 32);
     strncpy(settings.staPassword, preferences->getString("staPassword", settings.staPassword).c_str(), 32);
     preferencesEnd();
@@ -67,7 +67,7 @@ void WifiConnection::printAPSettings() {
     Serial.printf("[Wifi] AP %sabled '%s' '%s'\n",
                   settings.apEnabled ? "En" : "Dis",
                   settings.apSSID,
-                  "***"  //settings.apPassword
+                  "***"  // settings.apPassword
     );
     if (settings.apEnabled)
         Serial.printf("[Wifi] AP online, IP: %s\n", WiFi.softAPIP().toString().c_str());
@@ -77,7 +77,7 @@ void WifiConnection::printSTASettings() {
     Serial.printf("[Wifi] STA %sabled '%s' '%s'\n",
                   settings.staEnabled ? "En" : "Dis",
                   settings.staSSID,
-                  "***"  //settings.staPassword
+                  "***"  // settings.staPassword
     );
     if (WiFi.isConnected())
         Serial.printf("[Wifi] STA connected, local IP: %s\n", WiFi.localIP().toString().c_str());
@@ -149,20 +149,48 @@ bool WifiConnection::connected() {
 };
 
 void WifiConnection::registerCallbacks() {
-    WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-        log_i("WiFi AP new connection, now active: %d", WiFi.softAPgetStationNum());
-    },
-                 SYSTEM_EVENT_AP_STACONNECTED);
-    WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-        log_i("WiFi AP station disconnected, now active: %d", WiFi.softAPgetStationNum());
-    },
-                 SYSTEM_EVENT_AP_STADISCONNECTED);
-    WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-        log_i("WiFi STA connected, IP: %s", WiFi.localIP().toString().c_str());
-    },
-                 SYSTEM_EVENT_STA_GOT_IP);
-    WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-        log_i("WiFi STA disconnected");
-    },
-                 SYSTEM_EVENT_STA_LOST_IP);
+    WiFi.onEvent(
+        [this](arduino_event_id_t event, arduino_event_info_t info) {
+            onEvent(event, info);
+        },
+        ARDUINO_EVENT_MAX);
+}
+
+void WifiConnection::onEvent(arduino_event_id_t event, arduino_event_info_t info) {
+    switch (event) {
+        case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
+            log_i("[AP] station connected, now active: %d", WiFi.softAPgetStationNum());
+            break;
+        case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
+            log_i("[AP] station got IP");
+            break;
+        case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
+            log_i("[AP] station disconnected, now active: %d", WiFi.softAPgetStationNum());
+            break;
+        case ARDUINO_EVENT_WIFI_STA_START:
+            log_i("[STA] starting");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+            log_i("[STA] connected");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+            log_i("[STA] got IP: %s", WiFi.localIP().toString().c_str());
+            // WiFi.setAutoReconnect(true);
+            // WiFi.persistent(true);
+            break;
+        case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+            log_i("[STA] disconnected");
+            if (settings.enabled && settings.staEnabled) {
+                log_i("[STA] reconnecting");
+                // WiFi.disconnect();
+                WiFi.reconnect();
+                // WiFi.begin();
+            }
+            break;
+        case ARDUINO_EVENT_WIFI_STA_STOP:
+            log_i("[STA] stopped");
+            break;
+        default:
+            log_i("event: %d, info: %d", event, info);
+    }
 }
