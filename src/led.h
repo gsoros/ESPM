@@ -7,10 +7,11 @@
 
 #include <Arduino.h>
 
-#include "task.h"
+#include "atoll_task.h"
 
-class Led : public Task {
+class Led : public Atoll::Task {
    public:
+    const char *taskName() { return "Led"; }
     void setup() {
         pinMode(LED_PIN, OUTPUT);
         set();

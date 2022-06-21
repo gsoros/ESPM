@@ -2,10 +2,11 @@
 #define STATUS_H
 
 #include <Arduino.h>
-#include "task.h"
+#include "atoll_task.h"
 
-class Status : public Task {
+class Status : public Atoll::Task {
    public:
+    const char *taskName() { return "Status"; }
     bool statusEnabled = false;
     uint32_t statusDelay = 1000;  // ms
 

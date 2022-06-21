@@ -3,7 +3,7 @@
 #include "motion.h"
 #include "strain.h"
 
-void Power::setup(Preferences *p) {
+void Power::setup(::Preferences *p) {
     preferencesSetup(p, "POWER");
     loadSettings();
 }

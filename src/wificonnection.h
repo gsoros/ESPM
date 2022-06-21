@@ -1,6 +1,6 @@
 #ifndef WIFICONNECTION_H
 #define WIFICONNECTION_H
-
+#error removed
 #include <Arduino.h>
 #include <Preferences.h>
 #include <WiFi.h>

@@ -1,6 +1,6 @@
 #ifndef WIFISERIAL_H
 #define WIFISERIAL_H
-
+#error removed
 #include <Arduino.h>
 #include <Stream.h>
 #include <WiFi.h>

@@ -7,41 +7,43 @@
 #include "definitions.h"
 
 #ifdef FEATURE_SERIAL
-#include "splitstream.h"
-#include "wifiserial.h"
+#include "atoll_split_stream.h"
+#include "atoll_wifi_serial.h"
 #else
-#include "nullserial.h"
+#include "atoll_null_serial.h"
 #endif
-#include "haspreferences.h"
-#include "task.h"
+#include "atoll_preferences.h"
+#include "atoll_task.h"
+#include "ble_server.h"
+#include "atoll_api.h"
+#include "atoll_battery.h"
+#include "atoll_wifi.h"
+#include "atoll_ota.h"
+
 #include "motion.h"
 #include "strain.h"
 #include "power.h"
-#include "ble.h"
-#include "api.h"
-#include "battery.h"
-#include "wificonnection.h"
-#include "ota.h"
 #include "status.h"
 #include "led.h"
 
 // The one in charge
-class Board : public HasPreferences,
-              public Task {
+class Board : public Atoll::Task,
+              public Atoll::Preferences {
    public:
-    Preferences boardPreferences = Preferences();
+    const char *taskName() { return "Board"; }
+    ::Preferences arduinoPreferences = ::Preferences();
 #ifdef FEATURE_SERIAL
     HardwareSerial hwSerial = HardwareSerial(0);
-    WifiSerial wifiSerial;
+    Atoll::WifiSerial wifiSerial;
 #endif
-    WifiConnection wifi;
-    BLE ble;
+    Atoll::Wifi wifi;
+    BleServer bleServer;
     API api;
-    Battery battery;
+    Atoll::Battery battery;
     Motion motion;
     Strain strain;
     Power power;
-    OTA ota;
+    Atoll::Ota ota;
     Status status;
     Led led;
 
@@ -55,7 +57,7 @@ class Board : public HasPreferences,
 #ifdef FEATURE_SERIAL
         hwSerial.begin(115200);
 #endif
-        preferencesSetup(&boardPreferences, "BOARD");
+        preferencesSetup(&arduinoPreferences, "BOARD");
         loadSettings();
         setupTask("led");
         setupTask("wifi");
@@ -63,13 +65,14 @@ class Board : public HasPreferences,
         // wifiSerial.setup(); // Wifi will setup and start WifiSerial
         setupTask("serial");
 #endif
-        setupTask("ble");
+        setupTask("bleServer");
         setupTask("battery");
         setupTask("motion");
         setupTask("strain");
         setupTask("power");
-        // ota.setup(hostName); // Wifi will setup and start OTA
         setupTask("status");
+
+        bleServer.start();
     }
 
     void setupTask(const char *taskName) {
@@ -78,7 +81,7 @@ class Board : public HasPreferences,
             return;
         }
         if (strcmp("wifi", taskName) == 0) {
-            wifi.setup(preferences);
+            wifi.setup(hostName, preferences, "Wifi", &wifi, &api, &ota);
             return;
         }
         if (strcmp("serial", taskName) == 0) {
@@ -88,8 +91,8 @@ class Board : public HasPreferences,
 #endif
             return;
         }
-        if (strcmp("ble", taskName) == 0) {
-            ble.setup(hostName, preferences);
+        if (strcmp("bleServer", taskName) == 0) {
+            bleServer.setup(hostName, preferences);
             return;
         }
         if (strcmp("battery", taskName) == 0) {
@@ -121,7 +124,7 @@ class Board : public HasPreferences,
         // startTask("wifiSerial");
 #endif
         // wifi.taskStart("Wifi Task", 1); // Wifi task is empty
-        startTask("ble");
+        startTask("bleServer");
         startTask("battery");
         if (motionDetectionMethod == MDM_HALL || motionDetectionMethod == MDM_MPU)
             startTask("motion");
@@ -130,7 +133,7 @@ class Board : public HasPreferences,
         // startTask("ota");
         startTask("status");
         startTask("led");
-        taskStart("Board Task", 1);
+        taskStart(1);
     }
 
     void startTask(const char *taskName) {
@@ -144,24 +147,24 @@ class Board : public HasPreferences,
 #endif
             return;
         }
-        if (strcmp("ble", taskName) == 0) {
-            ble.taskStart("BLE Task", BLE_TASK_FREQ, ble.taskStack);
+        if (strcmp("bleServer", taskName) == 0) {
+            bleServer.taskStart(BLE_TASK_FREQ, ble.taskStack);
             return;
         }
         if (strcmp("battery", taskName) == 0) {
-            battery.taskStart("Battery Task", BATTERY_TASK_FREQ);
+            battery.taskStart(BATTERY_TASK_FREQ);
             return;
         }
         if (strcmp("motion", taskName) == 0) {
-            motion.taskStart("Motion Task", MOTION_TASK_FREQ);
+            motion.taskStart(MOTION_TASK_FREQ);
             return;
         }
         if (strcmp("strain", taskName) == 0) {
-            strain.taskStart("Strain Task", STRAIN_TASK_FREQ);
+            strain.taskStart(STRAIN_TASK_FREQ);
             return;
         }
         if (strcmp("power", taskName) == 0) {
-            power.taskStart("Power Task", POWER_TASK_FREQ);
+            power.taskStart(POWER_TASK_FREQ);
             return;
         }
         if (strcmp("ota", taskName) == 0) {
@@ -173,11 +176,11 @@ class Board : public HasPreferences,
             return;
         }
         if (strcmp("status", taskName) == 0) {
-            status.taskStart("Status Task", STATUS_TASK_FREQ);
+            status.taskStart(STATUS_TASK_FREQ);
             return;
         }
         if (strcmp("led", taskName) == 0) {
-            led.taskStart("Led Task", LED_TASK_FREQ);
+            led.taskStart(LED_TASK_FREQ);
             return;
         }
         log_e("unknown task: %s", taskName);

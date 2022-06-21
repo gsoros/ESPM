@@ -7,15 +7,16 @@
 #include <Preferences.h>
 #include <Wire.h>
 
-#include "haspreferences.h"
-#include "task.h"
+#include "atoll_preferences.h"
+#include "atoll_task.h"
 
 #ifndef MPU_RINGBUF_SIZE
 #define MPU_RINGBUF_SIZE 16  // circular buffer size
 #endif
 
-class Motion : public Task, public HasPreferences {
+class Motion : public Atoll::Task, public Atoll::Preferences {
    public:
+    const char *taskName() { return "Motion"; }
     MPU9250 *device;
     bool updateEnabled = false;
     bool accelGyroNeedsCalibration = false;
@@ -30,10 +31,10 @@ class Motion : public Task, public HasPreferences {
 
     void setup(const uint8_t sdaPin,
                const uint8_t sclPin,
-               Preferences *p);
+               ::Preferences *p);
     void setup(const uint8_t sdaPin,
                const uint8_t sclPin,
-               Preferences *p,
+               ::Preferences *p,
                const char *preferencesNS,
                uint8_t mpuAddress);
 

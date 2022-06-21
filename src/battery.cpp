@@ -1,7 +1,7 @@
 #include "battery.h"
 #include "board.h"
 
-void Battery::setup(Preferences *p) {
+void Battery::setup(::Preferences *p) {
     preferencesSetup(p, "Battery");
     this->loadSettings();
 }
@@ -47,7 +47,7 @@ float Battery::measureVoltage(bool useCorrection) {
             330 * samples) /  // 3.3V
         samples /
         100.0;  // double division
-    //log_i("Batt pin measured: (%d) = %fV\n", sum / samples, pinVoltage);
+    // log_i("Batt pin measured: (%d) = %fV\n", sum / samples, pinVoltage);
     voltage = pinVoltage * corrF;
     _voltageBuf.push(voltage);
     return useCorrection ? voltage : pinVoltage;

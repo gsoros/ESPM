@@ -5,12 +5,12 @@
 
 void Motion::setup(const uint8_t sdaPin,
                    const uint8_t sclPin,
-                   Preferences *p) {
+                   ::Preferences *p) {
     setup(sdaPin, sclPin, p, "MOTION", 0x68);
 }
 void Motion::setup(const uint8_t sdaPin,
                    const uint8_t sclPin,
-                   Preferences *p,
+                   ::Preferences *p,
                    const char *preferencesNS,
                    uint8_t mpuAddress) {
     preferencesSetup(p, preferencesNS);
@@ -18,26 +18,26 @@ void Motion::setup(const uint8_t sdaPin,
         Wire.begin(sdaPin, sclPin);
         vTaskDelay(100);
         device = new MPU9250();
-        //device->verbose(true);
+        // device->verbose(true);
         MPU9250Setting s;
         s.skip_mag = true;  // compass not needed
         s.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_125HZ;
-        //s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_10HZ;
-        //s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_3600HZ;
-        //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_10HZ;
-        //s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_420HZ;
-        //s.mag_output_bits = MAG_OUTPUT_BITS::M14BITS;
+        // s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_10HZ;
+        // s.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_3600HZ;
+        // s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_10HZ;
+        // s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_420HZ;
+        // s.mag_output_bits = MAG_OUTPUT_BITS::M14BITS;
         if (!device->setup(mpuAddress, s))
             Serial.println("[MOTION] Setup error");
-        //device->selectFilter(QuatFilterSel::MAHONY);
+        // device->selectFilter(QuatFilterSel::MAHONY);
         device->selectFilter(QuatFilterSel::NONE);
-        //device->selectFilter(QuatFilterSel::MADGWICK);
-        //device->setMagneticDeclination(5 + 19 / 60);  // 5° 19'
+        // device->selectFilter(QuatFilterSel::MADGWICK);
+        // device->setMagneticDeclination(5 + 19 / 60);  // 5° 19'
     } else if (board.motionDetectionMethod == MDM_HALL) {
         adc1_config_width(ADC_WIDTH_BIT_12);
     }
     loadSettings();
-    //printSettings();
+    // printSettings();
     updateEnabled = true;
     lastMovement = millis();
 }
@@ -72,7 +72,7 @@ void Motion::loop() {
                         board.power.onCrankEvent(dt);
                         board.ble.onCrankEvent(t, revolutions);
                     } else {
-                        //Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", dt);
+                        // Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", dt);
                     }
                 }
                 lastCrankEventTime = t;
@@ -98,7 +98,7 @@ void Motion::loop() {
                     board.ble.onCrankEvent(t, revolutions);
                     lastCrankEventTime = t;
                 } else {
-                    //Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", dt);
+                    // Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", dt);
                 }
             } else {
                 lastCrankEventTime = t;

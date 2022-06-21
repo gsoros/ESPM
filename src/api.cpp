@@ -1,6 +1,23 @@
 #include "api.h"
 #include "board.h"
 
+void Api::beforeBleServiceStart(BLEService *s) {
+    // api char for reading hall effect sensor measurements
+    board.bleServer.hallChar = s->createCharacteristic(
+        BLEUUID(HALL_CHAR_UUID),
+        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
+    board.bleServer.hallChar->setCallbacks(this);
+    uint8_t bytes[2];
+    bytes[0] = 0 & 0xff;
+    bytes[1] = (0 >> 8) & 0xff;
+    board.bleServer.hallChar->setValue((uint8_t *)bytes, 2);  // set initial value
+    BLEDescriptor *hallDesc = board.bleServer.hallChar->createDescriptor(
+        BLEUUID(HALL_DESC_UUID),
+        NIMBLE_PROPERTY::READ);
+    char str[] = "Hall Effect Sensor reading";
+    hallDesc->setValue((uint8_t *)str, strlen(str));
+}
+
 // Command format: commandCode|commandStr[=[arg]];
 // Reply format: commandCode:commandStr=[value]
 API::Result API::handleCommand(const char *commandWithArg, char *reply, char *value) {

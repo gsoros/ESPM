@@ -3,7 +3,7 @@
 
 void Strain::setup(const gpio_num_t doutPin,
                    const gpio_num_t sckPin,
-                   Preferences *p,
+                   ::Preferences *p,
                    const char *preferencesNS) {
     this->doutPin = doutPin;
     this->sckPin = sckPin;

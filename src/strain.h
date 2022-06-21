@@ -4,19 +4,19 @@
 #include <Arduino.h>
 #include <HX711_ADC.h>
 #include <CircularBuffer.h>
-#include <Preferences.h>
 #include <driver/rtc_io.h>
 
-#include "haspreferences.h"
-#include "task.h"
+#include "atoll_preferences.h"
+#include "atoll_task.h"
 
 #ifndef STRAIN_RINGBUF_SIZE
 #define STRAIN_RINGBUF_SIZE 512  // circular buffer size
 #endif
 
-class Strain : public Task,
-               public HasPreferences {
+class Strain : public Atoll::Task,
+               public Atoll::Preferences {
    public:
+    const char *taskName() { return "Strain"; }
     HX711_ADC *device;
     gpio_num_t doutPin;
     gpio_num_t sckPin;
@@ -27,7 +27,7 @@ class Strain : public Task,
     void
     setup(const gpio_num_t doutPin,
           const gpio_num_t sckPin,
-          Preferences *p,
+          ::Preferences *p,
           const char *preferencesNS = "STRAIN");
 
     void loop();

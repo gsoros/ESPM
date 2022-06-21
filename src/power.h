@@ -4,8 +4,8 @@
 #include <Arduino.h>
 //#include <driver/rtc_io.h>
 
-#include "haspreferences.h"
-#include "task.h"
+#include "atoll_preferences.h"
+#include "atoll_task.h"
 #include "CircularBuffer.h"
 #include "definitions.h"
 
@@ -13,14 +13,15 @@
 #define POWER_RINGBUF_SIZE 96  // circular buffer size
 #endif
 
-class Power : public Task, public HasPreferences {
+class Power : public Atoll::Task, public Atoll::Preferences {
    public:
+    const char *taskName() { return "Power"; }
     float crankLength;  // crank length in mm
     bool reverseMPU;
     bool reverseStrain;
     bool reportDouble;
 
-    void setup(Preferences *p);
+    void setup(::Preferences *p);
     void loop();
     float power(bool clearBuffer = false);
     void onCrankEvent(const ulong msSinceLastEvent);
