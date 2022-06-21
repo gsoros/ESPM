@@ -1,14 +1,34 @@
 #ifndef API_H
 #define API_H
 
-#include <Arduino.h>
+#include "definitions.h"
+#include "atoll_api.h"
+#include "ble_server.h"
 
-#define API_COMMAND_MAXLENGTH 32  // maximum length of an api command
-#define API_ARG_MAXLENGTH 32      // maximum length of an api argument
-#define API_VALUE_MAXLENGTH 16    // maximum length of a value string returned by an api command
-#define API_REPLY_MAXLENGTH 256   // maximum length of a reply string returned by an api command
+typedef Atoll::ApiResult ApiResult;
+typedef Atoll::ApiMessage ApiMessage;
 
-class API {
+typedef ApiResult *(*ApiProcessor)(ApiMessage *reply);
+
+class ApiCommand : public Atoll::ApiCommand {
+   public:
+    ApiCommand(
+        const char *name = "",
+        ApiProcessor processor = nullptr,
+        uint8_t code = 0)
+        : Atoll::ApiCommand(name, processor, code) {}
+};
+
+class Api : public Atoll::Api {
+   public:
+    static void setup(Api *instance,
+                      ::Preferences *p,
+                      const char *preferencesNS,
+                      BleServer *bleServer = nullptr,
+                      const char *serviceUuid = nullptr);
+    virtual void beforeBleServiceStart(BLEService *s) override;
+
+   protected:
    public:
     enum Command {
         invalid,
