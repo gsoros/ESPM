@@ -1,239 +1,62 @@
 #include "api.h"
 #include "board.h"
 
-void Api::beforeBleServiceStart(BLEService *s) {
+void Api::setup(
+    Api *instance,
+    ::Preferences *p,
+    const char *preferencesNS,
+    BleServer *bleServer,
+    const char *serviceUuid) {
+    Atoll::Api::setup(instance, p, preferencesNS, bleServer, serviceUuid);
+
+    addCommand(ApiCommand("system", Api::systemProcessor));
+}
+
+void Api::beforeBleServiceStart(Atoll::BleServer *server, BLEService *service) {
     // api char for reading hall effect sensor measurements
-    board.bleServer.hallChar = s->createCharacteristic(
+    BleServer *s = (BleServer *)server;
+    s->hallChar = service->createCharacteristic(
         BLEUUID(HALL_CHAR_UUID),
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
-    board.bleServer.hallChar->setCallbacks(this);
+    s->hallChar->setCallbacks(server);
     uint8_t bytes[2];
     bytes[0] = 0 & 0xff;
     bytes[1] = (0 >> 8) & 0xff;
-    board.bleServer.hallChar->setValue((uint8_t *)bytes, 2);  // set initial value
-    BLEDescriptor *hallDesc = board.bleServer.hallChar->createDescriptor(
+    s->hallChar->setValue((uint8_t *)bytes, 2);  // set initial value
+    BLEDescriptor *hallDesc = s->hallChar->createDescriptor(
         BLEUUID(HALL_DESC_UUID),
         NIMBLE_PROPERTY::READ);
     char str[] = "Hall Effect Sensor reading";
     hallDesc->setValue((uint8_t *)str, strlen(str));
 }
 
-// Command format: commandCode|commandStr[=[arg]];
-// Reply format: commandCode:commandStr=[value]
-API::Result API::handleCommand(const char *commandWithArg, char *reply, char *value) {
-    Serial.printf("%s Handling command %s\n", tag, commandWithArg);
-    char commandStr[API_COMMAND_MAXLENGTH] = "";
-    char argStr[API_ARG_MAXLENGTH] = "";
-    int commandWithArgLength = strlen(commandWithArg);
-    char *eqSign = strstr(commandWithArg, "=");
-    int commandEnd = eqSign ? eqSign - commandWithArg : commandWithArgLength;
-
-    if (API_COMMAND_MAXLENGTH < commandEnd) {
-        Serial.printf("%s %s: %s\n", tag, resultStr(Result::commandTooLong), commandWithArg);
-        return Result::commandTooLong;
-    }
-    strncpy(commandStr, commandWithArg, commandEnd);
-
-    if (eqSign) {
-        int argLength = commandWithArgLength - commandEnd - 1;
-        Serial.printf("%s argSize=%d\n", tag, argLength);
-        if (API_ARG_MAXLENGTH < argLength) {
-            Serial.printf("%s %s: %s\n", tag, resultStr(Result::argTooLong), commandWithArg);
-            return Result::argTooLong;
+ApiResult *Api::systemProcessor(ApiMessage *msg) {
+    if (msg->argStartsWith("hostname")) {
+        char buf[sizeof(board.hostName)] = "";
+        msg->argGetParam("hostname:", buf, sizeof(buf));
+        if (0 < strlen(buf)) {
+            // set hostname
+            if (strlen(buf) < 2) return argInvalid();
+            if (!isAlNumStr(buf)) return argInvalid();
+            strncpy(board.hostName, buf, sizeof(board.hostName));
+            board.saveSettings();
         }
-        strncpy(argStr, eqSign + 1, argLength);
+        // get hostname
+        strncpy(msg->reply, board.hostName, msgReplyLength);
+        return success();
+    } else if (msg->argIs("ota") || msg->argIs("OTA")) {
+        log_i("entering ota mode");
+        board.wifi.setEnabled(true, false);
+        board.ota.taskStart(OTA_TASK_FREQ);
+        msg->replyAppend("ota");
+        return success();
     }
-
-    Serial.printf("%s commandStr=%s argStr=%s\n", tag, commandStr, argStr);
-
-    Command command = parseCommandStr(commandStr);
-    // Serial.printf("%s command=%d\n", tag, (int)command);
-
-    // by default echo back the commandCode:commandStr= so clients can
-    // verify that this is a response to the correct command
-    snprintf(reply, API_REPLY_MAXLENGTH, "%d:%s=", (int)command,
-             command == API::Command::invalid
-                 ? commandStr
-                 : commandCodeToStr(command));
-
-    if (command == API::Command::invalid) {
-        Serial.printf("%s %s: %s\n", tag, resultStr(Result::unknownCommand), commandStr);
-        return Result::unknownCommand;
-    }
-
-    // these command processors can add their respective [value] to the [reply]
-    if (Command::wifi == command)
-        return commandWifi(argStr, reply, value);
-    if (Command::hostName == command)
-        return commandHostName(argStr, reply, value);
-    if (Command::reboot == command)
-        return commandReboot(argStr, reply);
-    if (Command::passkey == command)
-        return commandPasskey(argStr, reply, value);
-    if (Command::secureApi == command)
-        return commandSecureApi(argStr, reply, value);
-    if (Command::weightService == command)
-        return commandWeightService(argStr, reply, value);
-    if (Command::calibrateStrain == command)
-        return commandCalibrateStrain(argStr, reply);
-    if (Command::tare == command)
-        return commandTare(argStr, reply);
-    if (Command::wifiApEnabled == command)
-        return commandWifiApEnabled(argStr, reply, value);
-    if (Command::wifiApSSID == command)
-        return commandWifiApSSID(argStr, reply, value);
-    if (Command::wifiApPassword == command)
-        return commandWifiApPassword(argStr, reply, value);
-    if (Command::wifiStaEnabled == command)
-        return commandWifiStaEnabled(argStr, reply, value);
-    if (Command::wifiStaSSID == command)
-        return commandWifiStaSSID(argStr, reply, value);
-    if (Command::wifiStaPassword == command)
-        return commandWifiStaPassword(argStr, reply, value);
-    if (Command::crankLength == command)
-        return commandCrankLength(argStr, reply, value);
-    if (Command::reverseStrain == command)
-        return commandReverseStrain(argStr, reply, value);
-    if (Command::doublePower == command)
-        return commandDoublePower(argStr, reply, value);
-    if (Command::sleepDelay == command)
-        return commandSleepDelay(argStr, reply, value);
-    if (Command::hallChar == command)
-        return commandHallChar(argStr, reply, value);
-    if (Command::hallOffset == command)
-        return commandHallOffset(argStr, reply, value);
-    if (Command::hallThreshold == command)
-        return commandHallThreshold(argStr, reply, value);
-    if (Command::hallThresLow == command)
-        return commandHallThresLow(argStr, reply, value);
-    if (Command::strainThreshold == command)
-        return commandStrainThreshold(argStr, reply, value);
-    if (Command::strainThresLow == command)
-        return commandStrainThresLow(argStr, reply, value);
-    if (Command::motionDetectionMethod == command)
-        return commandMotionDetectionMethod(argStr, reply, value);
-    if (Command::sleep == command)
-        return commandSleep(argStr, reply);
-    if (Command::negativeTorqueMethod == command)
-        return commandNegativeTorqueMethod(argStr, reply, value);
-    if (Command::autoTare == command)
-        return commandAutoTare(argStr, reply, value);
-    if (Command::autoTareDelayMs == command)
-        return commandAutoTareDelayMs(argStr, reply, value);
-    if (Command::autoTareRangeG == command)
-        return commandAutoTareRangeG(argStr, reply, value);
-    if (Command::config == command)
-        return commandConfig(argStr, reply);
-    return Result::unknownCommand;
+    msg->replyAppend("|", true);
+    msg->replyAppend("hostname[:str]|ota");
+    return Atoll::Api::systemProcessor(msg);
 }
 
-// TODO If secureApi=true, to prevent lockout, maybe require passkey before disabling wifi?
-API::Result API::commandWifi(const char *str, char *reply, char *value) {
-    // set wifi
-    bool newValue = true;  // enable wifi by default
-    if (0 < strlen(str)) {
-        if (0 == strcmp("false", str) || 0 == strcmp("0", str)) {
-            newValue = false;
-        }
-        board.wifi.setEnabled(newValue);
-    }
-    // get wifi
-    char replyTmp[API_REPLY_MAXLENGTH];
-    strncpy(replyTmp, reply, sizeof(replyTmp));
-    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
-             replyTmp, (int)board.wifi.isEnabled(), board.wifi.isEnabled() ? "true" : "false");
-    strncpy(value, board.wifi.isEnabled() ? "1" : "0", API_VALUE_MAXLENGTH);
-    return Result::success;
-}
-
-API::Result API::commandHostName(const char *str, char *reply, char *value) {
-    // set hostname
-    if (0 < strlen(str)) {
-        int maxSize = sizeof(board.hostName);
-        if (maxSize - 1 < strlen(str)) return Result::stringInvalid;
-        if (!isAlNumStr(str)) return Result::stringInvalid;
-        strncpy(board.hostName, str, maxSize);
-        board.saveSettings();
-    }
-    // get hostname
-    strncat(reply, board.hostName, API_REPLY_MAXLENGTH - strlen(reply));
-    strncpy(value, board.hostName, API_VALUE_MAXLENGTH);
-    return Result::success;
-}
-
-API::Result API::commandReboot(const char *str, char *reply) {
-    Result result = Result::argInvalid;
-    uint32_t delayT = 0;
-    if (0 < strlen(str)) {
-        delayT = (uint32_t)atoi(str);
-        result = Result::success;
-    }
-    char replyTmp[API_REPLY_MAXLENGTH];
-    snprintf(replyTmp, API_REPLY_MAXLENGTH, "%d:%s;%s%d",
-             (int)result,
-             resultStr(result),
-             reply,
-             delayT);
-    if (Result::success == result) {
-        board.ble.setApiValue(replyTmp);
-        if (delayT > 0) {
-            Serial.printf("%sRebooting in %ds\n", tag, delayT);
-            delay(delayT);
-        }
-        board.ble.setApiValue("Rebooting...");
-        Serial.printf("%sRebooting...\n", tag);
-        Serial.flush();
-        board.reboot();
-    }
-    // Serial.printf("[API] commandReboot repyTmp=%s reply=%s\n", replyTmp, reply);
-    return result;
-}
-
-// TODO To prevent lockout, maybe require confirmation before setting passkey?
-API::Result API::commandPasskey(const char *str, char *reply, char *value) {
-    char keyS[7] = "";
-    // set passkey
-    if (0 < strlen(str)) {
-        if (6 < strlen(str)) return Result::passkeyInvalid;
-        strncpy(keyS, str, 6);
-        uint32_t keyI = (uint32_t)atoi(keyS);
-        if (999999 < keyI) return Result::passkeyInvalid;
-        board.ble.setPasskey(keyI);
-    }
-    // get passkey
-    itoa(board.ble.passkey, keyS, 10);
-    strncpy(value, keyS, API_VALUE_MAXLENGTH);
-    // strncat(reply, keyS, API_REPLY_MAXLENGTH - strlen(reply));
-    char replyTmp[API_REPLY_MAXLENGTH];
-    strncpy(replyTmp, reply, sizeof(replyTmp));
-    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d", replyTmp, (int)board.ble.passkey);
-    return Result::success;
-}
-
-// TODO To prevent lockout, maybe require passkey before enabling secureAPI?
-API::Result API::commandSecureApi(const char *str, char *reply, char *value) {
-    // set secureApi
-    int newValue = -1;
-    if (0 < strlen(str)) {
-        if (0 == strcmp("true", str) || 0 == strcmp("1", str)) {
-            newValue = 1;
-        } else if (0 == strcmp("false", str) || 0 == strcmp("0", str)) {
-            newValue = 0;
-        }
-        if (newValue == -1) {
-            return Result::secureApiInvalid;
-        }
-        board.ble.setSecureApi((bool)newValue);
-    }
-    // get secureApi
-    char replyTmp[API_REPLY_MAXLENGTH];
-    strncpy(replyTmp, reply, sizeof(replyTmp));
-    snprintf(reply, API_REPLY_MAXLENGTH, "%s%d:%s",
-             replyTmp, (int)board.ble.secureApi, board.ble.secureApi ? "true" : "false");
-    strncpy(value, board.ble.secureApi ? "1" : "0", API_VALUE_MAXLENGTH);
-    return Result::success;
-}
-
+/*
 API::Result API::commandWeightService(const char *str, char *reply, char *value) {
     // set value
     if (0 < strlen(str)) {
@@ -669,15 +492,4 @@ API::Result API::commandConfig(const char *str, char *reply) {
     // delay(1000);
     return Result::success;
 }
-
-bool API::isAlNumStr(const char *str) {
-    int len = strlen(str);
-    int cnt = 0;
-    while (*str != '\0' && cnt < len) {
-        // Serial.printf("%s isAlNumStr(%c): %d\n", tag, *str, isalnum(*str));
-        if (!isalnum(*str)) return false;
-        str++;
-        cnt++;
-    }
-    return true;
-}
+*/

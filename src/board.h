@@ -15,7 +15,7 @@
 #include "atoll_preferences.h"
 #include "atoll_task.h"
 #include "ble_server.h"
-#include "atoll_api.h"
+#include "api.h"
 #include "atoll_battery.h"
 #include "atoll_wifi.h"
 #include "atoll_ota.h"
@@ -23,8 +23,9 @@
 #include "motion.h"
 #include "strain.h"
 #include "power.h"
-#include "status.h"
+//#include "status.h"
 #include "led.h"
+#include "atoll_log.h"
 
 // The one in charge
 class Board : public Atoll::Task,
@@ -38,13 +39,13 @@ class Board : public Atoll::Task,
 #endif
     Atoll::Wifi wifi;
     BleServer bleServer;
-    API api;
+    Api api;
     Atoll::Battery battery;
     Motion motion;
     Strain strain;
     Power power;
     Atoll::Ota ota;
-    Status status;
+    // Status status;
     Led led;
 
     bool sleepEnabled = true;
@@ -56,23 +57,26 @@ class Board : public Atoll::Task,
         setCpuFrequencyMhz(80);  // no wifi/bt below 80MHz
 #ifdef FEATURE_SERIAL
         hwSerial.begin(115200);
+        wifiSerial.setup(hostName, 0, 0, WIFISERIAL_TASK_FREQ, 2048 + 1024);
+        Serial.setup(&hwSerial, &wifiSerial);
+        while (!hwSerial) vTaskDelay(10);
 #endif
         preferencesSetup(&arduinoPreferences, "BOARD");
         loadSettings();
+        log_i("\n\n\n%s %s %s\n\n\n", hostName, __DATE__, __TIME__);
+        setupTask("bleServer");
+        api.setup(&api, &arduinoPreferences, "API", &bleServer, API_SERVICE_UUID);
+        ota.setup(hostName);
         setupTask("led");
         setupTask("wifi");
-#ifdef FEATURE_SERIAL
-        // wifiSerial.setup(); // Wifi will setup and start WifiSerial
-        setupTask("serial");
-#endif
-        setupTask("bleServer");
         setupTask("battery");
         setupTask("motion");
         setupTask("strain");
         setupTask("power");
-        setupTask("status");
+        // setupTask("status");
 
         bleServer.start();
+        wifi.start();
     }
 
     void setupTask(const char *taskName) {
@@ -84,19 +88,12 @@ class Board : public Atoll::Task,
             wifi.setup(hostName, preferences, "Wifi", &wifi, &api, &ota);
             return;
         }
-        if (strcmp("serial", taskName) == 0) {
-#ifdef FEATURE_SERIAL
-            Serial.setup(&hwSerial, &wifiSerial, true, true);
-            while (!hwSerial) vTaskDelay(10);
-#endif
-            return;
-        }
         if (strcmp("bleServer", taskName) == 0) {
             bleServer.setup(hostName, preferences);
             return;
         }
         if (strcmp("battery", taskName) == 0) {
-            battery.setup(preferences);
+            battery.setup(preferences, BATTERY_PIN, &battery, &api, &bleServer);
             return;
         }
         if (strcmp("strain", taskName) == 0) {
@@ -112,10 +109,10 @@ class Board : public Atoll::Task,
                 motion.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
             return;
         }
-        if (strcmp("status", taskName) == 0) {
-            status.setup();
-            return;
-        }
+        // if (strcmp("status", taskName) == 0) {
+        //     status.setup();
+        //     return;
+        // }
         log_e("unknown task: %s", taskName);
     }
 
@@ -131,9 +128,9 @@ class Board : public Atoll::Task,
         startTask("strain");
         startTask("power");
         // startTask("ota");
-        startTask("status");
+        // startTask("status");
         startTask("led");
-        taskStart(1);
+        taskStart(BOARD_TASK_FREQ, 4096 + 1024);
     }
 
     void startTask(const char *taskName) {
@@ -143,12 +140,12 @@ class Board : public Atoll::Task,
                 Serial.printf("[Board] Wifi disabled, not starting WifiSerial task\n");
                 return;
             }
-            wifiSerial.taskStart("WifiSerial Task", WIFISERIAL_TASK_FREQ);
+            wifiSerial.taskStart(WIFISERIAL_TASK_FREQ);
 #endif
             return;
         }
         if (strcmp("bleServer", taskName) == 0) {
-            bleServer.taskStart(BLE_TASK_FREQ, ble.taskStack);
+            bleServer.taskStart(BLE_SERVER_TASK_FREQ, bleServer.taskStack);
             return;
         }
         if (strcmp("battery", taskName) == 0) {
@@ -172,13 +169,13 @@ class Board : public Atoll::Task,
                 Serial.printf("[Board] Wifi disabled, not starting OTA task\n");
                 return;
             }
-            ota.taskStart("OTA Task", OTA_TASK_FREQ, 8192);
+            ota.taskStart(OTA_TASK_FREQ, 8192);
             return;
         }
-        if (strcmp("status", taskName) == 0) {
-            status.taskStart(STATUS_TASK_FREQ);
-            return;
-        }
+        // if (strcmp("status", taskName) == 0) {
+        //     status.taskStart(STATUS_TASK_FREQ);
+        //     return;
+        // }
         if (strcmp("led", taskName) == 0) {
             led.taskStart(LED_TASK_FREQ);
             return;
@@ -188,12 +185,14 @@ class Board : public Atoll::Task,
 
     void stopTask(const char *taskName) {
         if (strcmp("ota", taskName) == 0) {
-            ota.off();
+            ota.stop();
+            ota.taskStop();
             return;
         }
         if (strcmp("wifiSerial", taskName) == 0) {
 #ifdef FEATURE_SERIAL
-            wifiSerial.off();
+            wifiSerial.stop();
+            wifiSerial.taskStop();
 #endif
             return;
         }
@@ -221,6 +220,15 @@ class Board : public Atoll::Task,
             Serial.printf("[Board] Deep sleep in %lis\n", tSleep / 1000UL);
             _lastSleepCountdown = t;
         }
+#ifdef FEATURE_SERIAL
+        while (Serial.available()) {
+            int i = Serial.read();
+            if (0 <= i && i < UINT8_MAX) {
+                Serial.write((uint8_t)i);           // echo serial input
+                api.write((const uint8_t *)&i, 1);  // feed serial input to api
+            }
+        }
+#endif
     }
 
     bool loadSettings() {
@@ -275,14 +283,14 @@ class Board : public Atoll::Task,
         strain.sleep();
         motion.enableWomSleep();
         // pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
-        ble.setApiValue("Sleep...");
+        api.notifyTxChar("Sleep...");
 #ifdef FEATURE_SERIAL
         Serial.println("[Board] Entering deep sleep");
         Serial.flush();
         delay(500);
         wifiSerial.disconnect();
 #endif
-        ble.stop();
+        bleServer.stop();
         delay(500);
         esp_sleep_enable_ext0_wakeup(MPU_WOM_INT_PIN, HIGH);
         esp_deep_sleep_start();
@@ -290,9 +298,9 @@ class Board : public Atoll::Task,
     }
 
     void reboot() {
-        ble.setApiValue("Rebooting...");
+        api.notifyTxChar("Rebooting...");
         delay(500);
-        ble.stop();
+        bleServer.stop();
         delay(500);
         ESP.restart();
     }

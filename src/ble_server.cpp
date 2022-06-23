@@ -9,9 +9,7 @@ void BleServer::setup(const char *deviceName, ::Preferences *p) {
 
     startCpService();
     startCscService();
-    startBlService();
     startWsService();
-    startApiService();
 
     lastPowerNotification = millis();
     lastCadenceNotification = lastPowerNotification;
@@ -152,26 +150,6 @@ void BleServer::stopCscService() {
     removeService(cscs);
 }
 
-// Start Battey Level service
-void BleServer::startBlService() {
-    log_i("Starting BLS");
-    blsUUID = BLEUUID(BATTERY_SERVICE_UUID);
-    bls = createService(blsUUID);
-    blChar = bls->createCharacteristic(
-        BLEUUID(BATTERY_LEVEL_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
-        //| NIMBLE_PROPERTY::INDICATE
-    );
-    blChar->setCallbacks(this);
-    BLEDescriptor *blDesc = blChar->createDescriptor(
-        BLEUUID(BATTERY_LEVEL_DESC_UUID),
-        NIMBLE_PROPERTY::READ);
-    char s[SETTINGS_STR_LENGTH] = "Percentage";
-    blDesc->setValue((uint8_t *)s, strlen(s));
-    bls->start();
-    advertiseService(blsUUID);
-}
-
 // Start Weight Scale service
 void BleServer::startWsService() {
     log_i("Starting WSS");
@@ -208,51 +186,6 @@ void BleServer::startWsService() {
     wmChar->setCallbacks(this);
     wss->start();
     advertiseService(wssUUID);
-}
-
-void BleServer::startApiService() {
-    Serial.println("[BLE] Starting APIS");
-    char s[SETTINGS_STR_LENGTH] = "";
-    asUUID = BLEUUID(API_SERVICE_UUID);
-    as = server->createService(asUUID);
-
-    // api char for writing commands and reading responses
-    uint32_t properties = NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE;
-    if (secureApi)
-        properties |= NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::WRITE_ENC | NIMBLE_PROPERTY::WRITE_AUTHEN;
-    apiChar = as->createCharacteristic(BLEUUID(API_CHAR_UUID), properties);
-    apiChar->setCallbacks(this);
-    strncpy(s, "Ready", 32);
-    apiChar->setValue((uint8_t *)s, strlen(s));
-    BLEDescriptor *apiDesc = apiChar->createDescriptor(
-        BLEUUID(API_DESC_UUID),
-        NIMBLE_PROPERTY::READ);
-    strncpy(s, "ESPM API v0.1", 32);
-    apiDesc->setValue((uint8_t *)s, strlen(s));
-
-    // api char for reading hall effect sensor measurements
-    hallChar = as->createCharacteristic(
-        BLEUUID(HALL_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
-    hallChar->setCallbacks(this);
-    uint8_t bytes[2];
-    bytes[0] = 0 & 0xff;
-    bytes[1] = (0 >> 8) & 0xff;
-    hallChar->setValue((uint8_t *)bytes, 2);  // set initial value
-    BLEDescriptor *hallDesc = hallChar->createDescriptor(
-        BLEUUID(HALL_DESC_UUID),
-        NIMBLE_PROPERTY::READ);
-    strncpy(s, "Hall Effect Sensor reading", 32);
-    hallDesc->setValue((uint8_t *)s, strlen(s));
-
-    as->start();
-
-    // this UUID will not fit in the advertisement packet, add it to the scan response
-    BLEAdvertisementData responseData;
-    responseData.setCompleteServices(asUUID);
-    advertising->setScanResponseData(responseData);
-
-    // advertising->addServiceUUID(asUUID);
 }
 
 void BleServer::onCrankEvent(const ulong t, const uint16_t revolutions) {
@@ -339,31 +272,6 @@ void BleServer::notifyBl(const ulong t) {
     blChar->notify();
 }
 
-// response format: responseCode:responseStr;commandCode:commandStr=[arg]
-void BleServer::handleApiCommand(const char *command) {
-    char reply[API_REPLY_MAXLENGTH] = "";
-    char value[API_VALUE_MAXLENGTH] = "";
-    API::Result result = board.api.handleCommand(command, reply, value);
-    char response[BLE_CHAR_VALUE_MAXLENGTH] = "";
-    snprintf(response, sizeof(response), "%d:%s;%s",
-             (int)result, board.api.resultStr(result), reply);
-    Serial.printf("[BLE] handleApiCommand(\"%s\") response: %s\n", command, response);
-    setApiValue(response);
-    if (API::Result::success == result)
-        board.led.blink(2, 100, 300);
-    else
-        board.led.blink(10, 100, 100);
-}
-
-void BleServer::setApiValue(const char *value) {
-    if (!enabled) {
-        Serial.println("[BLE] Not enabled, not setting API value");
-        return;
-    }
-    apiChar->setValue((uint8_t *)value, strlen(value));
-    apiChar->notify();
-}
-
 // Set Weight Measurement char value
 void BleServer::setWmValue(float value) {
     if (!enabled) return;
@@ -403,81 +311,6 @@ const char *BleServer::characteristicStr(BLECharacteristic *c) {
     return c->getUUID().toString().c_str();
 }
 
-// disconnect clients, stop advertising and shutdown BLE
-void BleServer::stop() {
-    while (!_clients.isEmpty())
-        server->disconnect(_clients.shift());
-    server->stopAdvertising();
-    enabled = false;
-    delay(100);  // give the BLE stack a chance to clear packets
-    // BLEDevice::deinit(true);  // TODO never returns
-}
-
-void BleServer::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
-    Serial.printf("[BLE] Client connected, ID: %d Address: %s\n",
-                  desc->conn_handle,
-                  BLEAddress(desc->peer_ota_addr).toString().c_str());
-    // NimBLEDevice::startSecurity(desc->conn_handle);
-    //  save client handle so we can gracefully disconnect them
-    bool savedClientHandle = false;
-    for (decltype(_clients)::index_t i = 0; i < _clients.size(); i++)
-        if (_clients[i] == desc->conn_handle)
-            savedClientHandle = true;
-    if (!savedClientHandle)
-        _clients.push(desc->conn_handle);
-}
-
-void BleServer::onDisconnect(BLEServer *pServer) {
-    Serial.println("[BLE] Server onDisconnect");
-}
-
-void BleServer::startAdvertising() {
-    if (!enabled) {
-        Serial.println("[BLE] Not enabled, not starting advertising");
-        return;
-    }
-    delay(300);
-    if (!advertising->isAdvertising()) {
-        server->startAdvertising();
-        Serial.println("[BLE] Start advertising");
-    }
-}
-
-void BleServer::onRead(BLECharacteristic *c) {
-    Serial.printf("[BLE] %s: onRead(), value: %s\n",
-                  characteristicStr(c),
-                  c->getValue().c_str());
-};
-
-void BleServer::onWrite(BLECharacteristic *c) {
-    char value[BLE_CHAR_VALUE_MAXLENGTH] = "";
-    strncpy(value, c->getValue().c_str(), sizeof(value));
-    Serial.printf("[BLE] %s: onWrite(), value: %s\n",
-                  characteristicStr(c),
-                  value);
-    if (c->getHandle() == apiChar->getHandle())
-        handleApiCommand(value);
-};
-
-void BleServer::onNotify(BLECharacteristic *pCharacteristic){
-    // Serial.printf("[BLE] Sending notification: %d\n", pCharacteristic->getValue<int>());
-};
-
-void BleServer::onSubscribe(BLECharacteristic *c, ble_gap_conn_desc *desc, uint16_t subValue) {
-    Serial.printf("[BLE] Client ID: %d Address: %s ",
-                  desc->conn_handle,
-                  BLEAddress(desc->peer_ota_addr).toString().c_str());
-    if (subValue == 0)
-        Serial.print("unsubscribed from ");
-    else if (subValue == 1)
-        Serial.print("subscribed to notfications for ");
-    else if (subValue == 2)
-        Serial.print("Subscribed to indications for ");
-    else if (subValue == 3)
-        Serial.print("subscribed to notifications and indications for ");
-    Serial.println(characteristicStr(c));
-};
-
 void BleServer::setCadenceInCpm(bool state) {
     if (state == cadenceInCpm) return;
     cadenceInCpm = state;
@@ -496,28 +329,6 @@ void BleServer::setCscServiceActive(bool state) {
         stopCscService();
 }
 
-void BleServer::setSecureApi(bool state) {
-    if (state == secureApi) return;
-    secureApi = state;
-    saveSettings();
-    Serial.printf("[BLE] SecureAPI %sabled\n", secureApi ? "en" : "dis");
-    /* TODO deinit() does not return
-    stop();
-    setup(deviceName, preferences);
-    */
-}
-
-void BleServer::setPasskey(uint32_t newPasskey) {
-    if (newPasskey == passkey) return;
-    passkey = newPasskey;
-    saveSettings();
-    Serial.printf("[BLE] New passkey: %d\n", passkey);
-    /* TODO deinit() does not return
-    stop();
-    setup(deviceName, preferences);
-    */
-}
-
 // Set the operating mode of the Weight Measurement char
 void BleServer::setWmCharMode(int mode) {
     wmCharMode = mode;
@@ -532,8 +343,6 @@ void BleServer::loadSettings() {
     if (!preferencesStartLoad()) return;
     cadenceInCpm = preferences->getBool("cadenceInCpm", cadenceInCpm);
     cscServiceActive = preferences->getBool("cscService", cscServiceActive);
-    secureApi = preferences->getBool("secureApi", secureApi);
-    passkey = (uint32_t)preferences->getInt("passkey", passkey);
     preferencesEnd();
 }
 
@@ -541,14 +350,10 @@ void BleServer::saveSettings() {
     if (!preferencesStartSave()) return;
     preferences->putBool("cadenceInCpm", cadenceInCpm);
     preferences->putBool("cscService", cscServiceActive);
-    preferences->putBool("secureApi", secureApi);
-    preferences->putInt("passkey", (int32_t)passkey);
     preferencesEnd();
 }
 
 void BleServer::printSettings() {
     Serial.printf("[BLE] Cadence data in CPM: %s\n", cadenceInCpm ? "Yes" : "No");
     Serial.printf("[BLE] CSC service: %s\n", cscServiceActive ? "Active" : "Not active");
-    Serial.printf("[BLE] SecureAPI: %s\n", secureApi ? "Yes" : "No");
-    Serial.printf("[BLE] Passkey: %d\n", passkey);
 }

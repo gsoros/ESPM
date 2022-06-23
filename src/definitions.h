@@ -9,15 +9,15 @@
 #define BLE_CHAR_VALUE_MAXLENGTH 256        // maximum number of bytes written to ble characteristic values
 ;                                           //
 ;                                           // task frequencies in Hz
-#define WIFISERIAL_TASK_FREQ 10             //
-#define BLE_TASK_FREQ 10                    //
-#define BATTERY_TASK_FREQ 1                 //
-#define MOTION_TASK_FREQ 125                //
-#define STRAIN_TASK_FREQ 90                 //
-#define POWER_TASK_FREQ 90                  //
-#define OTA_TASK_FREQ 10                    //
-#define STATUS_TASK_FREQ 10                 //
-#define LED_TASK_FREQ 10                    //
+#define BOARD_TASK_FREQ 2.0f                //
+#define WIFISERIAL_TASK_FREQ 10.0f          //
+#define BLE_SERVER_TASK_FREQ 1.0f           //
+#define BATTERY_TASK_FREQ 1.0f              //
+#define MOTION_TASK_FREQ 125.0f             //
+#define STRAIN_TASK_FREQ 90.0f              //
+#define POWER_TASK_FREQ 90.0f               //
+#define OTA_TASK_FREQ 1.0f                  //
+#define LED_TASK_FREQ 10.0f                 //
 ;                                           //
 #define SLEEP_DELAY_DEFAULT 5 * 60 * 1000   // 5m
 #define SLEEP_DELAY_MIN 1 * 60 * 1000       // 1m

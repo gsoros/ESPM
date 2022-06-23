@@ -43,7 +43,7 @@ void Strain::loop() {
                     board.motion.revolutions++;
                     Serial.printf("[STRAIN] Crank event #%d dt: %ldms\n", board.motion.revolutions, dt);
                     board.power.onCrankEvent(dt);
-                    board.ble.onCrankEvent(t, board.motion.revolutions);
+                    board.bleServer.onCrankEvent(t, board.motion.revolutions);
                     board.motion.lastCrankEventTime = t;
                 } else {
                     // Serial.printf("[STRAIN] Crank event skip, dt too small: %ldms\n", tDiff);
@@ -66,7 +66,7 @@ void Strain::loop() {
             }
             _lastAutoTare = t;
             if (abs(max - min) < autoTareRangeG / 1000.0) {
-                Serial.print("[STRAIN] Auto tare\n");
+                Serial.printf("[STRAIN] Auto tare: %d, %d\n", min, max);
                 device->tareNoDelay();
                 //_lastAutoTare = t;
             } else {

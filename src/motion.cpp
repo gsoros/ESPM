@@ -70,7 +70,7 @@ void Motion::loop() {
                         revolutions++;
                         Serial.printf("[MOTION] Crank event #%d dt: %ldms\n", revolutions, dt);
                         board.power.onCrankEvent(dt);
-                        board.ble.onCrankEvent(t, revolutions);
+                        board.bleServer.onCrankEvent(t, revolutions);
                     } else {
                         // Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", dt);
                     }
@@ -95,7 +95,7 @@ void Motion::loop() {
                     revolutions++;
                     Serial.printf("[MOTION] Crank event #%d dt: %ldms\n", revolutions, dt);
                     board.power.onCrankEvent(dt);
-                    board.ble.onCrankEvent(t, revolutions);
+                    board.bleServer.onCrankEvent(t, revolutions);
                     lastCrankEventTime = t;
                 } else {
                     // Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", dt);

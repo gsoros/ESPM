@@ -5,7 +5,6 @@
 #include "motion.h"
 #include "power.h"
 #include "strain.h"
-#include "wificonnection.h"
 
 void Status::setup() {
     statusEnabled = true;
@@ -68,7 +67,7 @@ int Status::getStr(char *str, int maxLength, bool echo) {
 }
 
 void Status::setFreq(float freq) {
-    if (freq < 0.1 || (float)taskFreq < freq) {
+    if (freq < 0.1 || (float)_taskFreq < freq) {
         Serial.printf("Frequency %.2f out of range\n", freq);
         return;
     }
@@ -395,7 +394,7 @@ void Status::handleInput(const char input) {
                         menu[1] = '\0';
                         break;
                     case 'f':
-                        Serial.printf("Enter status output frequency in Hz (0.1...%d) and press [Enter]: ", taskFreq);
+                        Serial.printf("Enter status output frequency in Hz (0.1...%d) and press [Enter]: ", _taskFreq);
                         getStr(tmpStr, 32);
                         setFreq((float)atof(tmpStr));
                         // status freq is not saved
@@ -409,11 +408,9 @@ void Status::handleInput(const char input) {
                         menu[1] = '\0';
                         break;
                     case 'u': {
-                        char reply[API_REPLY_MAXLENGTH] = "";
-                        char value[API_VALUE_MAXLENGTH] = "";
-                        board.api.handleCommand("config", reply, value);
-                        Serial.printf("Config length=%d\n", strlen(reply));
-                        Serial.println(reply);
+                        ApiMessage msg = board.api.process("init", false);
+                        Serial.printf("init length=%d\n", strlen(msg.reply));
+                        Serial.println(msg.reply);
                         menu[1] = '\0';
                     } break;
                     case 'x':
@@ -428,32 +425,32 @@ void Status::handleInput(const char input) {
             case 'b':  // ble
                 switch (menu[1]) {
                     case 'a':
-                        board.ble.setCadenceInCpm(!board.ble.cadenceInCpm);
+                        board.bleServer.setCadenceInCpm(!board.bleServer.cadenceInCpm);
                         menu[1] = '\0';
                         break;
                     case 'c':
-                        board.ble.setCscServiceActive(!board.ble.cscServiceActive);
+                        board.bleServer.setCscServiceActive(!board.bleServer.cscServiceActive);
                         menu[1] = '\0';
                         break;
                     case 's':
-                        board.ble.setSecureApi(!board.ble.secureApi);
+                        board.api.secureBle = !board.api.secureBle;
+                        board.api.saveSettings();
                         menu[1] = '\0';
                         break;
-                    case 'k':
+                    case 'k': {
                         Serial.print("Enter new numerical passkey (max 6 digits) and press [Enter]: ");
                         getStr(tmpStr, 6);
-                        char reply[API_REPLY_MAXLENGTH];
-                        API::Result apiResult;
-                        char value[API_VALUE_MAXLENGTH];
-                        apiResult = board.api.commandPasskey(tmpStr, reply, value);
-                        Serial.printf("Reply from API: %d:%s\n", apiResult, reply);
+                        char command[16];
+                        snprintf(command, sizeof(command), "passkey=%s", tmpStr);
+                        ApiMessage msg = board.api.process(command);
+                        Serial.printf("Reply from API: %d:%s\n", msg.result->code, msg.reply);
                         menu[1] = '\0';
-                        break;
+                    } break;
                     case 'x':
                         strncpy(menu, " ", 2);
                         break;
                     default:
-                        board.ble.printSettings();
+                        board.bleServer.printSettings();
                         Serial.print("BLE: toggle c[a]dence in cpm, toggle [c]sc service, toggle [s]ecure api, pass[k]ey, [p]rint config or e[x]it\n");
                         menu[1] = getChar();
                         menu[2] = '\0';

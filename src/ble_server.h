@@ -72,33 +72,17 @@ class BleServer : public Atoll::BleServer,
     void stopCpService();
     void startCscService();
     void stopCscService();
-    void startBlService();
     void startWsService();
-    void startApiService();
     void onCrankEvent(const ulong t, const uint16_t revolutions);
     void notifyCp(const ulong t);
     void notifyCsc(const ulong t);
     void notifyBl(const ulong t);
-    void handleApiCommand(const char *command);
-    void setApiValue(const char *value);
     void setWmValue(float value);
     void setHallValue(int value);
     const char *characteristicStr(BLECharacteristic *c);
-    void stop();
-
-    void onConnect(BLEServer *pServer, ble_gap_conn_desc *desc);
-    void onDisconnect(BLEServer *pServer);
-    void startAdvertising();
-
-    void onRead(BLECharacteristic *pCharacteristic);
-    void onWrite(BLECharacteristic *pCharacteristic);
-    void onNotify(BLECharacteristic *pCharacteristic);
-    void onSubscribe(BLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue);
 
     void setCadenceInCpm(bool state);
     void setCscServiceActive(bool state);
-    void setSecureApi(bool state);
-    void setPasskey(uint32_t newPasskey);
     void setWmCharMode(int mode);
     void setHallCharUpdateEnabled(bool state);
     void loadSettings();
