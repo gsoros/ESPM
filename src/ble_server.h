@@ -16,33 +16,33 @@
 class BleServer : public Atoll::BleServer,
                   public Atoll::Preferences {
    public:
-    BLEUUID disUUID;              // device information service uuid
-    BLEService *dis;              // device information service
-    BLECharacteristic *diChar;    // device information characteristic
+    // BLEUUID disUUID;              // device information service uuid
+    // BLEService *dis;              // device information service
+    // BLECharacteristic *diChar;    // device information characteristic
     BLEUUID cpsUUID;              // cycling power service uuid
     BLEService *cps;              // cycling power service
     BLECharacteristic *cpmChar;   // cycling power measurement characteristic
     BLEUUID cscsUUID;             // cycling speed and cadence service uuid
     BLEService *cscs;             // cycling speed and cadence service
     BLECharacteristic *cscmChar;  // cycling speed and cadence measurement characteristic
-    BLEUUID blsUUID;              // battery level service uuid
-    BLEService *bls;              // battery level service
-    BLECharacteristic *blChar;    // battery level characteristic
-    BLEUUID wssUUID;              // weight scale service uuid
-    BLEService *wss;              // weight scale service
-    BLECharacteristic *wmChar;    // weight measurement characteristic
-    BLEUUID asUUID;               // api service uuid
-    BLEService *as;               // api service
-    BLECharacteristic *apiChar;   // api characteristic
+    // BLEUUID blsUUID;              // battery level service uuid
+    // BLEService *bls;              // battery level service
+    // BLECharacteristic *blChar;    // battery level characteristic
+    BLEUUID wssUUID;            // weight scale service uuid
+    BLEService *wss;            // weight scale service
+    BLECharacteristic *wmChar;  // weight measurement characteristic
+    // BLEUUID asUUID;               // api service uuid
+    // BLEService *as;               // api service
+    // BLECharacteristic *apiChar;   // api characteristic
     BLECharacteristic *hallChar;  // hall effect sensor measurement characteristic
-    BLEAdvertising *advertising;  // pointer to advertising
+    // BLEAdvertising *advertising;  // pointer to advertising
 
     bool powerNotificationReady = false;
     unsigned long lastPowerNotification = 0;
     bool cadenceNotificationReady = false;
     unsigned long lastCadenceNotification = 0;
-    uint8_t lastBatteryLevel = 0;
-    unsigned long lastBatteryNotification = 0;
+    // uint8_t lastBatteryLevel = 0;
+    // unsigned long lastBatteryNotification = 0;
     int wmCharMode = WM_CHAR_MODE;       // weight measurement char updates and notifications
     bool hallCharUpdateEnabled = false;  // enables hall measurement value updates and notifications
     unsigned long lastWmNotification = 0;
@@ -76,7 +76,7 @@ class BleServer : public Atoll::BleServer,
     void onCrankEvent(const ulong t, const uint16_t revolutions);
     void notifyCp(const ulong t);
     void notifyCsc(const ulong t);
-    void notifyBl(const ulong t);
+    // void notifyBl(const ulong t);
     void setWmValue(float value);
     void setHallValue(int value);
     const char *characteristicStr(BLECharacteristic *c);

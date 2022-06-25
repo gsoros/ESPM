@@ -4,6 +4,7 @@
 #include "strain.h"
 
 void Power::setup(::Preferences *p) {
+    _powerBuf.clear();
     preferencesSetup(p, "POWER");
     loadSettings();
 }
@@ -17,7 +18,7 @@ void Power::loop() {
 void Power::onCrankEvent(const ulong msSinceLastEvent) {
     _lastCrankEventTime = millis();
     if (!board.strain.dataReady()) {
-        //log_e("strain not ready, skipping loop at %d, SPS=%f", millis(), board.strain.device->getSPS());
+        // log_e("strain not ready, skipping loop at %d, SPS=%f", millis(), board.strain.device->getSPS());
         return;
     }
     /*

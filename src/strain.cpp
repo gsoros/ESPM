@@ -7,6 +7,7 @@ void Strain::setup(const gpio_num_t doutPin,
                    const char *preferencesNS) {
     this->doutPin = doutPin;
     this->sckPin = sckPin;
+    _measurementBuf.clear();
     preferencesSetup(p, preferencesNS);
     rtc_gpio_hold_dis(sckPin);  // required to put HX711 into sleep mode
     device = new HX711_ADC(doutPin, sckPin);
@@ -41,7 +42,7 @@ void Strain::loop() {
                 ulong dt = t - board.motion.lastCrankEventTime;
                 if (CRANK_EVENT_MIN_MS < dt) {
                     board.motion.revolutions++;
-                    Serial.printf("[STRAIN] Crank event #%d dt: %ldms\n", board.motion.revolutions, dt);
+                    log_i("Crank event #%d dt: %ldms\n", board.motion.revolutions, dt);
                     board.power.onCrankEvent(dt);
                     board.bleServer.onCrankEvent(t, board.motion.revolutions);
                     board.motion.lastCrankEventTime = t;
@@ -66,11 +67,11 @@ void Strain::loop() {
             }
             _lastAutoTare = t;
             if (abs(max - min) < autoTareRangeG / 1000.0) {
-                Serial.printf("[STRAIN] Auto tare: %d, %d\n", min, max);
+                log_i("Auto tare: %d, %d\n", min, max);
                 device->tareNoDelay();
                 //_lastAutoTare = t;
             } else {
-                Serial.printf("[STRAIN] Auto tare range too large: %fkg > %dg\n", max - min, autoTareRangeG);
+                log_i("Auto tare range too large: %fkg > %dg\n", max - min, autoTareRangeG);
             }
         }
     }

@@ -5,6 +5,14 @@
 #include "atoll_api.h"
 #include "ble_server.h"
 
+#ifdef API_SERVICE_UUID
+#undef APISERVICE_UUID
+#endif
+#ifndef ESPM_API_SERVICE_UUID
+#error undefined
+#endif
+#define API_SERVICE_UUID ESPM_API_SERVICE_UUID
+
 typedef Atoll::ApiResult ApiResult;
 typedef Atoll::ApiMessage ApiMessage;
 

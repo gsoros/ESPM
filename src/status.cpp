@@ -1,7 +1,5 @@
 #include "status.h"
 #include "board.h"
-
-#include "battery.h"
 #include "motion.h"
 #include "power.h"
 #include "strain.h"

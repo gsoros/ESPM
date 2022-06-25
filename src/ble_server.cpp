@@ -13,18 +13,20 @@ void BleServer::setup(const char *deviceName, ::Preferences *p) {
 
     lastPowerNotification = millis();
     lastCadenceNotification = lastPowerNotification;
-    lastBatteryNotification = lastPowerNotification;
 }
 
 void BleServer::loop() {
     if (!enabled) return;
+    if (!started) {
+        log_e("not started");
+        return;
+    }
     const ulong t = millis();
     if (powerNotificationReady || lastPowerNotification < t - 1000)
         notifyCp(t);
     if (cadenceNotificationReady || lastCadenceNotification < t - 1500)
         notifyCsc(t);
-    if (lastBatteryLevel != board.battery.level) notifyBl(t);
-    if (!advertising->isAdvertising()) startAdvertising();
+    if (advertising && !advertising->isAdvertising()) startAdvertising();
     if (lastWmNotification < t - 500) {
         if (wmCharMode == WM_ON ||              //
             (wmCharMode == WM_WHEN_NO_CRANK &&  //
@@ -259,18 +261,18 @@ void BleServer::notifyCsc(const ulong t) {
 }
 
 // Notify Battery Level service
-void BleServer::notifyBl(const ulong t) {
-    if (!enabled) {
-        Serial.println("[BLE] Not enabled, not notifying BL");
-        return;
-    }
+// void BleServer::notifyBl(const ulong t) {
+//     if (!enabled) {
+//         log_i("Not enabled, not notifying BL");
+//         return;
+//     }
 
-    if (t - 2000 < lastBatteryNotification) return;
-    lastBatteryLevel = board.battery.level;
-    lastBatteryNotification = t;
-    blChar->setValue(&lastBatteryLevel, 1);
-    blChar->notify();
-}
+//     if (t - 2000 < lastBatteryNotification) return;
+//     lastBatteryLevel = board.battery.level;
+//     lastBatteryNotification = t;
+//     blChar->setValue(&lastBatteryLevel, 1);
+//     blChar->notify();
+// }
 
 // Set Weight Measurement char value
 void BleServer::setWmValue(float value) {
@@ -304,8 +306,6 @@ const char *BleServer::characteristicStr(BLECharacteristic *c) {
     if (c == nullptr) return "unknown characteristic";
     if (cpmChar != nullptr && cpmChar->getHandle() == c->getHandle()) return "CPM";
     if (cscmChar != nullptr && cscmChar->getHandle() == c->getHandle()) return "CSCM";
-    if (blChar != nullptr && blChar->getHandle() == c->getHandle()) return "BL";
-    if (apiChar != nullptr && apiChar->getHandle() == c->getHandle()) return "API";
     if (wmChar != nullptr && wmChar->getHandle() == c->getHandle()) return "WM";
     if (hallChar != nullptr && hallChar->getHandle() == c->getHandle()) return "HALL";
     return c->getUUID().toString().c_str();

@@ -24,11 +24,10 @@ class Strain : public Atoll::Task,
     int mdmStrainThresLow = MDM_STRAIN_DEFAULT_THRES_LOW;
     uint8_t negativeTorqueMethod = NEGATIVE_TORQUE_METHOD;
 
-    void
-    setup(const gpio_num_t doutPin,
-          const gpio_num_t sckPin,
-          ::Preferences *p,
-          const char *preferencesNS = "STRAIN");
+    void setup(const gpio_num_t doutPin,
+               const gpio_num_t sckPin,
+               ::Preferences *p,
+               const char *preferencesNS = "STRAIN");
 
     void loop();
 
