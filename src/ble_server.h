@@ -43,7 +43,7 @@ class BleServer : public Atoll::BleServer,
     unsigned long lastCadenceNotification = 0;
     // uint8_t lastBatteryLevel = 0;
     // unsigned long lastBatteryNotification = 0;
-    int wmCharMode = WM_CHAR_MODE;       // weight measurement char updates and notifications
+    uint8_t wmCharMode = WM_CHAR_MODE;   // weight measurement char updates and notifications
     bool hallCharUpdateEnabled = false;  // enables hall measurement value updates and notifications
     unsigned long lastWmNotification = 0;
     float lastWmValue = 0.0;
@@ -83,7 +83,7 @@ class BleServer : public Atoll::BleServer,
 
     void setCadenceInCpm(bool state);
     void setCscServiceActive(bool state);
-    void setWmCharMode(int mode);
+    void setWmCharMode(uint8_t mode);
     void setHallCharUpdateEnabled(bool state);
     void loadSettings();
     void saveSettings();

@@ -82,4 +82,15 @@
 #define WM_MAX 3                            // marks the high limit
 #define WM_CHAR_MODE WM_WHEN_NO_CRANK       //
 ;                                           //
+
+#include "atoll_ble_constants.h"
+
+#ifdef API_SERVICE_UUID
+#undef API_SERVICE_UUID
+#endif
+#ifndef ESPM_API_SERVICE_UUID
+#error undefined
+#endif
+#define API_SERVICE_UUID ESPM_API_SERVICE_UUID
+
 #endif

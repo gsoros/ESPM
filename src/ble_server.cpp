@@ -330,7 +330,7 @@ void BleServer::setCscServiceActive(bool state) {
 }
 
 // Set the operating mode of the Weight Measurement char
-void BleServer::setWmCharMode(int mode) {
+void BleServer::setWmCharMode(uint8_t mode) {
     wmCharMode = mode;
 }
 
