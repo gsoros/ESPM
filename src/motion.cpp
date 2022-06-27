@@ -28,7 +28,7 @@ void Motion::setup(const uint8_t sdaPin,
         // s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_420HZ;
         // s.mag_output_bits = MAG_OUTPUT_BITS::M14BITS;
         if (!device->setup(mpuAddress, s))
-            Serial.println("[MOTION] Setup error");
+            log_e("setup error");
         // device->selectFilter(QuatFilterSel::MAHONY);
         device->selectFilter(QuatFilterSel::NONE);
         // device->selectFilter(QuatFilterSel::MADGWICK);
@@ -68,7 +68,7 @@ void Motion::loop() {
                     ulong dt = t - lastCrankEventTime;
                     if (CRANK_EVENT_MIN_MS < dt) {
                         revolutions++;
-                        Serial.printf("[MOTION] Crank event #%d dt: %ldms\n", revolutions, dt);
+                        log_i("crank event #%d dt: %ldms", revolutions, dt);
                         board.power.onCrankEvent(dt);
                         board.bleServer.onCrankEvent(t, revolutions);
                     } else {
@@ -93,7 +93,7 @@ void Motion::loop() {
                 ulong dt = t - lastCrankEventTime;
                 if (CRANK_EVENT_MIN_MS < dt) {
                     revolutions++;
-                    Serial.printf("[MOTION] Crank event #%d dt: %ldms\n", revolutions, dt);
+                    log_i("crank event #%d dt: %ldms", revolutions, dt);
                     board.power.onCrankEvent(dt);
                     board.bleServer.onCrankEvent(t, revolutions);
                     lastCrankEventTime = t;
@@ -131,7 +131,7 @@ int Motion::hall() {
 void Motion::enableWomSleep(void) {
     // Todo enable waking on hall sensor (https://esp32.com/viewtopic.php?t=4608)
     if (board.motionDetectionMethod != MDM_MPU) return;
-    Serial.println("[MOTION] Enabling W-O-M sleep");
+    log_i("Enabling W-O-M sleep");
     updateEnabled = false;
     delay(20);
     device->enableWomSleep();
@@ -139,7 +139,7 @@ void Motion::enableWomSleep(void) {
 
 void Motion::calibrateAccelGyro() {
     if (board.motionDetectionMethod != MDM_MPU) return;
-    Serial.println("[MOTION] Accel and Gyro calibration, please leave the device still.");
+    log_i("Accel and Gyro calibration, please leave the device still.");
     updateEnabled = false;
     device->calibrateAccelGyro();
     updateEnabled = true;
@@ -147,7 +147,7 @@ void Motion::calibrateAccelGyro() {
 
 void Motion::calibrateMag() {
     if (board.motionDetectionMethod != MDM_MPU) return;
-    Serial.println("[MOTION] Mag calibration, please wave device in a figure eight for 15 seconds.");
+    log_i("Mag calibration, please wave device in a figure eight for 15 seconds.");
     updateEnabled = false;
     device->calibrateMag();
     updateEnabled = true;
@@ -176,53 +176,53 @@ void Motion::printSettings() {
     printAccelGyroCalibration();
     printMagCalibration();
     printMDCalibration();
-    Serial.print("Movement detection method: ");
+    log_i("Movement detection method:");
     if (board.motionDetectionMethod == MDM_STRAIN)
-        Serial.println("Strain");
+        log_i("Strain");
     else if (board.motionDetectionMethod == MDM_MPU)
-        Serial.println("MPU");
+        log_i("MPU");
     else if (board.motionDetectionMethod == MDM_HALL)
-        Serial.println("Hall sensor");
+        log_i("Hall sensor");
     else
-        Serial.println("invalid");
+        log_i("invalid");
 }
 
 void Motion::printAccelGyroCalibration() {
     if (board.motionDetectionMethod != MDM_MPU) return;
-    Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
-    Serial.printf("Accel bias [g]:    %14f %14f %14f\n",
-                  device->getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
-                  device->getAccBiasY() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
-                  device->getAccBiasZ() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
-    Serial.printf("Gyro bias [deg/s]: %14f %14f %14f\n",
-                  device->getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
-                  device->getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
-                  device->getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
-    Serial.printf("---------------------------------------------------------------\n");
+    log_i("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
+    log_i("Accel bias [g]:    %14f %14f %14f",
+          device->getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
+          device->getAccBiasY() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
+          device->getAccBiasZ() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
+    log_i("Gyro bias [deg/s]: %14f %14f %14f",
+          device->getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
+          device->getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
+          device->getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
+    log_i("---------------------------------------------------------------");
 }
 
 void Motion::printMagCalibration() {
     if (board.motionDetectionMethod != MDM_MPU) return;
-    Serial.printf("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
-    Serial.printf("Mag bias [mG]:     %14f %14f %14f\n",
-                  device->getMagBiasX(),
-                  device->getMagBiasY(),
-                  device->getMagBiasZ());
-    Serial.printf("Mag scale:         %14f %14f %14f\n",
-                  device->getMagScaleX(),
-                  device->getMagScaleY(),
-                  device->getMagScaleZ());
-    Serial.printf("---------------------------------------------------------------\n");
+    log_i("%16s ---------X--------------Y--------------Z------", preferencesNS);
+    log_i("Mag bias [mG]:     %14f %14f %14f",
+          device->getMagBiasX(),
+          device->getMagBiasY(),
+          device->getMagBiasZ());
+    log_i("Mag scale:         %14f %14f %14f",
+          device->getMagScaleX(),
+          device->getMagScaleY(),
+          device->getMagScaleZ());
+    log_i("---------------------------------------------------------------");
 }
 
 void Motion::printMDCalibration() {
-    Serial.printf("Hall offset: %d\nHall low threshold: %d\nHall high threshold: %d\n",
-                  hallOffset,
-                  hallThresLow,
-                  hallThreshold);
-    Serial.printf("Strain MD low threshold: %d\nStrain MD high threshold: %d\n",
-                  board.strain.mdmStrainThresLow,
-                  board.strain.mdmStrainThreshold);
+    log_i("Hall offset: %d\nHall low threshold: %d\nHall high threshold: %d",
+          hallOffset,
+          hallThresLow,
+          hallThreshold);
+    log_i("Strain MD low threshold: %d\nStrain MD high threshold: %d",
+          board.strain.mdmStrainThresLow,
+          board.strain.mdmStrainThreshold);
 }
 
 void Motion::loadSettings() {

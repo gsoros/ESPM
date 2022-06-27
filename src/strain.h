@@ -45,7 +45,7 @@ class Strain : public Atoll::Task,
     bool getAutoTare();
     void setAutoTare(bool val);
     ulong getAutoTareDelayMs();
-    void setAutoTareDelayMs(ulong val);
+    void setAutoTareDelayMs(ulong val, bool log=true);
     uint16_t getAutoTareRangeG();
     void setAutoTareRangeG(uint16_t val);
 

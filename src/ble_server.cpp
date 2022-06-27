@@ -205,7 +205,7 @@ void BleServer::onCrankEvent(const ulong t, const uint16_t revolutions) {
 void BleServer::notifyCp(const ulong t) {
     powerNotificationReady = false;
     if (!enabled) {
-        Serial.println("[BLE] Not enabled, not notifying CP");
+        log_i("Not enabled, not notifying CP");
         return;
     }
     if (t - CRANK_EVENT_MIN_MS < lastPowerNotification) return;
@@ -213,7 +213,7 @@ void BleServer::notifyCp(const ulong t) {
     static uint16_t prevPower = 0;
     power = (uint16_t)board.getPower();
     if (power == prevPower) {
-        // Serial.println("[BLE] Power not changed, not notifying CP");
+        // log_i("Power not changed, not notifying CP");
         return;
     }
     prevPower = power;
@@ -235,7 +235,7 @@ void BleServer::notifyCp(const ulong t) {
     } else {
         cpmChar->setValue((uint8_t *)&bufPower, 4);
     }
-    // Serial.printf("[BLE] Notifying power %d\n", power);
+    // log_i("Notifying power %d", power);
     cpmChar->notify();
 }
 
@@ -243,7 +243,7 @@ void BleServer::notifyCp(const ulong t) {
 void BleServer::notifyCsc(const ulong t) {
     cadenceNotificationReady = false;
     if (!enabled) {
-        Serial.println("[BLE] Not enabled, not notifying SCS");
+        log_i("Not enabled, not notifying SCS");
         return;
     }
     if (!cscServiceActive) return;
@@ -256,7 +256,7 @@ void BleServer::notifyCsc(const ulong t) {
     bufCadence[3] = lastCrankEventTime & 0xff;
     bufCadence[4] = (lastCrankEventTime >> 8) & 0xff;
     cscmChar->setValue((uint8_t *)&bufCadence, 5);
-    // Serial.printf("[BLE] Notifying cadence #%d ts %d\n", crankRevs, t);
+    // log_i("Notifying cadence #%d ts %d", crankRevs, t);
     cscmChar->notify();
 }
 
@@ -354,6 +354,6 @@ void BleServer::saveSettings() {
 }
 
 void BleServer::printSettings() {
-    Serial.printf("[BLE] Cadence data in CPM: %s\n", cadenceInCpm ? "Yes" : "No");
-    Serial.printf("[BLE] CSC service: %s\n", cscServiceActive ? "Active" : "Not active");
+    log_i("Cadence data in CPM: %s", cadenceInCpm ? "Yes" : "No");
+    log_i("CSC service: %s", cscServiceActive ? "Active" : "Not active");
 }

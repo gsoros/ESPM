@@ -174,7 +174,7 @@ class Board : public Atoll::Task,
     }
 
     void restartTask(const char *taskName) {
-        Serial.printf("[Board] Restarting task %s\n", taskName);
+        log_i("restarting task %s", taskName);
         stopTask(taskName);
         startTask(taskName);
     }
@@ -183,11 +183,11 @@ class Board : public Atoll::Task,
         const ulong t = millis();
         const long tSleep = timeUntilDeepSleep(t);
         if (0 == tSleep) {
-            Serial.printf("[Board] Deep sleep now ...zzzZZZ\n");
+            log_i("Deep sleep now ...zzzZZZ");
             deepSleep();
         }
         if (tSleep <= _sleepCountdownAfter && _lastSleepCountdown + _sleepCountdownEvery <= t) {
-            Serial.printf("[Board] Deep sleep in %lis\n", tSleep / 1000UL);
+            log_i("Deep sleep in %lis", tSleep / 1000UL);
             _lastSleepCountdown = t;
         }
 #ifdef FEATURE_SERIAL
@@ -241,7 +241,7 @@ class Board : public Atoll::Task,
         return 1;
 #endif
         if (!sleepEnabled) return 1;
-        Serial.println("[Board] Preparing for deep sleep");
+        log_i("Preparing for deep sleep");
         /*
         rtc_gpio_init(MPU_WOM_INT_PIN);
         rtc_gpio_set_direction(MPU_WOM_INT_PIN, RTC_GPIO_MODE_INPUT_ONLY);
@@ -255,7 +255,7 @@ class Board : public Atoll::Task,
         // pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
         api.notifyTxChar("Sleep...");
 #ifdef FEATURE_SERIAL
-        Serial.println("[Board] Entering deep sleep");
+        log_i("Entering deep sleep");
         Serial.flush();
         delay(500);
         wifiSerial.disconnect();
@@ -281,7 +281,7 @@ class Board : public Atoll::Task,
 
     void setSleepDelay(const ulong delay) {
         if (delay < SLEEP_DELAY_MIN) {
-            Serial.printf("[Board] sleep delay too short");
+            log_e("sleep delay too short");
             return;
         }
         sleepDelay = delay;

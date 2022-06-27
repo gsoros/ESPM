@@ -20,7 +20,7 @@ void Strain::setup(const gpio_num_t doutPin,
     // if (device->getTareTimeoutFlag()) {
     //     Serial.println("[Strain] HX711 tare timeout");
     // }
-    setAutoTareDelayMs(AUTO_TARE_DELAY_MS);
+    setAutoTareDelayMs(AUTO_TARE_DELAY_MS, false);
     loadSettings();
 }
 
@@ -148,7 +148,7 @@ int Strain::calibrateTo(float knownMass) {
     if (isnan(knownMass) ||
         isinf(knownMass) ||
         (-0.000000001 < knownMass && knownMass < 0.000000001)) {
-        Serial.println("[Strain] Error setting calibraton factor.");
+        log_e("Error setting calibraton factor.");
         return -1;
     }
     device->getNewCalibration(knownMass);
@@ -156,7 +156,7 @@ int Strain::calibrateTo(float knownMass) {
 }
 
 void Strain::printSettings() {
-    Serial.printf("[Strain] Calibration factor: %f\n", device->getCalFactor());
+    log_i("Calibration factor: %f", device->getCalFactor());
 }
 
 void Strain::loadSettings() {
@@ -169,7 +169,7 @@ void Strain::loadSettings() {
     setAutoTareRangeG(preferences->getUShort("ATRangeG", autoTareRangeG));
     if (!preferences->getBool("calibrated", false)) {
         preferencesEnd();
-        log_e("[Strain] Device has not yet been calibrated");
+        log_e("Device has not yet been calibrated");
         return;
     }
     device->setCalFactor(preferences->getFloat("calibration", 0.0));
@@ -199,17 +199,17 @@ bool Strain::getAutoTare() {
 
 void Strain::setAutoTare(bool val) {
     autoTare = val;
-    Serial.printf("[STRAIN] autoTare=%d\n", autoTare);
+    log_i("autoTare=%d", autoTare);
 }
 
 ulong Strain::getAutoTareDelayMs() {
     return autoTareDelayMs;
 }
 
-void Strain::setAutoTareDelayMs(ulong val) {
+void Strain::setAutoTareDelayMs(ulong val, bool log) {
     autoTareDelayMs = val;
     autoTareSamples = val / 1000 * STRAIN_TASK_FREQ;
-    Serial.printf("[STRAIN] autoTareDelayMs=%lu autoTareSamples=%d\n", autoTareDelayMs, autoTareSamples);
+    if (log) log_i("autoTareDelayMs=%lu autoTareSamples=%d", autoTareDelayMs, autoTareSamples);
 }
 
 uint16_t Strain::getAutoTareRangeG() {
@@ -218,5 +218,5 @@ uint16_t Strain::getAutoTareRangeG() {
 
 void Strain::setAutoTareRangeG(uint16_t val) {
     autoTareRangeG = val;
-    Serial.printf("[STRAIN] autoTareRangeG=%d\n", autoTareRangeG);
+    log_i("autoTareRangeG=%d", autoTareRangeG);
 }

@@ -77,11 +77,10 @@ void Power::saveSettings() {
 }
 
 void Power::printSettings() {
-    Serial.printf(
-        "[Power] Settings\nCrank length: %.2fmm\nStrain is %sreversed\nMPU is %sreversed\nValue is %sdoubled\n",
-        crankLength, reverseStrain ? "" : "not ",
-        reverseMPU ? "" : "not ",
-        reportDouble ? "" : "not ");
+    log_i("Settings: crank length: %.2fmm, strain is %sreversed, MPU is %sreversed, value is %sdoubled",
+          crankLength, reverseStrain ? "" : "not ",
+          reverseMPU ? "" : "not ",
+          reportDouble ? "" : "not ");
 }
 
 float Power::filterNegative(float value, bool reverse) {
