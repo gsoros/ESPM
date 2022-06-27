@@ -76,8 +76,8 @@ ApiResult *Api::systemProcessor(ApiMessage *msg) {
         return success();
     } else if (msg->argIs("ota") || msg->argIs("OTA")) {
         log_i("entering ota mode");
+        board.wifi.autoStartOta = true;
         board.wifi.setEnabled(true, false);
-        board.ota.taskStart(OTA_TASK_FREQ);
         msg->replyAppend("ota");
         return success();
     }

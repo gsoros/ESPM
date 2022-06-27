@@ -66,11 +66,11 @@ void Strain::loop() {
             }
             _lastAutoTare = t;
             if (abs(max - min) < autoTareRangeG / 1000.0) {
-                log_i("Auto tare: %.2f, %.2f", min, max);
+                // log_i("Auto tare: %.2f, %.2f", min, max);
                 device->tareNoDelay();
                 //_lastAutoTare = t;
             } else {
-                log_i("Auto tare range too large: %fkg > %dg", max - min, autoTareRangeG);
+                // log_i("Auto tare range too large: %fkg > %dg", max - min, autoTareRangeG);
             }
         }
     }

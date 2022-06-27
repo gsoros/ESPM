@@ -17,7 +17,7 @@
 #include "ble_server.h"
 #include "api.h"
 #include "atoll_battery.h"
-#include "atoll_wifi.h"
+#include "wifi.h"
 #include "atoll_ota.h"
 
 #include "motion.h"
@@ -37,7 +37,7 @@ class Board : public Atoll::Task,
     HardwareSerial hwSerial = HardwareSerial(0);
     Atoll::WifiSerial wifiSerial;
 #endif
-    Atoll::Wifi wifi;
+    Wifi wifi;
     BleServer bleServer;
     Api api;
     Atoll::Battery battery;
@@ -66,7 +66,7 @@ class Board : public Atoll::Task,
         log_i("\n\n\n%s %s %s\n\n\n", hostName, __DATE__, __TIME__);
         setupTask("bleServer");
         api.setup(&api, &arduinoPreferences, "API", &bleServer, API_SERVICE_UUID);
-        ota.setup(hostName);
+        ota.setup(hostName, 3232, true);
         setupTask("led");
         setupTask("wifi");
         setupTask("battery");
@@ -134,16 +134,6 @@ class Board : public Atoll::Task,
     }
 
     void startTask(const char *taskName) {
-        if (strcmp("wifiSerial", taskName) == 0) {
-#ifdef FEATURE_SERIAL
-            if (WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL) {
-                Serial.printf("[Board] Wifi disabled, not starting WifiSerial task\n");
-                return;
-            }
-            wifiSerial.taskStart(WIFISERIAL_TASK_FREQ);
-#endif
-            return;
-        }
         if (strcmp("bleServer", taskName) == 0) {
             bleServer.taskStart(BLE_SERVER_TASK_FREQ, bleServer.taskStack);
             return;
@@ -164,14 +154,6 @@ class Board : public Atoll::Task,
             power.taskStart(POWER_TASK_FREQ);
             return;
         }
-        if (strcmp("ota", taskName) == 0) {
-            if (WiFi.getMode() == WIFI_MODE_NULL) {
-                Serial.printf("[Board] Wifi disabled, not starting OTA task\n");
-                return;
-            }
-            ota.taskStart(OTA_TASK_FREQ, 8192);
-            return;
-        }
         // if (strcmp("status", taskName) == 0) {
         //     status.taskStart(STATUS_TASK_FREQ);
         //     return;
@@ -184,18 +166,6 @@ class Board : public Atoll::Task,
     }
 
     void stopTask(const char *taskName) {
-        if (strcmp("ota", taskName) == 0) {
-            ota.stop();
-            ota.taskStop();
-            return;
-        }
-        if (strcmp("wifiSerial", taskName) == 0) {
-#ifdef FEATURE_SERIAL
-            wifiSerial.stop();
-            wifiSerial.taskStop();
-#endif
-            return;
-        }
         if (strcmp("motion", taskName) == 0) {
             motion.taskStop();
             return;
