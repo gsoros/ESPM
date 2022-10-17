@@ -357,3 +357,14 @@ void BleServer::printSettings() {
     log_i("Cadence data in CPM: %s", cadenceInCpm ? "Yes" : "No");
     log_i("CSC service: %s", cscServiceActive ? "Active" : "Not active");
 }
+
+void BleServer::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
+    // if (board.api.secureBle) {
+    //     log_i("calling startSecurity()");
+    //     int res = BLEDevice::startSecurity(desc->conn_handle);
+    //     if (0 != res) {
+    //         log_e("startSecurity() returned %d", res);
+    //     }
+    // }
+    Atoll::BleServer::onConnect(pServer, desc);
+}
