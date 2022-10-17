@@ -85,12 +85,4 @@
 
 #include "atoll_ble_constants.h"
 
-#ifdef API_SERVICE_UUID
-#undef API_SERVICE_UUID
-#endif
-#ifndef ESPM_API_SERVICE_UUID
-#error undefined
-#endif
-#define API_SERVICE_UUID ESPM_API_SERVICE_UUID
-
 #endif
