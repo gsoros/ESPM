@@ -9,19 +9,6 @@
 #define BLE_CHAR_VALUE_MAXLENGTH 128
 #endif
 
-#ifndef BLE_APPEARANCE
-#define BLE_APPEARANCE APPEARANCE_CYCLING_POWER_SENSOR
-#endif
-
-/*
-0x00 BLE_HS_IO_DISPLAY_ONLY DisplayOnly IO capability
-0x01 BLE_HS_IO_DISPLAY_YESNO DisplayYesNo IO capability
-0x02 BLE_HS_IO_KEYBOARD_ONLY KeyboardOnly IO capability
-0x03 BLE_HS_IO_NO_INPUT_OUTPUT NoInputNoOutput IO capability
-0x04 BLE_HS_IO_KEYBOARD_DISPLAY KeyboardDisplay Only IO capability
-*/
-#define BLE_SECURITY_IOCAP BLE_HS_IO_DISPLAY_ONLY
-
 class BleServer : public Atoll::BleServer,
                   public Atoll::Preferences {
    public:
@@ -76,6 +63,8 @@ class BleServer : public Atoll::BleServer,
     unsigned char bufSpeedCadenceFeature[2];
 
     virtual void setup(const char *deviceName, ::Preferences *p);
+    virtual void init() override;
+    virtual uint16_t getAppearance() override;
     virtual void loop() override;
 
     void startCpService();

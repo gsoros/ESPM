@@ -1,6 +1,8 @@
 #include "ble_server.h"
 #include "board.h"
 
+#include "atoll_ble.h"
+
 void BleServer::setup(const char *deviceName, ::Preferences *p) {
     Atoll::BleServer::setup(deviceName);
     preferencesSetup(p, "BLE");
@@ -13,6 +15,21 @@ void BleServer::setup(const char *deviceName, ::Preferences *p) {
 
     lastPowerNotification = millis();
     lastCadenceNotification = lastPowerNotification;
+}
+
+void BleServer::init() {
+    /*
+      0x00 BLE_HS_IO_DISPLAY_ONLY     DisplayOnly     IO capability
+      0x01 BLE_HS_IO_DISPLAY_YESNO    DisplayYesNo    IO capability
+      0x02 BLE_HS_IO_KEYBOARD_ONLY    KeyboardOnly    IO capability
+      0x03 BLE_HS_IO_NO_INPUT_OUTPUT  NoInputNoOutput IO capability
+      0x04 BLE_HS_IO_KEYBOARD_DISPLAY KeyboardDisplay IO capability
+    */
+    Atoll::Ble::init(deviceName, BLE_HS_IO_DISPLAY_ONLY);
+}
+
+uint16_t BleServer::getAppearance() {
+    return APPEARANCE_CYCLING_POWER_SENSOR;
 }
 
 void BleServer::loop() {
