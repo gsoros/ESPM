@@ -88,7 +88,7 @@ class BleServer : public Atoll::BleServer,
     void saveSettings();
     void printSettings();
 
-    virtual void onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) override;
+    virtual void onConnect(BLEServer *pServer, BLEConnInfo &connInfo) override;
 };
 
 #endif

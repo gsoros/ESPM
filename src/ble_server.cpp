@@ -375,7 +375,7 @@ void BleServer::printSettings() {
     log_i("CSC service: %s", cscServiceActive ? "Active" : "Not active");
 }
 
-void BleServer::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
+void BleServer::onConnect(BLEServer *pServer, BLEConnInfo &info) {
     // if (board.api.secureBle) {
     //     log_i("calling startSecurity()");
     //     int res = BLEDevice::startSecurity(desc->conn_handle);
@@ -383,5 +383,5 @@ void BleServer::onConnect(BLEServer *pServer, ble_gap_conn_desc *desc) {
     //         log_e("startSecurity() returned %d", res);
     //     }
     // }
-    Atoll::BleServer::onConnect(pServer, desc);
+    Atoll::BleServer::onConnect(pServer, info);
 }
