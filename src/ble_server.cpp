@@ -25,7 +25,8 @@ void BleServer::init() {
       0x03 BLE_HS_IO_NO_INPUT_OUTPUT  NoInputNoOutput IO capability
       0x04 BLE_HS_IO_KEYBOARD_DISPLAY KeyboardDisplay IO capability
     */
-    Atoll::Ble::init(deviceName, BLE_HS_IO_DISPLAY_ONLY);
+    // Atoll::Ble::init(deviceName, BLE_ATT_MTU_MAX, BLE_HS_IO_DISPLAY_ONLY);
+    Atoll::Ble::init(deviceName, 64 + 15, BLE_HS_IO_DISPLAY_ONLY);
 }
 
 uint16_t BleServer::getAppearance() {
