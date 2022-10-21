@@ -45,7 +45,7 @@ class Strain : public Atoll::Task,
     bool getAutoTare();
     void setAutoTare(bool val);
     ulong getAutoTareDelayMs();
-    void setAutoTareDelayMs(ulong val, bool log=true);
+    void setAutoTareDelayMs(ulong val, bool log = true);
     uint16_t getAutoTareRangeG();
     void setAutoTareRangeG(uint16_t val);
 
@@ -53,9 +53,9 @@ class Strain : public Atoll::Task,
     CircularBuffer<float, STRAIN_RINGBUF_SIZE> _measurementBuf;
     bool _halfRevolution = false;
     bool autoTare = AUTO_TARE;
-    ulong autoTareDelayMs;
+    ulong autoTareDelayMs = AUTO_TARE_DELAY_MS;
     uint16_t autoTareRangeG = AUTO_TARE_RANGE_G;
-    uint16_t autoTareSamples;
+    uint16_t autoTareSamples = AUTO_TARE_DELAY_MS / 1000 * STRAIN_TASK_FREQ;
     ulong _lastAutoTare = 0;
 };
 

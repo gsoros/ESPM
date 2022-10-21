@@ -18,6 +18,10 @@ void BleServer::setup(const char *deviceName, ::Preferences *p) {
 }
 
 void BleServer::init() {
+    // uint16_t mtu = 23; // optimal
+    // uint16_t mtu = 64 + 15;
+    // uint16_t mtu = BLE_ATT_MTU_MAX;
+    uint16_t mtu = 280;  // api init string fits, workaround until we can read() in Atoll::PeerCharacteristicApiTx::onNotify
     /*
       0x00 BLE_HS_IO_DISPLAY_ONLY     DisplayOnly     IO capability
       0x01 BLE_HS_IO_DISPLAY_YESNO    DisplayYesNo    IO capability
@@ -25,8 +29,9 @@ void BleServer::init() {
       0x03 BLE_HS_IO_NO_INPUT_OUTPUT  NoInputNoOutput IO capability
       0x04 BLE_HS_IO_KEYBOARD_DISPLAY KeyboardDisplay IO capability
     */
-    // Atoll::Ble::init(deviceName, BLE_ATT_MTU_MAX, BLE_HS_IO_DISPLAY_ONLY);
-    Atoll::Ble::init(deviceName, 64 + 15, BLE_HS_IO_DISPLAY_ONLY);
+    uint8_t iocap = BLE_HS_IO_DISPLAY_ONLY;
+
+    Atoll::Ble::init(deviceName, mtu, iocap);
 }
 
 uint16_t BleServer::getAppearance() {
@@ -48,7 +53,7 @@ void BleServer::loop() {
     if (lastWmNotification < t - 500) {
         if (wmCharMode == WM_ON ||              //
             (wmCharMode == WM_WHEN_NO_CRANK &&  //
-             board.motion.lastCrankEventTime < t - 1000))
+             board.motion.lastCrankEventTime < t - 2000))
             setWmValue(board.strain.liveValue());
         else
             setWmValue(0.0);

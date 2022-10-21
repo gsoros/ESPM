@@ -70,7 +70,7 @@
 ;                                           //
 #define CRANK_EVENT_MIN_MS 400              // 400 ms = 150 RPM
 ;                                           //
-#define POWER_ZERO_DELAY_MS 2000            // push zero power values after the last crank event (2000 ms = 30 RPM)
+#define POWER_ZERO_DELAY_MS 3000            // push zero power values after the last crank event (3s = 20RPM)
 ;                                           //
 #define AUTO_TARE 1                         // enable auto tare by default
 #define AUTO_TARE_DELAY_MS 3000             // auto tare after 3 secs of last crank event
