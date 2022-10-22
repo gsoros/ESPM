@@ -18,10 +18,10 @@ void BleServer::setup(const char *deviceName, ::Preferences *p) {
 }
 
 void BleServer::init() {
-    // uint16_t mtu = 23; // optimal
+    uint16_t mtu = 23;  // optimal
     // uint16_t mtu = 64 + 15;
     // uint16_t mtu = BLE_ATT_MTU_MAX;
-    uint16_t mtu = 280;  // api init string fits, workaround until we can read() in Atoll::PeerCharacteristicApiTx::onNotify
+    // uint16_t mtu = 280;  // api init string fits, workaround until we can read() in Atoll::PeerCharacteristicApiTx::onNotify
     /*
       0x00 BLE_HS_IO_DISPLAY_ONLY     DisplayOnly     IO capability
       0x01 BLE_HS_IO_DISPLAY_YESNO    DisplayYesNo    IO capability
