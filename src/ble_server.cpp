@@ -46,12 +46,12 @@ void BleServer::loop() {
         log_e("not started");
         return;
     }
+    Atoll::BleServer::loop();
     const ulong t = millis();
     if (powerNotificationReady || lastPowerNotification < t - 1000)
         notifyCp(t);
     if (cadenceNotificationReady || lastCadenceNotification < t - 1500)
         notifyCsc(t);
-    if (advertising && !advertising->isAdvertising()) startAdvertising();
     if (lastWmNotification < t - 500) {
         if (wmCharMode == WM_ON ||              //
             (wmCharMode == WM_WHEN_NO_CRANK &&  //
