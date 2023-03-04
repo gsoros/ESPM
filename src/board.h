@@ -23,7 +23,7 @@
 #include "motion.h"
 #include "strain.h"
 #include "power.h"
-//#include "status.h"
+// #include "status.h"
 #include "led.h"
 #include "atoll_log.h"
 
@@ -48,6 +48,7 @@ class Board : public Atoll::Task,
     // Status status;
     Led led;
 
+    bool otaMode = false;
     bool sleepEnabled = true;
     ulong sleepDelay = SLEEP_DELAY_DEFAULT;
     char hostName[SETTINGS_STR_LENGTH] = HOSTNAME;

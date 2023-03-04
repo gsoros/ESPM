@@ -179,7 +179,16 @@ long Board::timeUntilDeepSleep(ulong t) {
 #endif
     if (!sleepEnabled) return -1;
     if (0 == sleepDelay) return -1;
+    if (otaMode) return -1;
     if (0 == t) t = millis();
+    if (battery.isCharging()) {
+        static ulong lastLog = 0;
+        if (!lastLog || lastLog < t - 5 * 60 * 1000) {
+            log_i("not sleeping while charging");
+            lastLog = t;
+        }
+        return -1;
+    }
     // if (0 == motion.lastMovement) return -1;
     if (t <= motion.lastMovement) return -1;
     const long tSleep = motion.lastMovement + sleepDelay - t;
@@ -203,7 +212,9 @@ int Board::deepSleep() {
     strain.sleep();
     motion.enableWomSleep();
     // pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
-    api.notifyTxChar("Sleep...");
+    char msg[32];
+    snprintf(msg, sizeof(msg), "%d;%d=sleep", api.success()->code, api.command("system")->code);
+    api.notifyTxChar(msg);
 #ifdef FEATURE_SERIAL
     log_i("Entering deep sleep");
     Serial.flush();

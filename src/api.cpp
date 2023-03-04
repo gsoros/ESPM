@@ -53,13 +53,6 @@ void Api::beforeBleServiceStart(BLEService *service) {
     hallDesc->setValue((uint8_t *)str, strlen(str));
 }
 
-void Api::notifyTxChar(const char *str) {
-    if (!bleServer) return;
-    bleServer->notify(serviceUuid,
-                      BLEUUID(API_TX_CHAR_UUID),
-                      (uint8_t *)str, strlen(str));
-}
-
 ApiResult *Api::systemProcessor(ApiMessage *msg) {
     if (msg->argStartsWith("hostname")) {
         char buf[sizeof(board.hostName)] = "";
@@ -76,6 +69,7 @@ ApiResult *Api::systemProcessor(ApiMessage *msg) {
         return success();
     } else if (msg->argIs("ota") || msg->argIs("OTA")) {
         log_i("entering ota mode");
+        board.otaMode = true;
         board.wifi.autoStartOta = true;
         board.wifi.setEnabled(true, false);
         msg->replyAppend("ota");

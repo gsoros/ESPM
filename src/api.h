@@ -27,7 +27,6 @@ class Api : public Atoll::Api {
                       BleServer *bleServer = nullptr,
                       const char *serviceUuid = nullptr);
     virtual void beforeBleServiceStart(BLEService *service) override;
-    void notifyTxChar(const char *str);
 
    protected:
     static ApiResult *systemProcessor(ApiMessage *);
