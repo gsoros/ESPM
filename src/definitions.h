@@ -1,9 +1,9 @@
 #ifndef DEFINITIONS_H___
 #define DEFINITIONS_H___
 
-;                                           //#define NO_GLOBAL_SERIAL // defined in compile flags
+;                                           // #define NO_GLOBAL_SERIAL // defined in compile flags
 ;                                           //
-;                                           //#define DISABLE_SLEEP // for testing
+;                                           // #define DISABLE_SLEEP // for testing
 ;                                           //
 #define SETTINGS_STR_LENGTH 32              // maximum length of settings strings
 #define BLE_CHAR_VALUE_MAXLENGTH 256        // maximum number of bytes written to ble characteristic values
@@ -42,6 +42,8 @@
 ;                                           //
 #define STRAIN_DOUT_PIN GPIO_NUM_5          //
 #define STRAIN_SCK_PIN GPIO_NUM_13          //
+;                                           //
+#define TEMPERATURE_PIN GPIO_NUM_32         // onewire ds18b20 parasitic
 ;                                           //
 #define HX711_SAMPLES 64                    // number of samples in moving average dataset, value must be 1, 2, 4, 8, 16, 32, 64 or 128.
 #define HX711_IGN_HIGH_SAMPLE 1             // adds extra sample(s) to the dataset and ignores peak high/low sample, value must be 0 or 1.

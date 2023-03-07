@@ -12,6 +12,7 @@
 #else
 #include "atoll_null_serial.h"
 #endif
+
 #include "atoll_preferences.h"
 #include "atoll_task.h"
 #include "ble_server.h"
@@ -19,6 +20,10 @@
 #include "atoll_battery.h"
 #include "wifi.h"
 #include "atoll_ota.h"
+
+#ifdef FEATURE_TEMPERATURE
+#include "atoll_temperature_sensor.h"
+#endif
 
 #include "motion.h"
 #include "strain.h"
@@ -47,6 +52,14 @@ class Board : public Atoll::Task,
     Atoll::Ota ota;
     // Status status;
     Led led;
+
+#ifdef FEATURE_TEMPERATURE
+    typedef Atoll::TemperatureSensor Temp;
+    OneWire temperatureBus = OneWire(TEMPERATURE_PIN);
+    DallasTemperature dallasTemperature = DallasTemperature(&temperatureBus);
+    Temp *crankTemperature = nullptr;
+    void onTempChange(Temp *sensor);
+#endif
 
     bool otaMode = false;
     bool sleepEnabled = true;

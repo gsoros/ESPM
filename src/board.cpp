@@ -18,6 +18,7 @@ void Board::setup() {
     setupTask("bleServer");
     api.setup(&api, &arduinoPreferences, "API", &bleServer, API_SERVICE_UUID);
     ota.setup(hostName, 3232, true);
+
     setupTask("led");
     setupTask("wifi");
     setupTask("battery");
@@ -25,6 +26,7 @@ void Board::setup() {
     setupTask("strain");
     setupTask("power");
     // setupTask("status");
+    setupTask("temperature");
 
     bleServer.start();
     wifi.start();
@@ -64,6 +66,32 @@ void Board::setupTask(const char *taskName) {
     //     status.setup();
     //     return;
     // }
+    if (strcmp("temperature", taskName) == 0) {
+#ifdef FEATURE_TEMPERATURE
+        dallasTemperature.begin();
+        log_d("%d temperature sensor(s), %sparasitic",
+              Temp::getDeviceCount(&dallasTemperature),
+              dallasTemperature.isParasitePowerMode() ? "" : "not ");
+        Temp::Address address;
+        if (!Temp::getAddressByIndex(&dallasTemperature, 0, address)) {
+            log_e("could not get temp sensor address");
+        } else {
+            crankTemperature = new Temp(
+                &dallasTemperature,
+                "tCrank",
+                address,
+                1.0f,
+                [this](Temp *sensor) { onTempChange(sensor); });
+            if (!crankTemperature->setResolution(11)) {
+                log_e("could not set resolution on %s", crankTemperature->label);
+            }
+            crankTemperature->addBleService(&bleServer);
+        }
+#else
+        log_d("no temperature sensor support")
+#endif
+        return;
+    }
     log_e("unknown task: %s", taskName);
 }
 
@@ -81,6 +109,7 @@ void Board::startTasks() {
     // startTask("ota");
     // startTask("status");
     startTask("led");
+    startTask("temperature");
     taskStart(BOARD_TASK_FREQ, 4096 + 1024);
 }
 
@@ -112,6 +141,15 @@ void Board::startTask(const char *taskName) {
     if (strcmp("led", taskName) == 0) {
         led.taskStart(LED_TASK_FREQ);
         return;
+    }
+    if (strcmp("temperature", taskName) == 0) {
+#ifdef FEATURE_TEMPERATURE
+        if (!crankTemperature)
+            log_e("crankTemperature not available");
+        else
+            crankTemperature->taskStart();
+        return;
+#endif
     }
     log_e("unknown task: %s", taskName);
 }
@@ -259,4 +297,8 @@ void Board::setMotionDetectionMethod(int method) {
         setupTask("motion");
         startTask("motion");
     }
+}
+
+void Board::onTempChange(Temp *sensor) {
+    log_i("%s %.2f", sensor->label, sensor->value);
 }
