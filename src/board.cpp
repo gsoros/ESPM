@@ -68,25 +68,15 @@ void Board::setupTask(const char *taskName) {
     // }
     if (strcmp("temperature", taskName) == 0) {
 #ifdef FEATURE_TEMPERATURE
-        dallasTemperature.begin();
-        log_d("%d temperature sensor(s), %sparasitic",
-              Temp::getDeviceCount(&dallasTemperature),
-              dallasTemperature.isParasitePowerMode() ? "" : "not ");
-        Temp::Address address;
-        if (!Temp::getAddressByIndex(&dallasTemperature, 0, address)) {
-            log_e("could not get temp sensor address");
-        } else {
-            crankTemperature = new Temp(
-                &dallasTemperature,
-                "tCrank",
-                address,
-                1.0f,
-                [this](Temp *sensor) { onTempChange(sensor); });
-            if (!crankTemperature->setResolution(11)) {
-                log_e("could not set resolution on %s", crankTemperature->label);
-            }
-            crankTemperature->addBleService(&bleServer);
-        }
+        crankTemperature = new Temp(
+            TEMPERATURE_PIN,
+            "tCrank",
+            11,
+            1.0f,
+            [this](Temp *sensor) { onTempChange(sensor); });
+
+        crankTemperature->addBleService(&bleServer);
+
 #else
         log_d("no temperature sensor support")
 #endif
@@ -147,7 +137,7 @@ void Board::startTask(const char *taskName) {
         if (!crankTemperature)
             log_e("crankTemperature not available");
         else
-            crankTemperature->taskStart();
+            crankTemperature->begin();
         return;
 #endif
     }

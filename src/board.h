@@ -55,8 +55,6 @@ class Board : public Atoll::Task,
 
 #ifdef FEATURE_TEMPERATURE
     typedef Atoll::TemperatureSensor Temp;
-    OneWire temperatureBus = OneWire(TEMPERATURE_PIN);
-    DallasTemperature dallasTemperature = DallasTemperature(&temperatureBus);
     Temp *crankTemperature = nullptr;
     void onTempChange(Temp *sensor);
 #endif
