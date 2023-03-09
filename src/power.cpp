@@ -23,7 +23,7 @@ void Power::onCrankEvent(const ulong msSinceLastEvent) {
     }
     /*
     double deltaT = msSinceLastEvent / 1000.0;  // t(s)
-    float radius = crankLength / 1000.0;        // r(m)
+    float radius = crankLength(mm) / 1000.0;    // r(m)
     float distance = 2.0 * radius * PI;         // s(m)   = 2 * r(m) * π
     double velocity = distance / deltaT;        // v(m/s) = s(m) / t(s)
     float mass = board.strain.value(true);      // m(kg)

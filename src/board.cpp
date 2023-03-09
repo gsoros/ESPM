@@ -68,15 +68,7 @@ void Board::setupTask(const char *taskName) {
     // }
     if (strcmp("temperature", taskName) == 0) {
 #ifdef FEATURE_TEMPERATURE
-        crankTemperature = new Temp(
-            TEMPERATURE_PIN,
-            "tCrank",
-            11,
-            1.0f,
-            [this](Temp *sensor) { onTempChange(sensor); });
-
-        crankTemperature->addBleService(&bleServer);
-
+        temperature.setup();
 #else
         log_d("no temperature sensor support")
 #endif
@@ -134,12 +126,9 @@ void Board::startTask(const char *taskName) {
     }
     if (strcmp("temperature", taskName) == 0) {
 #ifdef FEATURE_TEMPERATURE
-        if (!crankTemperature)
-            log_e("crankTemperature not available");
-        else
-            crankTemperature->begin();
-        return;
+        temperature.begin();
 #endif
+        return;
     }
     log_e("unknown task: %s", taskName);
 }
@@ -287,8 +276,4 @@ void Board::setMotionDetectionMethod(int method) {
         setupTask("motion");
         startTask("motion");
     }
-}
-
-void Board::onTempChange(Temp *sensor) {
-    log_i("%s %.2f", sensor->label, sensor->value);
 }

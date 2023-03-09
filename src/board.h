@@ -22,7 +22,7 @@
 #include "atoll_ota.h"
 
 #ifdef FEATURE_TEMPERATURE
-#include "atoll_temperature_sensor.h"
+#include "temperature.h"
 #endif
 
 #include "motion.h"
@@ -54,9 +54,7 @@ class Board : public Atoll::Task,
     Led led;
 
 #ifdef FEATURE_TEMPERATURE
-    typedef Atoll::TemperatureSensor Temp;
-    Temp *crankTemperature = nullptr;
-    void onTempChange(Temp *sensor);
+    Temperature temperature;
 #endif
 
     bool otaMode = false;
