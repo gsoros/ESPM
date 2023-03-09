@@ -38,7 +38,7 @@ void Temperature::begin() {
 void Temperature::onSensorValueChange(Sensor *sensor) {
     if (sensor->address == crankSensor->address)
         tcSetCorrection(sensor->value);
-    log_i("Sensor: %s, Temp: %.2f°C, Correction: %.1fkg",
+    log_i("%s temp: %.2f°C, correction: %.1fkg",
           sensor->label,
           sensor->value,
           tcGetCorrection());
