@@ -10,12 +10,12 @@ Temperature::Temperature() {}
 
 Temperature::~Temperature() {
     if (crankSensor) delete crankSensor;
+    if (tc) delete tc;
 }
 
 void Temperature::setup() {
-    for (uint16_t i = 0; i < tcTableSize(); i++)  // tcTableUnsetValue(i);
-        tcTableSetValue(i, (int8_t)random(INT8_MIN, INT8_MAX + 1));
-
+    uint32_t heap = esp_get_free_heap_size();
+    int stack = (int)uxTaskGetStackHighWaterMark(NULL);
     crankSensor = new Sensor(                                    // single sensor: exclusive mode
         TEMPERATURE_PIN,                                         // pin
         "crank",                                                 // label
@@ -26,6 +26,10 @@ void Temperature::setup() {
 #ifdef FEATURE_BLE_SERVER
     crankSensor->addBleService(&board.bleServer);
 #endif
+    tc = new TemperatureCompensation();
+    log_d("heap used: %d, stack used: %d",
+          heap - esp_get_free_heap_size(),
+          stack - (int)uxTaskGetStackHighWaterMark(NULL));
 }
 
 void Temperature::begin() {
@@ -37,59 +41,53 @@ void Temperature::begin() {
 
 void Temperature::onSensorValueChange(Sensor *sensor) {
     if (sensor->address == crankSensor->address)
-        tcSetCorrection(sensor->value);
-    log_i("%s temp: %.2f°C, correction: %.1fkg",
+        setCompensation(sensor->value);
+    log_i("%s temp: %.2f°C, compensation: %.1fkg",
           sensor->label,
           sensor->value,
-          tcGetCorrection());
+          getCompensation());
 }
 
-size_t Temperature::tcTableSize() {
-    return sizeof(tcTable) / sizeof(tcTable[0]);
-}
-
-bool Temperature::tcTableValidIndex(uint16_t index) {
-    return index < tcTableSize() - 1;
-}
-
-int8_t Temperature::tcTableGetValue(uint16_t index) {
-    if (!tcTableValidIndex(index)) {
-        log_e("index %d out of range", index);
-        return TC_VALUE_EMPTY;
-    }
-    return tcTable[index];
-}
-
-bool Temperature::tcTableSetValue(uint16_t index, int8_t value) {
-    if (!tcTableValidIndex(index)) {
-        log_e("index %d out of range", index);
-        return false;
-    }
-    tcTable[index] = value;
+/// @brief set offset to current compensation value, e.g. after tare
+/// @return
+bool Temperature::setCompensationOffset() {
+    compensationOffset = compensation;
     return true;
 }
 
-bool Temperature::tcTableUnsetValue(uint16_t index) {
-    return tcTableSetValue(index, TC_VALUE_EMPTY);
-}
+void Temperature::setCompensation(float temperature) {
+    if (!tc) {
+        log_e("no table");
+        compensation = 0.0f;
+        return;
+    }
 
-void Temperature::tcSetCorrection(float temperature) {
+    float keyResolution = tc->getKeyResolution();
+    if (keyResolution <= 0.0) {
+        log_e("invalid key resolution");
+        compensation = 0.0f;
+        return;
+    }
     // TODO interpolate to neighbors etc
-    uint16_t index = (uint16_t)temperature - TC_TABLE_OFFSET;
-    int8_t skew = tcTableGetValue(index);
+    // index = (temp - offset) / resolution
+    uint16_t index = (uint16_t)((temperature - (float)tc->getKeyOffset()) / keyResolution);
+    if (!tc->validIndex(index)) {
+        log_e("could not find index for %.2f˚C", temperature);
+    }
+    int8_t skew = tc->getValue(index);
     log_d("index: %d, skew: %d", index, skew);
-    if (skew == TC_VALUE_EMPTY)
-        correction = 0.0;
+    if (skew == tc->valueUnset)
+        compensation = 0.0f;
     else
-        correction = (float)skew * TC_TABLE_MAGNITUDE;
+        compensation = (float)skew * tc->getValueResolution();
 }
 
-/// @brief Get current temperature correction value for the weight scale.
+/// @brief Get current temperature compensation value for the weight scale.
 /// @return value in kg
-float Temperature::tcGetCorrection() {
+float Temperature::getCompensation() {
     // if (!crankSensor) return 0.0f;
     // TODO check crankSensor->lastUpdate etc
-    return correction;
+    return compensation - compensationOffset;
 }
 
 #endif  // FEATURE_TEMPERATURE

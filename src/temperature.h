@@ -2,29 +2,16 @@
 #define __temperature_h
 
 #include "definitions.h"
-#include "atoll_temperature_sensor.h"
 #include "atoll_preferences.h"
-
-#ifndef TC_TABLE_SIZE
-#define TC_TABLE_SIZE 50  // temperature correction lookup table size
-#endif
-
-#ifndef TC_TABLE_OFFSET
-#define TC_TABLE_OFFSET -15  // first element corresponds to the correction value at -15˚C
-#endif
-
-#ifndef TC_TABLE_MAGNITUDE
-#define TC_TABLE_MAGNITUDE 0.1F  // a value of 10 means +1kg correction
-#endif
-
-#define TC_VALUE_EMPTY INT8_MIN
+#include "atoll_temperature_sensor.h"
+#include "temperature_compensation.h"
 
 class Temperature : public Atoll::Preferences {
    public:
     typedef Atoll::TemperatureSensor Sensor;
-    typedef int8_t CorrectionTable[TC_TABLE_SIZE];
 
     Sensor *crankSensor = nullptr;
+    TemperatureCompensation *tc = nullptr;
 
     Temperature();
     ~Temperature();
@@ -34,19 +21,14 @@ class Temperature : public Atoll::Preferences {
 
     void onSensorValueChange(Sensor *sensor);
 
-    size_t tcTableSize();
-
-    int8_t tcTableGetValue(uint16_t index);
-    bool tcTableSetValue(uint16_t index, int8_t value);
-    bool tcTableUnsetValue(uint16_t index);
-    float tcGetCorrection();
+    bool setCompensationOffset();
+    float getCompensation();
 
    protected:
-    bool tcTableValidIndex(uint16_t index);
-    void tcSetCorrection(float temperature);
+    void setCompensation(float temperature);
 
-    float correction = 0.0f;  // kg
-    CorrectionTable tcTable;
+    float compensationOffset = 0.0f;  // kg
+    float compensation = 0.0f;        // kg
 };
 
 #endif
