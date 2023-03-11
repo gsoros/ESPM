@@ -1,7 +1,9 @@
-#if !defined(__temperature_compensation_h) && defined(FEATURE_TEMPERATURE)
+#if !defined(__temperature_compensation_h) && defined(FEATURE_TEMPERATURE_COMPENSATION)
 #define __temperature_compensation_h
 
 #include <Arduino.h>
+#include "atoll_preferences.h"
+#include "api.h"
 
 #ifndef TC_TABLE_SIZE
 #define TC_TABLE_SIZE 256  // temperature correction lookup table size
@@ -20,8 +22,10 @@
 #endif
 
 #define TC_TABLE_VALUE_UNSET INT8_MIN
+#define TC_TABLE_VALUE_MIN INT8_MIN + 1
+#define TC_TABLE_VALUE_MAX INT8_MAX
 
-class TemperatureCompensation {
+class TemperatureCompensation : public Atoll::Preferences {
    public:
     TemperatureCompensation(
         uint16_t size = TC_TABLE_SIZE,
@@ -29,6 +33,8 @@ class TemperatureCompensation {
         float keyResolution = TC_TABLE_KEY_RESOLUTION,
         float valueResolution = TC_TABLE_VALUE_RESOLUTION);
     ~TemperatureCompensation();
+
+    void setup(::Preferences *p);
 
     uint16_t getSize();
     bool setSize(uint16_t size);
@@ -48,6 +54,8 @@ class TemperatureCompensation {
 
     bool validIndex(uint16_t index);
 
+    bool enabled = false;
+
    protected:
     int8_t *values = nullptr;
     uint16_t size = 0;
@@ -57,6 +65,15 @@ class TemperatureCompensation {
 
    public:
     const int8_t valueUnset = TC_TABLE_VALUE_UNSET;
+    const int8_t valueMin = TC_TABLE_VALUE_MIN;
+    const int8_t valueMax = TC_TABLE_VALUE_MAX;
+
+    void loadSettings();
+    void saveSettings();
+    void printSettings();
+
+    void addApiCommand();
+    Api::Result *tcProcessor(Api::Message *msg);
 };
 
 #endif

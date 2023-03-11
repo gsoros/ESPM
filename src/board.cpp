@@ -16,9 +16,8 @@ void Board::setup() {
     loadSettings();
     log_i("\n\n\n%s %s %s\n\n\n", hostName, __DATE__, __TIME__);
     setupTask("bleServer");
-    api.setup(&api, &arduinoPreferences, "API", &bleServer, API_SERVICE_UUID);
-    ota.setup(hostName, 3232, true);
-
+    setupTask("api");
+    setupTask("ota");
     setupTask("led");
     setupTask("wifi");
     setupTask("battery");
@@ -27,6 +26,7 @@ void Board::setup() {
     setupTask("power");
     // setupTask("status");
     setupTask("temperature");
+    setupTask("tc");
 
     bleServer.start();
     wifi.start();
@@ -43,6 +43,14 @@ void Board::setupTask(const char *taskName) {
     }
     if (strcmp("bleServer", taskName) == 0) {
         bleServer.setup(hostName, preferences);
+        return;
+    }
+    if (strcmp("api", taskName) == 0) {
+        api.setup(&api, &arduinoPreferences, "API", API_SERVICE_UUID);
+        return;
+    }
+    if (strcmp("ota", taskName) == 0) {
+        ota.setup(hostName, 3232, true);
         return;
     }
     if (strcmp("battery", taskName) == 0) {
@@ -68,10 +76,22 @@ void Board::setupTask(const char *taskName) {
     // }
     if (strcmp("temperature", taskName) == 0) {
 #ifdef FEATURE_TEMPERATURE
-        temperature.setup();
+        temperature.setup(
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
+            &tc
+#endif  // FEATURE_TEMPERATURE_COMPENSATION
+        );
 #else
-        log_d("no temperature sensor support")
-#endif
+        log_d("no temperature sensor support");
+#endif  // FEATURE_TEMPERATURE
+        return;
+    }
+    if (strcmp("tc", taskName) == 0) {
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
+        tc.setup(preferences);
+#else
+        log_d("no temperature compensation support");
+#endif  // FEATURE_TEMPERATURE_COMPENSATION
         return;
     }
     log_e("unknown task: %s", taskName);

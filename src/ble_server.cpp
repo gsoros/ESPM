@@ -75,8 +75,8 @@ void BleServer::startCpService() {
     // Cycling Power Feature
     BLECharacteristic *cpfChar = cps->createCharacteristic(
         BLEUUID(CYCLING_POWER_FEATURE_CHAR_UUID),
-        NIMBLE_PROPERTY::READ
-        //| NIMBLE_PROPERTY::READ_ENC
+        BLE_PROP::READ
+        //| BLE_PROP::READ_ENC
     );
     cpfChar->setCallbacks(this);
 
@@ -93,13 +93,13 @@ void BleServer::startCpService() {
     // Cycling Power Measurement
     cpmChar = cps->createCharacteristic(
         BLEUUID(CYCLING_POWER_MEASUREMENT_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
-        //| NIMBLE_PROPERTY::INDICATE
+        BLE_PROP::READ | BLE_PROP::NOTIFY
+        //| BLE_PROP::INDICATE
     );
 
     BLEDescriptor *cpmDesc = cpmChar->createDescriptor(
         BLEUUID(CYCLING_POWER_MEASUREMENT_DESC_UUID),
-        NIMBLE_PROPERTY::READ);
+        BLE_PROP::READ);
     char s[SETTINGS_STR_LENGTH];
     strncpy(s, cadenceInCpm ? "Power and cadence measurement" : "Power measurement", sizeof(s));
     cpmDesc->setValue((uint8_t *)s, strlen(s));
@@ -110,7 +110,7 @@ void BleServer::startCpService() {
     /*
     BLECharacteristic *cpChar = cps->createCharacteristic(
         BLEUUID(SC_CONTROL_POINT_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE
+        BLE_PROP::READ | BLE_PROP::WRITE
     );
     bufControlPoint[0] = SC_CONTROL_POINT_OP_SET_CUMULATIVE_VALUE;
     cpChar->setValue((uint8_t *)&bufControlPoint, 1);
@@ -119,8 +119,8 @@ void BleServer::startCpService() {
     // CPS Sensor Location
     BLECharacteristic *slChar = cps->createCharacteristic(
         BLEUUID(SENSOR_LOCATION_CHAR_UUID),
-        NIMBLE_PROPERTY::READ
-        //| NIMBLE_PROPERTY::READ_ENC
+        BLE_PROP::READ
+        //| BLE_PROP::READ_ENC
     );
     slChar->setCallbacks(this);
     bufSensorLocation[0] = SENSOR_LOCATION_RIGHT_CRANK & 0xff;
@@ -144,8 +144,8 @@ void BleServer::startCscService() {
     // Cycling Speed and Cadence Feature
     BLECharacteristic *cscfChar = cscs->createCharacteristic(
         BLEUUID(CSC_FEATURE_CHAR_UUID),
-        NIMBLE_PROPERTY::READ
-        //| NIMBLE_PROPERTY::READ_ENC
+        BLE_PROP::READ
+        //| BLE_PROP::READ_ENC
     );
     cscfChar->setCallbacks(this);
     bufSpeedCadenceFeature[0] = 0x00;
@@ -156,13 +156,13 @@ void BleServer::startCscService() {
     // Cycling Speed and Cadence Measurement
     cscmChar = cscs->createCharacteristic(
         BLEUUID(CSC_MEASUREMENT_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
-        // NIMBLE_PROPERTY::INDICATE
+        BLE_PROP::READ | BLE_PROP::NOTIFY
+        // BLE_PROP::INDICATE
     );
 
     BLEDescriptor *cscmDesc = cscmChar->createDescriptor(
         BLEUUID(CSC_MEASUREMENT_DESC_UUID),
-        NIMBLE_PROPERTY::READ);
+        BLE_PROP::READ);
     char s[SETTINGS_STR_LENGTH] = "Cadence measurement";
     cscmDesc->setValue((uint8_t *)s, strlen(s));
 
@@ -186,8 +186,8 @@ void BleServer::startWsService() {
     // Weight Scale Feature
     BLECharacteristic *wsfChar = wss->createCharacteristic(
         BLEUUID(WEIGHT_SCALE_FEATURE_UUID),
-        NIMBLE_PROPERTY::READ
-        //| NIMBLE_PROPERTY::READ_ENC
+        BLE_PROP::READ
+        //| BLE_PROP::READ_ENC
     );
     wsfChar->setCallbacks(this);
     unsigned char bufWsf[4];
@@ -200,13 +200,13 @@ void BleServer::startWsService() {
     // Weight Measurement
     wmChar = wss->createCharacteristic(
         BLEUUID(WEIGHT_MEASUREMENT_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
-        // NIMBLE_PROPERTY::INDICATE
+        BLE_PROP::READ | BLE_PROP::NOTIFY
+        // BLE_PROP::INDICATE
     );
 
     BLEDescriptor *wmDesc = wmChar->createDescriptor(
         BLEUUID(WEIGHT_MEASUREMENT_DESC_UUID),
-        NIMBLE_PROPERTY::READ);
+        BLE_PROP::READ);
     char s[SETTINGS_STR_LENGTH] = "Can be enabled in API";
     wmDesc->setValue((uint8_t *)s, strlen(s));
 

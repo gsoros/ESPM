@@ -5,55 +5,49 @@ void Api::setup(
     Api *instance,
     ::Preferences *p,
     const char *preferencesNS,
-    BleServer *bleServer,
     const char *serviceUuid) {
-    Atoll::Api::setup(instance, p, preferencesNS, bleServer, serviceUuid);
-
-    addCommand(ApiCommand("system", Api::systemProcessor));
-    addCommand(ApiCommand("wse", Api::weightServiceProcessor));
-    addCommand(ApiCommand("cs", Api::calibrateStrainProcessor));
-    addCommand(ApiCommand("tare", Api::tareProcessor));
-    addCommand(ApiCommand("cl", Api::crankLengthProcessor));
-    addCommand(ApiCommand("rs", Api::reverseStrainProcessor));
-    addCommand(ApiCommand("dp", Api::doublePowerProcessor));
-    addCommand(ApiCommand("sd", Api::sleepDelayProcessor));
-    addCommand(ApiCommand("hc", Api::hallCharProcessor));
-    addCommand(ApiCommand("ho", Api::hallOffsetProcessor));
-    addCommand(ApiCommand("ht", Api::hallThresholdProcessor));
-    addCommand(ApiCommand("htl", Api::hallThresLowProcessor));
-    addCommand(ApiCommand("st", Api::strainThresholdProcessor));
-    addCommand(ApiCommand("stl", Api::strainThresLowProcessor));
-    addCommand(ApiCommand("mdm", Api::motionDetectionMethodProcessor));
-    addCommand(ApiCommand("sleep", Api::sleepProcessor));
-    addCommand(ApiCommand("ntm", Api::negativeTorqueMethodProcessor));
-    addCommand(ApiCommand("at", Api::autoTareProcessor));
-    addCommand(ApiCommand("atd", Api::autoTareDelayMsProcessor));
-    addCommand(ApiCommand("atr", Api::autoTareRangeGProcessor));
+    Atoll::Api::setup(instance, p, preferencesNS, &board.bleServer, serviceUuid);
+    addCommand(Command("system", systemProcessor));
+    addCommand(Command("wse", weightServiceProcessor));
+    addCommand(Command("cs", calibrateStrainProcessor));
+    addCommand(Command("tare", tareProcessor));
+    addCommand(Command("cl", crankLengthProcessor));
+    addCommand(Command("rs", reverseStrainProcessor));
+    addCommand(Command("dp", doublePowerProcessor));
+    addCommand(Command("sd", sleepDelayProcessor));
+    addCommand(Command("hc", hallCharProcessor));
+    addCommand(Command("ho", hallOffsetProcessor));
+    addCommand(Command("ht", hallThresholdProcessor));
+    addCommand(Command("htl", hallThresLowProcessor));
+    addCommand(Command("st", strainThresholdProcessor));
+    addCommand(Command("stl", strainThresLowProcessor));
+    addCommand(Command("mdm", motionDetectionMethodProcessor));
+    addCommand(Command("sleep", sleepProcessor));
+    addCommand(Command("ntm", negativeTorqueMethodProcessor));
+    addCommand(Command("at", autoTareProcessor));
+    addCommand(Command("atd", autoTareDelayMsProcessor));
+    addCommand(Command("atr", autoTareRangeGProcessor));
 }
 
 void Api::beforeBleServiceStart(BLEService *service) {
     // add api char for reading hall effect sensor measurements
-    if (!Atoll::Api::bleServer) {
-        log_e("bleServer is null");
-        return;
-    }
-    BleServer *s = (BleServer *)Atoll::Api::bleServer;
-    s->hallChar = service->createCharacteristic(
+    BleServer *bleServer = &board.bleServer;
+    bleServer->hallChar = service->createCharacteristic(
         BLEUUID(HALL_CHAR_UUID),
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
-    s->hallChar->setCallbacks(s);
+        BLE_PROP::READ | BLE_PROP::INDICATE | BLE_PROP::NOTIFY);
+    bleServer->hallChar->setCallbacks(&board.bleServer);
     uint8_t bytes[2];
     bytes[0] = 0 & 0xff;
     bytes[1] = (0 >> 8) & 0xff;
-    s->hallChar->setValue((uint8_t *)bytes, 2);  // set initial value
-    BLEDescriptor *hallDesc = s->hallChar->createDescriptor(
+    bleServer->hallChar->setValue((uint8_t *)bytes, 2);  // set initial value
+    BLEDescriptor *hallDesc = bleServer->hallChar->createDescriptor(
         BLEUUID(HALL_DESC_UUID),
-        NIMBLE_PROPERTY::READ);
+        BLE_PROP::READ);
     char str[] = "Hall Effect Sensor reading";
     hallDesc->setValue((uint8_t *)str, strlen(str));
 }
 
-ApiResult *Api::systemProcessor(ApiMessage *msg) {
+Api::Result *Api::systemProcessor(Message *msg) {
     if (msg->argStartsWith("hostname")) {
         char buf[sizeof(board.hostName)] = "";
         msg->argGetParam("hostname:", buf, sizeof(buf));
@@ -80,7 +74,7 @@ ApiResult *Api::systemProcessor(ApiMessage *msg) {
     return Atoll::Api::systemProcessor(msg);
 }
 
-ApiResult *Api::weightServiceProcessor(ApiMessage *msg) {
+Api::Result *Api::weightServiceProcessor(Message *msg) {
     // set value
     if (0 < strlen(msg->arg)) {
         uint8_t newValue = (uint8_t)atoi(msg->arg);
@@ -95,8 +89,8 @@ ApiResult *Api::weightServiceProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::calibrateStrainProcessor(ApiMessage *msg) {
-    ApiResult *result = argInvalid();
+Api::Result *Api::calibrateStrainProcessor(Message *msg) {
+    Api::Result *result = argInvalid();
     float knownMass;
     knownMass = (float)atof(msg->arg);
     if (1 < knownMass && knownMass < 1000) {
@@ -112,7 +106,7 @@ ApiResult *Api::calibrateStrainProcessor(ApiMessage *msg) {
     return result;
 }
 
-ApiResult *Api::tareProcessor(ApiMessage *msg) {
+Api::Result *Api::tareProcessor(Message *msg) {
     if (0 < strlen(msg->arg)) {
         board.strain.tare();
         return success();
@@ -120,8 +114,8 @@ ApiResult *Api::tareProcessor(ApiMessage *msg) {
     return argInvalid();
 }
 
-ApiResult *Api::crankLengthProcessor(ApiMessage *msg) {
-    ApiResult *result = success();
+Api::Result *Api::crankLengthProcessor(Message *msg) {
+    Api::Result *result = success();
     if (1 < strlen(msg->arg)) {
         result = error();
         float crankLength = (float)atof(msg->arg);
@@ -137,7 +131,7 @@ ApiResult *Api::crankLengthProcessor(ApiMessage *msg) {
     return result;
 }
 
-ApiResult *Api::reverseStrainProcessor(ApiMessage *msg) {
+Api::Result *Api::reverseStrainProcessor(Message *msg) {
     bool newValue = false;  // disable by default
     if (0 < strlen(msg->arg)) {
         if (0 == strcmp("true", msg->arg) || 0 == strcmp("1", msg->arg)) {
@@ -153,7 +147,7 @@ ApiResult *Api::reverseStrainProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::doublePowerProcessor(ApiMessage *msg) {
+Api::Result *Api::doublePowerProcessor(Message *msg) {
     bool newValue = false;  // disable by default
     if (0 < strlen(msg->arg)) {
         if (0 == strcmp("true", msg->arg) || 0 == strcmp("1", msg->arg)) {
@@ -169,8 +163,8 @@ ApiResult *Api::doublePowerProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::sleepDelayProcessor(ApiMessage *msg) {
-    ApiResult *result = success();
+Api::Result *Api::sleepDelayProcessor(Message *msg) {
+    Api::Result *result = success();
     if (1 < strlen(msg->arg)) {
         result = error();
         ulong sleepDelay = (ulong)atoi(msg->arg);
@@ -186,7 +180,7 @@ ApiResult *Api::sleepDelayProcessor(ApiMessage *msg) {
     return result;
 }
 
-ApiResult *Api::hallCharProcessor(ApiMessage *msg) {
+Api::Result *Api::hallCharProcessor(Message *msg) {
     bool newValue = false;  // disable by default
     if (0 < strlen(msg->arg)) {
         if (0 == strcmp("true", msg->arg) || 0 == strcmp("1", msg->arg)) {
@@ -201,7 +195,7 @@ ApiResult *Api::hallCharProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::hallOffsetProcessor(ApiMessage *msg) {
+Api::Result *Api::hallOffsetProcessor(Message *msg) {
     if (0 < strlen(msg->arg)) {
         board.motion.hallOffset = atoi(msg->arg);
         board.motion.saveSettings();
@@ -212,7 +206,7 @@ ApiResult *Api::hallOffsetProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::hallThresholdProcessor(ApiMessage *msg) {
+Api::Result *Api::hallThresholdProcessor(Message *msg) {
     if (0 < strlen(msg->arg)) {
         board.motion.setHallThreshold(atoi(msg->arg));
         board.motion.saveSettings();
@@ -223,7 +217,7 @@ ApiResult *Api::hallThresholdProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::hallThresLowProcessor(ApiMessage *msg) {
+Api::Result *Api::hallThresLowProcessor(Message *msg) {
     if (0 < strlen(msg->arg)) {
         board.motion.setHallThresLow(atoi(msg->arg));
         board.motion.saveSettings();
@@ -234,7 +228,7 @@ ApiResult *Api::hallThresLowProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::strainThresholdProcessor(ApiMessage *msg) {
+Api::Result *Api::strainThresholdProcessor(Message *msg) {
     if (0 < strlen(msg->arg)) {
         board.strain.setMdmStrainThreshold(atoi(msg->arg));
         board.strain.saveSettings();
@@ -245,7 +239,7 @@ ApiResult *Api::strainThresholdProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::strainThresLowProcessor(ApiMessage *msg) {
+Api::Result *Api::strainThresLowProcessor(Message *msg) {
     if (0 < strlen(msg->arg)) {
         board.strain.setMdmStrainThresLow(atoi(msg->arg));
         board.strain.saveSettings();
@@ -256,8 +250,8 @@ ApiResult *Api::strainThresLowProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::motionDetectionMethodProcessor(ApiMessage *msg) {
-    ApiResult *result = error();
+Api::Result *Api::motionDetectionMethodProcessor(Message *msg) {
+    Api::Result *result = error();
     if (0 < strlen(msg->arg)) {
         int tmpI = atoi(msg->arg);
         if (0 <= tmpI && tmpI < MDM_MAX) {
@@ -274,8 +268,8 @@ ApiResult *Api::motionDetectionMethodProcessor(ApiMessage *msg) {
     return result;
 }
 
-ApiResult *Api::sleepProcessor(ApiMessage *msg) {
-    ApiResult *result = argInvalid();
+Api::Result *Api::sleepProcessor(Message *msg) {
+    Api::Result *result = argInvalid();
     if (0 == strcmp("true", msg->arg) || 0 == strcmp("1", msg->arg)) {
         result = board.deepSleep() == 0 ? success() : error();
     }
@@ -283,8 +277,8 @@ ApiResult *Api::sleepProcessor(ApiMessage *msg) {
     return result;
 }
 
-ApiResult *Api::negativeTorqueMethodProcessor(ApiMessage *msg) {
-    ApiResult *result = error();
+Api::Result *Api::negativeTorqueMethodProcessor(Message *msg) {
+    Api::Result *result = error();
     if (0 < strlen(msg->arg)) {
         int tmpI = atoi(msg->arg);
         if (0 <= tmpI && tmpI < NTM_MAX) {
@@ -301,7 +295,7 @@ ApiResult *Api::negativeTorqueMethodProcessor(ApiMessage *msg) {
     return result;
 }
 
-ApiResult *Api::autoTareProcessor(ApiMessage *msg) {
+Api::Result *Api::autoTareProcessor(Message *msg) {
     if (0 < strlen(msg->arg)) {
         int i = atoi(msg->arg);
         if (0 == strcmp("true", msg->arg) || 1 == i)
@@ -316,7 +310,7 @@ ApiResult *Api::autoTareProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::autoTareDelayMsProcessor(ApiMessage *msg) {
+Api::Result *Api::autoTareDelayMsProcessor(Message *msg) {
     if (0 < strlen(msg->arg)) {
         int tmpI = atoi(msg->arg);
         if (10 < tmpI && tmpI < 10000) {
@@ -330,7 +324,7 @@ ApiResult *Api::autoTareDelayMsProcessor(ApiMessage *msg) {
     return success();
 }
 
-ApiResult *Api::autoTareRangeGProcessor(ApiMessage *msg) {
+Api::Result *Api::autoTareRangeGProcessor(Message *msg) {
     if (0 < strlen(msg->arg)) {
         int tmpI = atoi(msg->arg);
         if (10 < tmpI && tmpI < 10000) {

@@ -2,33 +2,38 @@
 #define __temperature_h
 
 #include "definitions.h"
-#include "atoll_preferences.h"
 #include "atoll_temperature_sensor.h"
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
 #include "temperature_compensation.h"
+#endif
 
-class Temperature : public Atoll::Preferences {
+class Temperature {
    public:
     typedef Atoll::TemperatureSensor Sensor;
 
     Sensor *crankSensor = nullptr;
-    TemperatureCompensation *tc = nullptr;
 
     Temperature();
     ~Temperature();
 
-    void setup();
     void begin();
 
     void onSensorValueChange(Sensor *sensor);
 
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
+    typedef TemperatureCompensation TC;
+    void setup(TC *tc);
+    TC *tc = nullptr;
     bool setCompensationOffset();
     float getCompensation();
 
    protected:
     void setCompensation(float temperature);
-
     float compensationOffset = 0.0f;  // kg
     float compensation = 0.0f;        // kg
+#else
+    void setup();
+#endif  // FEATURE_TEMPERATURE_COMPENSATION
 };
 
 #endif

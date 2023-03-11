@@ -10,10 +10,17 @@ Temperature::Temperature() {}
 
 Temperature::~Temperature() {
     if (crankSensor) delete crankSensor;
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
     if (tc) delete tc;
+#endif
 }
 
-void Temperature::setup() {
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
+void Temperature::setup(TC *tc)
+#else
+void Temperature::setup()
+#endif  // FEATURE_TEMPERATURE_COMPENSATION
+{
     uint32_t heap = esp_get_free_heap_size();
     int stack = (int)uxTaskGetStackHighWaterMark(NULL);
     crankSensor = new Sensor(                                    // single sensor: exclusive mode
@@ -26,7 +33,9 @@ void Temperature::setup() {
 #ifdef FEATURE_BLE_SERVER
     crankSensor->addBleService(&board.bleServer);
 #endif
-    tc = new TemperatureCompensation();
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
+    this->tc = tc;
+#endif
     log_d("heap used: %d, stack used: %d",
           heap - esp_get_free_heap_size(),
           stack - (int)uxTaskGetStackHighWaterMark(NULL));
@@ -40,14 +49,21 @@ void Temperature::begin() {
 }
 
 void Temperature::onSensorValueChange(Sensor *sensor) {
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
     if (sensor->address == crankSensor->address)
         setCompensation(sensor->value);
     log_i("%s temp: %.2f°C, compensation: %.1fkg",
           sensor->label,
           sensor->value,
           getCompensation());
+#else
+    log_i("%s temp: %.2f°C",
+          sensor->label,
+          sensor->value);
+#endif
 }
 
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
 /// @brief set offset to current compensation value, e.g. after tare
 /// @return
 bool Temperature::setCompensationOffset() {
@@ -75,7 +91,7 @@ void Temperature::setCompensation(float temperature) {
         log_e("could not find index for %.2f˚C", temperature);
     }
     int8_t skew = tc->getValue(index);
-    log_d("index: %d, skew: %d", index, skew);
+    log_d("index: %d, skew: %d%s", index, skew, tc->valueUnset == skew ? " (value not set)" : "");
     if (skew == tc->valueUnset)
         compensation = 0.0f;
     else
@@ -89,5 +105,6 @@ float Temperature::getCompensation() {
     // TODO check crankSensor->lastUpdate etc
     return compensation - compensationOffset;
 }
+#endif  // FEATURE_TEMPERATURE_COMPENSATION
 
 #endif  // FEATURE_TEMPERATURE

@@ -24,6 +24,9 @@
 #ifdef FEATURE_TEMPERATURE
 #include "temperature.h"
 #endif
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
+#include "temperature_compensation.h"
+#endif
 
 #include "motion.h"
 #include "strain.h"
@@ -55,6 +58,9 @@ class Board : public Atoll::Task,
 
 #ifdef FEATURE_TEMPERATURE
     Temperature temperature;
+#endif
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
+    TemperatureCompensation tc;
 #endif
 
     bool otaMode = false;

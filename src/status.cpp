@@ -406,7 +406,7 @@ void Status::handleInput(const char input) {
                         menu[1] = '\0';
                         break;
                     case 'u': {
-                        ApiMessage msg = board.api.process("init", false);
+                        Api::Message msg = board.api.process("init", false);
                         Serial.printf("init length=%d\n", strlen(msg.reply));
                         Serial.println(msg.reply);
                         menu[1] = '\0';
@@ -440,7 +440,7 @@ void Status::handleInput(const char input) {
                         getStr(tmpStr, 6);
                         char command[16];
                         snprintf(command, sizeof(command), "passkey=%s", tmpStr);
-                        ApiMessage msg = board.api.process(command);
+                        Api::Message msg = board.api.process(command);
                         Serial.printf("Reply from API: %d:%s\n", msg.result->code, msg.reply);
                         menu[1] = '\0';
                     } break;
