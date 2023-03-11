@@ -27,7 +27,7 @@ void Temperature::setup()
         TEMPERATURE_PIN,                                         // pin
         "crank",                                                 // label
         11,                                                      // resolution
-        1.0f,                                                    // update frequency
+        0.2f,                                                    // update frequency
         [this](Sensor *sensor) { onSensorValueChange(sensor); }  // callback
     );
 #ifdef FEATURE_BLE_SERVER
