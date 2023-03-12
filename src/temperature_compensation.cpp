@@ -177,17 +177,16 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
             enabled = atoi(msg->arg);
             saveSettings();
         }
-        snprintf(msg->reply, sizeof(msg->reply), "%d=%d", Api::command("tc")->code, enabled);
+        snprintf(msg->reply, sizeof(msg->reply), "%d", enabled);
         return Api::success();
     }
 
-    // get/set params: params[;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;] -> =size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;
-    if (msg->argStartsWith("params")) {
-        if (msg->argStartsWith("params;")) {
+    // get/set table params: table[;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;] -> =size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;
+    if (msg->argStartsWith("table")) {
+        if (msg->argStartsWith("table;")) {
             uint8_t changed = 0;
             char buf[8] = "";
-            if (msg->argHasParam("size:")) {
-                msg->argGetParam("size:", buf, sizeof(buf));
+            if (msg->argGetParam("size:", buf, sizeof(buf))) {
                 int i = atoi(buf);
                 if (i < 16 || 10000 < i) {
                     msg->replyAppend("size out of range (16-10000)");
@@ -198,8 +197,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
                     changed++;
                 }
             }
-            if (msg->argHasParam("keyOffset:")) {
-                msg->argGetParam("keyOffset:", buf, sizeof(buf));
+            if (msg->argGetParam("keyOffset:", buf, sizeof(buf))) {
                 int i = atoi(buf);
                 if (i < INT16_MIN || INT16_MAX < i) {
                     msg->replyAppend("keyOffset out of range (int16)");
@@ -210,8 +208,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
                     changed++;
                 }
             }
-            if (msg->argHasParam("keyRes:")) {
-                msg->argGetParam("keyRes:", buf, sizeof(buf));
+            if (msg->argGetParam("keyRes:", buf, sizeof(buf))) {
                 double f = atof(buf);
                 if (f < 0.01 || 1.0 < f) {
                     msg->replyAppend("keyRes out of range (0.01-1.0)");
@@ -222,8 +219,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
                     changed++;
                 }
             }
-            if (msg->argHasParam("valueRes:")) {
-                msg->argGetParam("valueRes:", buf, sizeof(buf));
+            if (msg->argGetParam("valueRes:", buf, sizeof(buf))) {
                 double f = atof(buf);
                 if (f < 0.01 || 1.0 < f) {
                     msg->replyAppend("valueRes out of range (0.01-1.0)");
@@ -319,7 +315,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
         return Api::argInvalid();
     }
     }
-    msg->replyAppend("0|1|params[;size:uint16;keyOffset:int8;keyRes:float;valueRes:float;]|valuesFrom:uint16[;set:int8,int8,...]");
+    msg->replyAppend("0|1|table[;size:uint16;keyOffset:int8;keyRes:float;valueRes:float;]|valuesFrom:uint16[;set:int8,int8,...]");
     return Api::argInvalid();
 
     /*
@@ -334,7 +330,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
     tc=valuesFrom:60;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
     tc=valuesFrom:80;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
     tc=valuesFrom:100;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
-    tc=params;size:20;keyOffset:0;keyRes:1.0;valueRes:0.1;
+    tc=table;size:20;keyOffset:0;keyRes:1.0;valueRes:0.1;
     */
 }
 

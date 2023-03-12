@@ -25,7 +25,7 @@ void Temperature::setup()
     int stack = (int)uxTaskGetStackHighWaterMark(NULL);
     crankSensor = new Sensor(                                    // single sensor: exclusive mode
         TEMPERATURE_PIN,                                         // pin
-        "crank",                                                 // label
+        "tCrank",                                                // label
         11,                                                      // resolution
         0.2f,                                                    // update frequency
         [this](Sensor *sensor) { onSensorValueChange(sensor); }  // callback
@@ -43,7 +43,7 @@ void Temperature::setup()
 
 void Temperature::begin() {
     if (!crankSensor)
-        log_e("crank is null");
+        log_e("no crank sensor");
     else
         crankSensor->begin();
 }
@@ -52,12 +52,12 @@ void Temperature::onSensorValueChange(Sensor *sensor) {
 #ifdef FEATURE_TEMPERATURE_COMPENSATION
     if (sensor->address == crankSensor->address)
         setCompensation(sensor->value);
-    log_i("%s temp: %.2f°C, compensation: %.1fkg",
+    log_i("%s: %.2f°C, compensation: %.1fkg",
           sensor->label,
           sensor->value,
           getCompensation());
 #else
-    log_i("%s temp: %.2f°C",
+    log_i("%s: %.2f°C",
           sensor->label,
           sensor->value);
 #endif
@@ -77,7 +77,11 @@ void Temperature::setCompensation(float temperature) {
         compensation = 0.0f;
         return;
     }
-
+    if (!tc->enabled) {
+        // log_d("tc not enabled");
+        compensation = 0.0f;
+        return;
+    }
     float keyResolution = tc->getKeyResolution();
     if (keyResolution <= 0.0) {
         log_e("invalid key resolution");
