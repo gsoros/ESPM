@@ -232,7 +232,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
             }
             if (changed) saveSettings();
         }
-        snprintf(msg->reply, sizeof(msg->reply), "%d=size:%d;keyOffset:%d;keyRes:%.2f;valueRes:%.2f;",
+        snprintf(msg->reply, sizeof(msg->reply), "%d=table;size:%d;keyOffset:%d;keyRes:%.2f;valueRes:%.2f;",
                  Api::command("tc")->code,
                  getSize(),
                  getKeyOffset(),
@@ -325,12 +325,12 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
     tc=valuesFrom:0;set:,, ,,100,,                       // ok
     tc=valuesFrom:0;set: ,, ,,,,,                        // ok
     tc=valuesFrom:0;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
-    tc=valuesFrom:20;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
+    tc=valuesFrom:20;set:-90,,23,24,27,32,33,31,30,26,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
     tc=valuesFrom:40;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
     tc=valuesFrom:60;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
     tc=valuesFrom:80;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
     tc=valuesFrom:100;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
-    tc=table;size:20;keyOffset:0;keyRes:1.0;valueRes:0.1;
+    tc=table;size:100;keyOffset:-15;keyRes:0.5;valueRes:0.1;
     */
 }
 
