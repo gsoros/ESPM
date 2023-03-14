@@ -171,17 +171,19 @@ void TemperatureCompensation::addApiCommand() {
 }
 
 Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
-    // get/set enabled: tc=[0|1] -> =0|1
-    if (msg->argIs("") || msg->argIs("0") || msg->argIs("1")) {
-        if (msg->argIs("0") || msg->argIs("1")) {
-            enabled = atoi(msg->arg);
+    // get/set enabled: tc=[enabled][:0|1] -> =enabled:0|1
+    if (msg->argIs("") || msg->argStartsWith("enabled")) {
+        if (msg->argHasParam("enabled:")) {
+            char buf[2] = "";
+            msg->argGetParam("enabled:", buf, sizeof(buf));
+            enabled = atoi(buf);
             saveSettings();
         }
-        snprintf(msg->reply, sizeof(msg->reply), "%d", enabled);
+        snprintf(msg->reply, sizeof(msg->reply), "enabled:%d", enabled);
         return Api::success();
     }
 
-    // get/set table params: table[;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;] -> =size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;
+    // get/set table params: table[;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;] -> =table;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;
     if (msg->argStartsWith("table")) {
         if (msg->argStartsWith("table;")) {
             uint8_t changed = 0;
@@ -232,8 +234,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
             }
             if (changed) saveSettings();
         }
-        snprintf(msg->reply, sizeof(msg->reply), "%d=table;size:%d;keyOffset:%d;keyRes:%.2f;valueRes:%.2f;",
-                 Api::command("tc")->code,
+        snprintf(msg->reply, sizeof(msg->reply), "table;size:%d;keyOffset:%d;keyRes:%.2f;valueRes:%.2f;",
                  getSize(),
                  getKeyOffset(),
                  getKeyResolution(),
@@ -295,12 +296,15 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
             snprintf(msg->reply, sizeof(msg->reply), "valuesFrom:%d;", index);
             int8_t value;
             int avail = sizeof(msg->reply) - strlen(msg->reply) - 10;
-            for (int16_t i = index; i < getSize(); i++) {
+            uint16_t size = getSize();
+            for (int16_t i = index; i < size; i++) {
                 value = getValue(i);
-                if (valueUnset == value)
+                if (valueUnset == value && i + 1 < size)
                     snprintf(buf, sizeof(buf), ",", value);
-                else
+                else if (i + 1 < size)
                     snprintf(buf, sizeof(buf), "%d,", value);
+                else
+                    snprintf(buf, sizeof(buf), "%d", value);  // last value
                 avail -= strlen(buf);
                 if (avail <= 0) break;
                 msg->replyAppend(buf);
@@ -315,7 +319,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
         return Api::argInvalid();
     }
     }
-    msg->replyAppend("0|1|table[;size:uint16;keyOffset:int8;keyRes:float;valueRes:float;]|valuesFrom:uint16[;set:int8,int8,...]");
+    msg->replyAppend("[enabled[:0|1]]|table[;size:uint16;keyOffset:int8;keyRes:float;valueRes:float;]|valuesFrom:uint16[;set:[int8],[int8],...]");
     return Api::argInvalid();
 
     /*
