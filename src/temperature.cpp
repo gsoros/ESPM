@@ -52,10 +52,11 @@ void Temperature::onSensorValueChange(Sensor *sensor) {
 #ifdef FEATURE_TEMPERATURE_COMPENSATION
     if (sensor->address == crankSensor->address)
         setCompensation(sensor->value);
-    log_i("%s: %.2f°C, compensation: %.1fkg",
+    log_i("%s: %.2f°C, compensation: %.1fkg%s",
           sensor->label,
           sensor->value,
-          getCompensation());
+          getCompensation(),
+          tc->enabled ? "" : " (disabled)");
 #else
     log_i("%s: %.2f°C",
           sensor->label,
@@ -83,7 +84,7 @@ void Temperature::setCompensation(float temperature) {
         return;
     }
     float keyResolution = tc->getKeyResolution();
-    if (keyResolution <= 0.0) {
+    if (keyResolution <= 0.0f) {
         log_e("invalid key resolution");
         compensation = 0.0f;
         return;
@@ -93,15 +94,17 @@ void Temperature::setCompensation(float temperature) {
     uint16_t index = (uint16_t)((temperature - (float)tc->getKeyOffset()) / keyResolution);
     if (!tc->validIndex(index)) {
         log_e("could not find index for %.2f˚C", temperature);
+        return;
     }
     int8_t skew = tc->getValue(index);
     log_d("index: %d, skew: %d", index, skew);
     compensation = (float)skew * tc->getValueResolution();
 }
 
-/// @brief Get current temperature compensation value for the weight scale.
+/// @brief Get current TC value for the weight scale, if TC is enabled
 /// @return value in kg
 float Temperature::getCompensation() {
+    if (!tc->enabled) return 0.0f;
     // if (!crankSensor) return 0.0f;
     // TODO check crankSensor->lastUpdate etc
     return compensation - compensationOffset;

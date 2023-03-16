@@ -76,7 +76,7 @@ void Strain::loop() {
     }
 }
 
-// returns the average of the measurement values in the buffer, optionally emtying the buffer
+// returns the average of the measurement values in the buffer, optionally emptying the buffer
 float Strain::value(bool clearBuffer) {
     float avg = 0.0;
     if (!dataReady()) return avg;
@@ -112,11 +112,22 @@ float Strain::value(bool clearBuffer) {
     if (0 < nValidMeasurements)
         avg = sum / nValidMeasurements;
     if (clearBuffer) _measurementBuf.clear();
+
+#if defined(FEATURE_TEMPERATURE) && defined(FEATURE_TEMPERATURE_COMPENSATION)
+    avg += board.temperature.getCompensation();
+#endif
+
     return avg;
 }
 
 float Strain::liveValue() {
-    return dataReady() ? _measurementBuf.last() : 0.0;
+    return dataReady() ? _measurementBuf.last()
+
+#if defined(FEATURE_TEMPERATURE) && defined(FEATURE_TEMPERATURE_COMPENSATION)
+                             + board.temperature.getCompensation()
+#endif
+
+                       : 0.0;
 }
 
 bool Strain::dataReady() {
@@ -191,6 +202,9 @@ void Strain::saveSettings() {
 
 void Strain::tare() {
     device->tare();
+#if defined(FEATURE_TEMPERATURE) && defined(FEATURE_TEMPERATURE_COMPENSATION)
+    board.temperature.setCompensationOffset();
+#endif
 }
 
 bool Strain::getAutoTare() {
