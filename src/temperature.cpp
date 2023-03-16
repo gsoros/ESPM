@@ -95,11 +95,8 @@ void Temperature::setCompensation(float temperature) {
         log_e("could not find index for %.2f˚C", temperature);
     }
     int8_t skew = tc->getValue(index);
-    log_d("index: %d, skew: %d%s", index, skew, tc->valueUnset == skew ? " (value not set)" : "");
-    if (skew == tc->valueUnset)
-        compensation = 0.0f;
-    else
-        compensation = (float)skew * tc->getValueResolution();
+    log_d("index: %d, skew: %d", index, skew);
+    compensation = (float)skew * tc->getValueResolution();
 }
 
 /// @brief Get current temperature compensation value for the weight scale.

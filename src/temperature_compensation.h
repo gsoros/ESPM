@@ -21,8 +21,7 @@
 #define TC_TABLE_VALUE_RESOLUTION 0.1F  // a value of 10 means +1kg correction
 #endif
 
-#define TC_TABLE_VALUE_UNSET INT8_MIN
-#define TC_TABLE_VALUE_MIN INT8_MIN + 1
+#define TC_TABLE_VALUE_MIN INT8_MIN
 #define TC_TABLE_VALUE_MAX INT8_MAX
 
 class TemperatureCompensation : public Atoll::Preferences {
@@ -64,7 +63,6 @@ class TemperatureCompensation : public Atoll::Preferences {
     float valueResolution = 0.0f;
 
    public:
-    const int8_t valueUnset = TC_TABLE_VALUE_UNSET;
     const int8_t valueMin = TC_TABLE_VALUE_MIN;
     const int8_t valueMax = TC_TABLE_VALUE_MAX;
 

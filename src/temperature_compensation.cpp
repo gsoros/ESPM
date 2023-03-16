@@ -53,7 +53,7 @@ bool TemperatureCompensation::setSize(uint16_t size) {
     this->size = size;
     for (uint16_t i = 0; i < size; i++) {
         unsetValue(i);
-        // setValue(i, (int8_t)random(valueUnset, INT8_MAX + 1));
+        // setValue(i, (int8_t)random(valueMin, valueMax +1));
     }
     return true;
 }
@@ -96,7 +96,7 @@ bool TemperatureCompensation::validIndex(uint16_t index) {
 int8_t TemperatureCompensation::getValue(uint16_t index) {
     if (!validIndex(index)) {
         log_e("index %d out of range", index);
-        return valueUnset;
+        return 0;
     }
     return values[index];
 }
@@ -111,7 +111,7 @@ bool TemperatureCompensation::setValue(uint16_t index, int8_t value) {
 }
 
 bool TemperatureCompensation::unsetValue(uint16_t index) {
-    return setValue(index, valueUnset);
+    return setValue(index, 0);
 }
 
 void TemperatureCompensation::loadSettings() {
@@ -144,25 +144,19 @@ void TemperatureCompensation::saveSettings() {
 
 void TemperatureCompensation::printSettings() {
     int8_t cur, min = valueMax, max = valueMin;
-    uint16_t numSet = 0;
     for (uint16_t i = 0; i < getSize(); i++) {
         cur = getValue(i);
-        if (valueUnset == cur) continue;
-        numSet++;
         if (cur < min) min = cur;
         if (max < cur) max = cur;
     }
-    char range[32];
-    snprintf(range, sizeof(range), " (%d - %d)", min, max);
-    char buf[128];
-    snprintf(buf, sizeof(buf), "%d values%s", numSet, numSet ? range : "");
-    log_i("enabled: %d, table size: %d, key offset: %d, key res: %.2f˚C, value res: %.2fkg, %s",
+    log_i("enabled: %d, table size: %d, key offset: %d, key res: %.2f˚C, value res: %.2fkg, range %d...%d",
           enabled,
           getSize(),
           getKeyOffset(),
           getKeyResolution(),
           getValueResolution(),
-          buf);
+          min,
+          max);
 }
 
 void TemperatureCompensation::addApiCommand() {
@@ -186,6 +180,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
     // get/set table params: table[;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;] -> =table;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;
     if (msg->argStartsWith("table")) {
         if (msg->argStartsWith("table;")) {
+            log_d("arg: %s", msg->arg);
             uint8_t changed = 0;
             char buf[8] = "";
             if (msg->argGetParam("size:", buf, sizeof(buf))) {
@@ -201,6 +196,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
             }
             if (msg->argGetParam("keyOffset:", buf, sizeof(buf))) {
                 int i = atoi(buf);
+                log_d("got keyOffset: %d", i);
                 if (i < INT16_MIN || INT16_MAX < i) {
                     msg->replyAppend("keyOffset out of range (int16)");
                     return Api::argInvalid();
@@ -212,29 +208,31 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
             }
             if (msg->argGetParam("keyRes:", buf, sizeof(buf))) {
                 double f = atof(buf);
-                if (f < 0.01 || 1.0 < f) {
-                    msg->replyAppend("keyRes out of range (0.01-1.0)");
+                log_d("got keyRes: %.4f", f);
+                if (f < 0.001 || 1.0 < f) {
+                    msg->replyAppend("keyRes out of range (0.001...1.0)");
                     return Api::argInvalid();
                 }
-                if (f != getKeyResolution()) {
+                if ((float)f != getKeyResolution()) {
                     setKeyResolution(f);
                     changed++;
                 }
             }
             if (msg->argGetParam("valueRes:", buf, sizeof(buf))) {
                 double f = atof(buf);
-                if (f < 0.01 || 1.0 < f) {
-                    msg->replyAppend("valueRes out of range (0.01-1.0)");
+                log_d("got valueRes: %.4f", f);
+                if (f < 0.001 || 1.0 < f) {
+                    msg->replyAppend("valueRes out of range (0.001...1.0)");
                     return Api::argInvalid();
                 }
-                if (f != getValueResolution()) {
+                if ((float)f != getValueResolution()) {
                     setValueResolution(f);
                     changed++;
                 }
             }
             if (changed) saveSettings();
         }
-        snprintf(msg->reply, sizeof(msg->reply), "table;size:%d;keyOffset:%d;keyRes:%.2f;valueRes:%.2f;",
+        snprintf(msg->reply, sizeof(msg->reply), "table;size:%d;keyOffset:%d;keyRes:%.4f;valueRes:%.4f;",
                  getSize(),
                  getKeyOffset(),
                  getKeyResolution(),
@@ -265,13 +263,13 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
                     if (getSize() - 1 < writeIndex) goto indexOutOfRange;
                     snprintf(buf, min(sizeof(buf), (uint)(end - start) + 1), "%s", start);
                     if (0 == strcmp(buf, "") || 0 == strcmp(buf, " "))
-                        value = valueUnset;
+                        value = 0;
                     else
                         value = atoi(buf);
-                    if (value < valueUnset || valueMax < value) {
+                    if (value < valueMin || valueMax < value) {
                         char buf[40];
                         snprintf(buf, sizeof(buf), "value %d out of range (%d - %d)",
-                                 value, valueUnset, valueMax);
+                                 value, valueMin, valueMax);
                         msg->replyAppend(buf);
                         return Api::argInvalid();
                     }
@@ -299,7 +297,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
             uint16_t size = getSize();
             for (int16_t i = index; i < size; i++) {
                 value = getValue(i);
-                if (valueUnset == value && i + 1 < size)
+                if (0 == value && i + 1 < size)
                     snprintf(buf, sizeof(buf), ",", value);
                 else if (i + 1 < size)
                     snprintf(buf, sizeof(buf), "%d,", value);
@@ -328,13 +326,16 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
     tc=valuesFrom:65535;set:-150                         // index out of range
     tc=valuesFrom:0;set:,, ,,100,,                       // ok
     tc=valuesFrom:0;set: ,, ,,,,,                        // ok
-    tc=valuesFrom:0;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
+    tc=valuesFrom:0;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,,10,20,30,40,50,60,70,80,90,100
     tc=valuesFrom:20;set:-90,,23,24,27,32,33,31,30,26,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
     tc=valuesFrom:40;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
     tc=valuesFrom:60;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
     tc=valuesFrom:80;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
     tc=valuesFrom:100;set:-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100
     tc=table;size:100;keyOffset:-15;keyRes:0.5;valueRes:0.1;
+    tc=table;size:69;keyOffset:15;keyRes:0.5;valueRes:0.1;
+    tc=table;size:70;keyOffset:17;keyRes:0.4429;valueRes:0.1175;
+    tc=valuesFrom:0;set:-5,0,1,2,3,4,5,6,7,8,9,10,12,12,15,15,17,18,19,20,21,22,23,24,26,27,28,29,31,33,34,35,37,39,40,42,44,47,49,50,52,54,57,59,62,64,65,67,69,71,73,77,79,81,83,85,86,88,89,91,95,97,99,100,102,104,115,118,122,126
     */
 }
 
