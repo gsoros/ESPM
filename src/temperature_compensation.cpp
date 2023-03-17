@@ -165,19 +165,29 @@ void TemperatureCompensation::addApiCommand() {
 }
 
 Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
-    // get/set enabled: tc=[enabled][:0|1] -> =enabled:0|1
-    if (msg->argIs("") || msg->argStartsWith("enabled")) {
-        if (msg->argHasParam("enabled:")) {
-            char buf[2] = "";
-            msg->argGetParam("enabled:", buf, sizeof(buf));
-            enabled = atoi(buf);
-            saveSettings();
+    // get/set enabled: tc=[enabled][:0|1] -> enabled:0|1
+    if (msg->argIs("") || msg->argIs("0") || msg->argIs("1") || msg->argStartsWith("enabled")) {
+        if (strlen(msg->arg)) {
+            int8_t tmpInt = -1;
+            if (msg->argIs("1"))
+                tmpInt = 1;
+            else if (msg->argIs("0"))
+                tmpInt = 0;
+            else if (msg->argHasParam("enabled:")) {
+                char buf[2] = "";
+                msg->argGetParam("enabled:", buf, sizeof(buf));
+                tmpInt = atoi(buf);
+            }
+            if (0 <= tmpInt && tmpInt <= 1) {
+                enabled = (bool)tmpInt;
+                saveSettings();
+            }
         }
         snprintf(msg->reply, sizeof(msg->reply), "enabled:%d", enabled);
         return Api::success();
     }
 
-    // get/set table params: table[;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;] -> =table;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;
+    // get/set table params: table[;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;] -> table;size:512;keyOffset:-15;keyRes:0.1;valueRes:0.2;
     if (msg->argStartsWith("table")) {
         if (msg->argStartsWith("table;")) {
             log_d("arg: %s", msg->arg);
@@ -240,7 +250,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
         return Api::success();
     }
 
-    // get/set values: tc=valuesFrom:index[;set:val1,val2,val3,...]] -> =valuesFrom:index;val1,val2,val3,...
+    // get/set values: tc=valuesFrom:index[;set:val1,val2,val3,...]] -> valuesFrom:index;val1,val2,val3,...
     if (msg->argStartsWith("valuesFrom:")) {
         char buf[6] = "";  // "65535" "-123,"
         msg->argGetParam("valuesFrom:", buf, sizeof(buf));
@@ -317,7 +327,7 @@ Api::Result *TemperatureCompensation::tcProcessor(Api::Message *msg) {
         return Api::argInvalid();
     }
     }
-    msg->replyAppend("[enabled[:0|1]]|table[;size:uint16;keyOffset:int8;keyRes:float;valueRes:float;]|valuesFrom:uint16[;set:[int8],[int8],...]");
+    msg->replyAppend("[enabled][:0|1]|table[;size:uint16;keyOffset:int8;keyRes:float;valueRes:float;]|valuesFrom:uint16[;set:[int8],[int8],...]");
     return Api::argInvalid();
 
     /*
