@@ -18,10 +18,11 @@ void BleServer::setup(const char *deviceName, ::Preferences *p) {
 }
 
 void BleServer::init() {
-    // uint16_t mtu = 23;  // optimal
-    //  uint16_t mtu = 64 + 15;
-    uint16_t mtu = BLE_ATT_MTU_MAX;
-    // uint16_t mtu = 280;  // api init string fits
+    uint16_t mtu =
+        //  23;  // optimal
+        //  64 + 15; //
+        BLE_ATT_MTU_MAX;  //
+    //  280;  // api init string fits
 
     /*
       index name                       IO capability
