@@ -3,6 +3,7 @@
 
 #include "driver/adc.h"
 
+#ifdef FEATURE_MPU
 void Motion::setup(const uint8_t sdaPin,
                    const uint8_t sclPin,
                    ::Preferences *p) {
@@ -17,7 +18,7 @@ void Motion::setup(const uint8_t sdaPin,
     if (board.motionDetectionMethod == MDM_MPU) {
         Wire.begin(sdaPin, sclPin);
         vTaskDelay(100);
-        device = new MPU9250();
+        mpu = new MPU9250();
         // device->verbose(true);
         MPU9250Setting s;
         s.skip_mag = true;  // compass not needed
@@ -27,13 +28,18 @@ void Motion::setup(const uint8_t sdaPin,
         // s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_10HZ;
         // s.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_420HZ;
         // s.mag_output_bits = MAG_OUTPUT_BITS::M14BITS;
-        if (!device->setup(mpuAddress, s))
+        if (!mpu->setup(mpuAddress, s))
             log_e("setup error");
         // device->selectFilter(QuatFilterSel::MAHONY);
-        device->selectFilter(QuatFilterSel::NONE);
+        mpu->selectFilter(QuatFilterSel::NONE);
         // device->selectFilter(QuatFilterSel::MADGWICK);
         // device->setMagneticDeclination(5 + 19 / 60);  // 5° 19'
-    } else if (board.motionDetectionMethod == MDM_HALL) {
+    } else
+#else
+void Motion::setup(::Preferences *pp, const char *preferencesNS) {
+    preferencesSetup(p, preferencesNS);
+#endif
+        if (board.motionDetectionMethod == MDM_HALL) {
         adc1_config_width(ADC_WIDTH_BIT_12);
     }
     loadSettings();
@@ -44,22 +50,32 @@ void Motion::setup(const uint8_t sdaPin,
 
 void Motion::loop() {
     const ulong t = millis();
-
+#ifdef FEATURE_MPU
     if (board.motionDetectionMethod == MDM_MPU) {
-        if (accelGyroNeedsCalibration) {
-            calibrateAccelGyro();
-            accelGyroNeedsCalibration = false;
+        if (mpuAccelGyroNeedsCalibration) {
+            mpuCalibrateAccelGyro();
+            mpuAccelGyroNeedsCalibration = false;
         }
-        if (magNeedsCalibration) {
-            calibrateMag();
-            magNeedsCalibration = false;
+        if (mpuMagNeedsCalibration) {
+            mpuCalibrateMag();
+            mpuMagNeedsCalibration = false;
         }
         if (!updateEnabled)
             return;
-        if (!device->update())
+        if (!mpu->update())
             return;
 
-        float angle = device->getYaw() + 180.0;  // -180...180 -> 0...360
+#ifdef FEATURE_SERIAL
+        if (0 < mpuLogMs && _mpuLastLogMs + mpuLogMs <= t) {
+            Serial.printf("[MPU] %.2f %.2f %.2f %.2f\n",
+                          mpu->getPitch(),
+                          mpu->getRoll(),
+                          mpu->getYaw(),
+                          mpu->getTemperature());
+            _mpuLastLogMs = t;
+        }
+#endif
+        float angle = mpu->getYaw() + 180.0;  // -180...180 -> 0...360
 
         if ((_previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= _previousAngle)) {
             lastMovement = t;
@@ -72,7 +88,7 @@ void Motion::loop() {
                         board.power.onCrankEvent(dt);
                         board.bleServer.onCrankEvent(t, revolutions);
                     } else {
-                        // Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", dt);
+                        // Serial.printf("Crank event skip, dt too small: %ldms\n", dt);
                     }
                 }
                 lastCrankEventTime = t;
@@ -81,7 +97,9 @@ void Motion::loop() {
         }
         _previousTime = t;
         _previousAngle = angle;
-    } else if (board.motionDetectionMethod == MDM_HALL) {
+    } else
+#endif
+        if (board.motionDetectionMethod == MDM_HALL) {
         if (!_halfRevolution) {
             if (abs(hall()) < hallThresLow) {
                 _halfRevolution = true;
@@ -98,7 +116,7 @@ void Motion::loop() {
                     board.bleServer.onCrankEvent(t, revolutions);
                     lastCrankEventTime = t;
                 } else {
-                    // Serial.printf("[MOTION] Crank event skip, dt too small: %ldms\n", dt);
+                    // Serial.printf("Crank event skip, dt too small: %ldms\n", dt);
                 }
             } else {
                 lastCrankEventTime = t;
@@ -115,7 +133,7 @@ int Motion::hall() {
     }
     /*
     int value;
-    Serial.print("[MOTION] hall() ");
+    Serial.print("hall() ");
     for (int i = 0; i < HALL_DEFAULT_SAMPLES; i++) {
         value = hall_sensor_read();
         avg += value / HALL_DEFAULT_SAMPLES;
@@ -127,38 +145,68 @@ int Motion::hall() {
     return lastHallValue;
 }
 
+#ifdef FEATURE_MPU
 // Enable wake-on-motion and go to sleep
-void Motion::enableWomSleep(void) {
+void Motion::mpuEnableWomSleep(void) {
     // Todo enable waking on hall sensor (https://esp32.com/viewtopic.php?t=4608)
     if (board.motionDetectionMethod != MDM_MPU) return;
     log_i("Enabling W-O-M sleep");
     updateEnabled = false;
     delay(20);
-    device->enableWomSleep();
+    mpu->enableWomSleep();
 }
 
-void Motion::calibrateAccelGyro() {
+void Motion::mpuCalibrateAccelGyro() {
     if (board.motionDetectionMethod != MDM_MPU) return;
     log_i("Accel and Gyro calibration, please leave the device still.");
     updateEnabled = false;
-    device->calibrateAccelGyro();
+    mpu->calibrateAccelGyro();
     updateEnabled = true;
 }
 
-void Motion::calibrateMag() {
+void Motion::mpuCalibrateMag() {
     if (board.motionDetectionMethod != MDM_MPU) return;
     log_i("Mag calibration, please wave device in a figure eight for 15 seconds.");
     updateEnabled = false;
-    device->calibrateMag();
+    mpu->calibrateMag();
     updateEnabled = true;
 }
 
-void Motion::calibrate() {
-    device->calibrateAccelGyro();
-    device->calibrateMag();
+void Motion::mpuCalibrate() {
+    mpu->calibrateAccelGyro();
+    mpu->calibrateMag();
     printSettings();
     saveSettings();
 }
+
+void Motion::printMpuAccelGyroCalibration() {
+    if (board.motionDetectionMethod != MDM_MPU) return;
+    log_i("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
+    log_i("Accel bias [g]:    %14f %14f %14f",
+          mpu->getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
+          mpu->getAccBiasY() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
+          mpu->getAccBiasZ() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
+    log_i("Gyro bias [deg/s]: %14f %14f %14f",
+          mpu->getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
+          mpu->getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
+          mpu->getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
+    log_i("---------------------------------------------------------------");
+}
+
+void Motion::printMpuMagCalibration() {
+    if (board.motionDetectionMethod != MDM_MPU) return;
+    log_i("%16s ---------X--------------Y--------------Z------", preferencesNS);
+    log_i("Mag bias [mG]:     %14f %14f %14f",
+          mpu->getMagBiasX(),
+          mpu->getMagBiasY(),
+          mpu->getMagBiasZ());
+    log_i("Mag scale:         %14f %14f %14f",
+          mpu->getMagScaleX(),
+          mpu->getMagScaleY(),
+          mpu->getMagScaleZ());
+    log_i("---------------------------------------------------------------");
+}
+#endif
 
 void Motion::setHallOffset(int offset) {
     hallOffset = offset;
@@ -173,8 +221,10 @@ void Motion::setHallThresLow(int threshold) {
 }
 
 void Motion::printSettings() {
-    printAccelGyroCalibration();
-    printMagCalibration();
+#ifdef FEATURE_MPU
+    printMpuAccelGyroCalibration();
+    printMpuMagCalibration();
+#endif
     printMDCalibration();
     log_i("Movement detection method:");
     if (board.motionDetectionMethod == MDM_STRAIN)
@@ -185,34 +235,6 @@ void Motion::printSettings() {
         log_i("Hall sensor");
     else
         log_i("invalid");
-}
-
-void Motion::printAccelGyroCalibration() {
-    if (board.motionDetectionMethod != MDM_MPU) return;
-    log_i("%16s ---------X--------------Y--------------Z------\n", preferencesNS);
-    log_i("Accel bias [g]:    %14f %14f %14f",
-          device->getAccBiasX() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
-          device->getAccBiasY() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY,
-          device->getAccBiasZ() * 1000.f / (float)MPU9250::CALIB_ACCEL_SENSITIVITY);
-    log_i("Gyro bias [deg/s]: %14f %14f %14f",
-          device->getGyroBiasX() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
-          device->getGyroBiasY() / (float)MPU9250::CALIB_GYRO_SENSITIVITY,
-          device->getGyroBiasZ() / (float)MPU9250::CALIB_GYRO_SENSITIVITY);
-    log_i("---------------------------------------------------------------");
-}
-
-void Motion::printMagCalibration() {
-    if (board.motionDetectionMethod != MDM_MPU) return;
-    log_i("%16s ---------X--------------Y--------------Z------", preferencesNS);
-    log_i("Mag bias [mG]:     %14f %14f %14f",
-          device->getMagBiasX(),
-          device->getMagBiasY(),
-          device->getMagBiasZ());
-    log_i("Mag scale:         %14f %14f %14f",
-          device->getMagScaleX(),
-          device->getMagScaleY(),
-          device->getMagScaleZ());
-    log_i("---------------------------------------------------------------");
 }
 
 void Motion::printMDCalibration() {
@@ -227,28 +249,33 @@ void Motion::printMDCalibration() {
 
 void Motion::loadSettings() {
     if (!preferencesStartLoad()) return;
+
     if (board.motionDetectionMethod == MDM_MPU) {
-        if (!preferences->getBool("calibrated", false)) {
+#ifdef FEATURE_MPU
+        if (!preferences->getBool("mpuCal", false)) {
             preferencesEnd();
-            log_e("[MOTION] MOTION has not yet been calibrated");
+            log_e("mpu has not yet been calibrated");
             return;
         }
-        device->setAccBias(
-            _prefGetValidFloat("abX", 0),
-            _prefGetValidFloat("abY", 0),
-            _prefGetValidFloat("abZ", 0));
-        device->setGyroBias(
-            _prefGetValidFloat("gbX", 0),
-            _prefGetValidFloat("gbY", 0),
-            _prefGetValidFloat("gbZ", 0));
-        device->setMagBias(
-            _prefGetValidFloat("mbX", 0),
-            _prefGetValidFloat("mbY", 0),
-            _prefGetValidFloat("mbZ", 0));
-        device->setMagScale(
-            _prefGetValidFloat("msX", 1),
-            _prefGetValidFloat("msY", 1),
-            _prefGetValidFloat("msZ", 1));
+        mpu->setAccBias(
+            _prefGetValidFloat("mpuabX", 0),
+            _prefGetValidFloat("mpuabY", 0),
+            _prefGetValidFloat("mpuabZ", 0));
+        mpu->setGyroBias(
+            _prefGetValidFloat("mpugbX", 0),
+            _prefGetValidFloat("mpugbY", 0),
+            _prefGetValidFloat("mpugbZ", 0));
+        mpu->setMagBias(
+            _prefGetValidFloat("mpumbX", 0),
+            _prefGetValidFloat("mpumbY", 0),
+            _prefGetValidFloat("mpumbZ", 0));
+        mpu->setMagScale(
+            _prefGetValidFloat("mpumsX", 1),
+            _prefGetValidFloat("mpumsY", 1),
+            _prefGetValidFloat("mpumsZ", 1));
+#else
+        log_e("MDM is MPU but FEATURE_MPU is missing");
+#endif
     }
     hallOffset = preferences->getInt("hallO", hallOffset);
     hallThreshold = preferences->getInt("hallT", hallThreshold);
@@ -259,21 +286,23 @@ void Motion::loadSettings() {
 
 void Motion::saveSettings() {
     if (!preferencesStartSave()) return;
+#ifdef FEATURE_MPU
     if (board.motionDetectionMethod == MDM_MPU) {
-        _prefPutValidFloat("abX", device->getAccBiasX());
-        _prefPutValidFloat("abY", device->getAccBiasY());
-        _prefPutValidFloat("abZ", device->getAccBiasZ());
-        _prefPutValidFloat("gbX", device->getGyroBiasX());
-        _prefPutValidFloat("gbY", device->getGyroBiasY());
-        _prefPutValidFloat("gbZ", device->getGyroBiasZ());
-        _prefPutValidFloat("mbX", device->getMagBiasX());
-        _prefPutValidFloat("mbY", device->getMagBiasY());
-        _prefPutValidFloat("mbZ", device->getMagBiasZ());
-        _prefPutValidFloat("msX", device->getMagScaleX());
-        _prefPutValidFloat("msY", device->getMagScaleY());
-        _prefPutValidFloat("msZ", device->getMagScaleZ());
-        preferences->putBool("calibrated", true);
+        _prefPutValidFloat("mpuabX", mpu->getAccBiasX());
+        _prefPutValidFloat("mpuabY", mpu->getAccBiasY());
+        _prefPutValidFloat("mpuabZ", mpu->getAccBiasZ());
+        _prefPutValidFloat("mpugbX", mpu->getGyroBiasX());
+        _prefPutValidFloat("mpugbY", mpu->getGyroBiasY());
+        _prefPutValidFloat("mpugbZ", mpu->getGyroBiasZ());
+        _prefPutValidFloat("mpumbX", mpu->getMagBiasX());
+        _prefPutValidFloat("mpumbY", mpu->getMagBiasY());
+        _prefPutValidFloat("mpumbZ", mpu->getMagBiasZ());
+        _prefPutValidFloat("mpumsX", mpu->getMagScaleX());
+        _prefPutValidFloat("mpumsY", mpu->getMagScaleY());
+        _prefPutValidFloat("mpumsZ", mpu->getMagScaleZ());
+        preferences->putBool("mpuCal", true);
     }
+#endif
     preferences->putInt("hallO", (int32_t)hallOffset);
     preferences->putInt("hallT", (int32_t)hallThreshold);
     preferences->putInt("hallTL", (int32_t)hallThresLow);
@@ -282,9 +311,9 @@ void Motion::saveSettings() {
 
 float Motion::_prefGetValidFloat(const char *key, const float_t defaultValue) {
     float f = preferences->getFloat(key, defaultValue);
-    log_i("[MOTION] loaded %f for (%s, %f) from %s", f, key, defaultValue, preferencesNS);
+    log_i("loaded %f for (%s, %f) from %s", f, key, defaultValue, preferencesNS);
     if (isinf(f) || isnan(f)) {
-        log_e("[MOTION] invalid, returning default %f for %s", defaultValue, key);
+        log_e("invalid, returning default %f for %s", defaultValue, key);
         f = defaultValue;
     }
     return f;
@@ -293,10 +322,10 @@ float Motion::_prefGetValidFloat(const char *key, const float_t defaultValue) {
 size_t Motion::_prefPutValidFloat(const char *key, const float_t value) {
     size_t written = 0;
     if (isinf(value) || isnan(value)) {
-        log_e("[MOTION] invalid, not saving %f for %s", value, key);
+        log_e("invalid, not saving %f for %s", value, key);
         return written;
     }
     written = preferences->putFloat(key, value);
-    log_i("[MOTION] saved %f for %s in %s", value, key, preferencesNS);
+    log_i("saved %f for %s in %s", value, key, preferencesNS);
     return written;
 }

@@ -27,6 +27,9 @@ void Api::setup(
     addCommand(Command("at", autoTareProcessor));
     addCommand(Command("atd", autoTareDelayMsProcessor));
     addCommand(Command("atr", autoTareRangeGProcessor));
+#ifdef FEATURE_MPU
+    addCommand(Command("ml", mpuLogIntervalProcessor));
+#endif
 }
 
 void Api::beforeBleServiceStart(BLEService *service) {
@@ -337,3 +340,18 @@ Api::Result *Api::autoTareRangeGProcessor(Message *msg) {
     msg->replyAppend(buf);
     return success();
 }
+
+#ifdef FEATURE_MPU
+Api::Result *Api::mpuLogIntervalProcessor(Message *msg) {
+    if (0 < strlen(msg->arg)) {
+        int tmpI = atoi(msg->arg);
+        if (0 <= tmpI && tmpI < 100000) {
+            board.motion.mpuLogMs = tmpI;
+        }
+    }
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%d", board.motion.mpuLogMs);
+    msg->replyAppend(buf);
+    return success();
+}
+#endif

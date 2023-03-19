@@ -34,6 +34,9 @@ class Api : public Atoll::Api {
     static Result *autoTareProcessor(Message *);
     static Result *autoTareDelayMsProcessor(Message *);
     static Result *autoTareRangeGProcessor(Message *);
+#ifdef FEATURE_MPU
+    static Result *mpuLogIntervalProcessor(Message *);
+#endif
 };
 
 #endif

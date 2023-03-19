@@ -152,15 +152,15 @@ void Status::handleInput(const char input) {
             case 'c':  // calibrate
                 switch (menu[1]) {
                     case 'a':
-                        board.motion.calibrateAccelGyro();
+                        board.motion.mpuCalibrateAccelGyro();
                         board.motion.saveSettings();
-                        board.motion.printAccelGyroCalibration();
+                        board.motion.printMpuAccelGyroCalibration();
                         menu[1] = '\0';
                         break;
                     case 'm':
-                        board.motion.calibrateMag();
+                        board.motion.mpuCalibrateMag();
                         board.motion.saveSettings();
-                        board.motion.printMagCalibration();
+                        board.motion.printMpuMagCalibration();
                         menu[1] = '\0';
                         break;
                     case 'b':

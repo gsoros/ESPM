@@ -67,7 +67,11 @@ void Board::setupTask(const char *taskName) {
     }
     if (strcmp("motion", taskName) == 0) {
         if (motionDetectionMethod == MDM_HALL || motionDetectionMethod == MDM_MPU)
+#ifdef FEATURE_MPU
             motion.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
+#else
+            motion.setup(preferences);
+#endif
         return;
     }
     // if (strcmp("status", taskName) == 0) {
@@ -238,6 +242,8 @@ int Board::deepSleep() {
 #endif
     if (!sleepEnabled) return 1;
     log_i("Preparing for deep sleep");
+    strain.sleep();
+#ifdef FEATURE_MPU
     /*
     rtc_gpio_init(MPU_WOM_INT_PIN);
     rtc_gpio_set_direction(MPU_WOM_INT_PIN, RTC_GPIO_MODE_INPUT_ONLY);
@@ -246,9 +252,9 @@ int Board::deepSleep() {
     rtc_gpio_pulldown_en(MPU_WOM_INT_PIN);
     rtc_gpio_hold_en(MPU_WOM_INT_PIN);
     */
-    strain.sleep();
-    motion.enableWomSleep();
+    motion.mpuEnableWomSleep();
     // pinMode(MPU_WOM_INT_PIN, INPUT_PULLDOWN);
+#endif
     char msg[32];
     snprintf(msg, sizeof(msg), "%d;%d=sleep", api.success()->code, api.command("system")->code);
     api.notifyTxChar(msg);
