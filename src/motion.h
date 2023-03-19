@@ -4,12 +4,12 @@
 #include <Arduino.h>
 #include <CircularBuffer.h>
 #ifdef FEATURE_MPU
-#include <MPU9250.h>
+#include <MPU6500_Raw.h>
 #include <Wire.h>
 #ifndef MPU_RINGBUF_SIZE
 #define MPU_RINGBUF_SIZE 16  // circular buffer size
 #endif
-#endif
+#endif  // FEATURE_MPU
 #include <Preferences.h>
 
 #include "atoll_preferences.h"
@@ -19,10 +19,9 @@ class Motion : public Atoll::Task, public Atoll::Preferences {
    public:
     const char *taskName() { return "Motion"; }
 #ifdef FEATURE_MPU
-    MPU9250 *mpu;
+    MPU6500 *mpu;
     ulong mpuLogMs = 0;
     bool mpuAccelGyroNeedsCalibration = false;
-    bool mpuMagNeedsCalibration = false;
     void setup(const uint8_t sdaPin,
                const uint8_t sclPin,
                ::Preferences *p);
@@ -33,13 +32,11 @@ class Motion : public Atoll::Task, public Atoll::Preferences {
                uint8_t mpuAddress);
     void mpuEnableWomSleep();
     void mpuCalibrateAccelGyro();
-    void mpuCalibrateMag();
     void mpuCalibrate();
     void printMpuAccelGyroCalibration();
-    void printMpuMagCalibration();
 #else
     void setup(::Preferences *p, const char *preferencesNS);
-#endif
+#endif  // FEATURE_MPU
     bool updateEnabled = false;
     ulong lastMovement = 0;
     uint16_t revolutions = 0;

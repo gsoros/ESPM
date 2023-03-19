@@ -97,7 +97,6 @@ void Status::print() {
 /*
     [c]alibrate
         [a]ccel/gyro
-        [m]ag
         [b]attery
         [s]train
         [h]all offset
@@ -155,12 +154,6 @@ void Status::handleInput(const char input) {
                         board.motion.mpuCalibrateAccelGyro();
                         board.motion.saveSettings();
                         board.motion.printMpuAccelGyroCalibration();
-                        menu[1] = '\0';
-                        break;
-                    case 'm':
-                        board.motion.mpuCalibrateMag();
-                        board.motion.saveSettings();
-                        board.motion.printMpuMagCalibration();
                         menu[1] = '\0';
                         break;
                     case 'b':
