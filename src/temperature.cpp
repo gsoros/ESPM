@@ -23,13 +23,23 @@ void Temperature::setup()
 {
     uint32_t heap = esp_get_free_heap_size();
     int stack = (int)uxTaskGetStackHighWaterMark(NULL);
-    crankSensor = new Sensor(                                    // single sensor: exclusive mode
-        TEMPERATURE_PIN,                                         // pin
-        "tCrank",                                                // label
-        11,                                                      // resolution
-        0.2f,                                                    // update frequency
-        [this](Sensor *sensor) { onSensorValueChange(sensor); }  // callback
+
+#ifdef FEATURE_DS18B20
+    crankSensor = new DS18B20(                                         // single sensor: exclusive mode
+        TEMPERATURE_PIN,                                               // pin
+        "tCrank",                                                      // label
+        11,                                                            // resolution
+        0.2f,                                                          // update frequency
+        [this](DS18B20 *sensor) { onCrankTemperatureChange(sensor); }  // callback
     );
+#else  // FEATURE_MPU_TEMPERATURE
+    crankSensor = new MpuTemperature(
+        "tMpu",                                                               // label
+        1.0f,                                                                 // update frequency
+        [this](MpuTemperature *sensor) { onCrankTemperatureChange(sensor); }  // callback
+    );
+#endif
+
 #ifdef FEATURE_BLE_SERVER
     crankSensor->addBleService(&board.bleServer);
 #endif
@@ -48,7 +58,8 @@ void Temperature::begin() {
         crankSensor->begin();
 }
 
-void Temperature::onSensorValueChange(Sensor *sensor) {
+#ifdef FEATURE_DS18B20
+void Temperature::onCrankTemperatureChange(DS18B20 *sensor) {
 #ifdef FEATURE_TEMPERATURE_COMPENSATION
     if (sensor->address == crankSensor->address)
         setCompensation(sensor->value);
@@ -63,6 +74,22 @@ void Temperature::onSensorValueChange(Sensor *sensor) {
           sensor->value);
 #endif
 }
+#else  // FEATURE_MPU_TEMPERATURE
+void Temperature::onCrankTemperatureChange(MpuTemperature *sensor) {
+#ifdef FEATURE_TEMPERATURE_COMPENSATION
+    setCompensation(sensor->value);
+    log_i("%s: %.2f°C, compensation: %.1fkg%s",
+          sensor->label,
+          sensor->value,
+          getCompensation(),
+          tc->enabled ? "" : " (disabled)");
+#else
+    log_i("%s: %.2f°C",
+          sensor->label,
+          sensor->value);
+#endif  // FEATURE_TEMPERATURE_COMPENSATION
+}
+#endif  // FEATURE_MPU_TEMPERATURE
 
 #ifdef FEATURE_TEMPERATURE_COMPENSATION
 /// @brief set offset to current compensation value, e.g. after tare

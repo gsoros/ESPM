@@ -66,12 +66,16 @@ void Board::setupTask(const char *taskName) {
         return;
     }
     if (strcmp("motion", taskName) == 0) {
-        if (motionDetectionMethod == MDM_HALL || motionDetectionMethod == MDM_MPU)
 #ifdef FEATURE_MPU
+        if (motionDetectionMethod == MDM_HALL || motionDetectionMethod == MDM_MPU
+#ifdef FEATURE_MPU_TEMPERATURE
+            || true
+#endif  // FEATURE_MPU_TEMPERATURE
+        )
             motion.setup(MPU_SDA_PIN, MPU_SCL_PIN, preferences);
-#else
-            motion.setup(preferences);
-#endif
+#else   // !FEATURE_MPU
+        motion.setup(preferences);
+#endif  // FEATURE_MPU
         return;
     }
     // if (strcmp("status", taskName) == 0) {
@@ -108,8 +112,13 @@ void Board::startTasks() {
     // wifi.taskStart("Wifi Task", 1); // Wifi task is empty
     startTask("bleServer");
     startTask("battery");
-    if (motionDetectionMethod == MDM_HALL || motionDetectionMethod == MDM_MPU)
+    if (motionDetectionMethod == MDM_HALL || motionDetectionMethod == MDM_MPU
+#ifdef FEATURE_MPU_TEMPERATURE
+        || true
+#endif
+    ) {
         startTask("motion");
+    }
     startTask("strain");
     startTask("power");
     // startTask("ota");
@@ -129,7 +138,15 @@ void Board::startTask(const char *taskName) {
         return;
     }
     if (strcmp("motion", taskName) == 0) {
-        motion.taskStart(MOTION_TASK_FREQ);
+        float freq = -1.0f;
+        if (motionDetectionMethod == MDM_HALL || motionDetectionMethod == MDM_MPU)
+            freq = MOTION_TASK_FREQ;
+        else {
+#ifdef FEATURE_MPU_TEMPERATURE
+            freq = MPU_TEMP_TASK_FREQ;
+#endif
+        }
+        if (0.0f < freq) motion.taskStart(freq);
         return;
     }
     if (strcmp("strain", taskName) == 0) {

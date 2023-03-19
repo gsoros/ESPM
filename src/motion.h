@@ -37,9 +37,16 @@ class Motion : public Atoll::Task, public Atoll::Preferences {
     void mpuCalibrate();
     void printMpuAccelGyroCalibration();
     void printMpuMagCalibration();
+
+#ifdef FEATURE_MPU_TEMPERATURE
+    float getMpuTemperature();
+#endif  // FEATURE_MPU_TEMPERATURE
+
 #else
     void setup(::Preferences *p, const char *preferencesNS);
-#endif
+
+#endif  // FEATURE_MPU
+
     bool updateEnabled = false;
     ulong lastMovement = 0;
     uint16_t revolutions = 0;

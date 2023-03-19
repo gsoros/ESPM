@@ -2,7 +2,23 @@
 #define __temperature_h
 
 #include "definitions.h"
-#include "atoll_temperature_sensor.h"
+
+#if !defined(FEATURE_DS18B20) && !defined(FEATURE_MPU_TEMPERATURE)
+#error missing sensor support
+#endif
+
+#if defined(FEATURE_DS18B20) && defined(FEATURE_MPU_TEMPERATURE)
+#error only one sensor is supported
+#endif
+
+#ifdef FEATURE_DS18B20
+#include "atoll_ds18b20.h"
+#endif  // FEATURE_DS18B20
+
+#ifdef FEATURE_MPU_TEMPERATURE
+#include "mpu_temperature.h"
+#endif  // FEATURE_MPU_TEMPERATURE
+
 #ifdef FEATURE_TEMPERATURE_COMPENSATION
 #include "temperature_compensation.h"
 #endif
@@ -11,14 +27,25 @@ class Temperature {
    public:
     typedef Atoll::TemperatureSensor Sensor;
 
-    Sensor *crankSensor = nullptr;
+#ifdef FEATURE_DS18B20
+    typedef Atoll::DS18B20 DS18B20;
+    DS18B20 *crankSensor = nullptr;
+#else  // FEATURE_MPU_TEMPERATURE
+    MpuTemperature *crankSensor = nullptr;
+#endif
 
     Temperature();
     ~Temperature();
 
     void begin();
 
-    void onSensorValueChange(Sensor *sensor);
+    void onCrankTemperatureChange(
+#ifdef FEATURE_DS18B20
+        DS18B20
+#else  // FEATURE_MPU_TEMPERATURE
+        MpuTemperature
+#endif
+            *sensor);
 
 #ifdef FEATURE_TEMPERATURE_COMPENSATION
     typedef TemperatureCompensation TC;

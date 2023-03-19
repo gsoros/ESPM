@@ -14,6 +14,7 @@
 #define BLE_SERVER_TASK_FREQ 1.0f           //
 #define BATTERY_TASK_FREQ 1.0f              //
 #define MOTION_TASK_FREQ 125.0f             //
+#define MPU_TEMP_TASK_FREQ 1.0f             //
 #define STRAIN_TASK_FREQ 90.0f              //
 #define POWER_TASK_FREQ 90.0f               //
 #define OTA_TASK_FREQ 1.0f                  //

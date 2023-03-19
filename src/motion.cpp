@@ -15,7 +15,13 @@ void Motion::setup(const uint8_t sdaPin,
                    const char *preferencesNS,
                    uint8_t mpuAddress) {
     preferencesSetup(p, preferencesNS);
-    if (board.motionDetectionMethod == MDM_MPU) {
+    if (board.motionDetectionMethod == MDM_MPU ||
+#ifdef FEATURE_MPU_TEMPERATURE
+        true
+#else
+        false
+#endif
+    ) {
         Wire.begin(sdaPin, sclPin);
         vTaskDelay(100);
         mpu = new MPU9250();
@@ -34,12 +40,14 @@ void Motion::setup(const uint8_t sdaPin,
         mpu->selectFilter(QuatFilterSel::NONE);
         // device->selectFilter(QuatFilterSel::MADGWICK);
         // device->setMagneticDeclination(5 + 19 / 60);  // 5° 19'
-    } else
-#else
+    }
+#else   // !FEATURE_MPU
 void Motion::setup(::Preferences *pp, const char *preferencesNS) {
     preferencesSetup(p, preferencesNS);
-#endif
-        if (board.motionDetectionMethod == MDM_HALL) {
+    if (board.motionDetectionMethod == MDM_MPU) log_e("MDM is MPU but FEATURE_MPU is missing");
+#endif  // FEATURE_MPU
+
+    if (board.motionDetectionMethod == MDM_HALL) {
         adc1_config_width(ADC_WIDTH_BIT_12);
     }
     loadSettings();
@@ -50,6 +58,7 @@ void Motion::setup(::Preferences *pp, const char *preferencesNS) {
 
 void Motion::loop() {
     const ulong t = millis();
+
 #ifdef FEATURE_MPU
     if (board.motionDetectionMethod == MDM_MPU) {
         if (mpuAccelGyroNeedsCalibration) {
@@ -74,7 +83,8 @@ void Motion::loop() {
                           mpu->getTemperature());
             _mpuLastLogMs = t;
         }
-#endif
+#endif  // FEATURE_SERIAL
+
         float angle = mpu->getYaw() + 180.0;  // -180...180 -> 0...360
 
         if ((_previousAngle < 180.0 && 180.0 <= angle) || (angle < 180.0 && 180.0 <= _previousAngle)) {
@@ -98,8 +108,14 @@ void Motion::loop() {
         _previousTime = t;
         _previousAngle = angle;
     } else
-#endif
-        if (board.motionDetectionMethod == MDM_HALL) {
+
+#ifdef FEATURE_MPU_TEMPERATURE
+        mpu->update();
+#endif  // FEATURE_MPU_TEMPERATURE
+
+#endif  // FEATURE_MPU
+
+    if (board.motionDetectionMethod == MDM_HALL) {
         if (!_halfRevolution) {
             if (abs(hall()) < hallThresLow) {
                 _halfRevolution = true;
@@ -329,3 +345,9 @@ size_t Motion::_prefPutValidFloat(const char *key, const float_t value) {
     log_i("saved %f for %s in %s", value, key, preferencesNS);
     return written;
 }
+
+#if defined(FEATURE_MPU) && defined(FEATURE_MPU_TEMPERATURE)
+float Motion::getMpuTemperature() {
+    return mpu->getTemperature();
+}
+#endif
