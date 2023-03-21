@@ -1,10 +1,13 @@
 #ifdef FEATURE_TEMPERATURE
+
 #include "temperature.h"
 #include "board.h"
 
+#ifdef FEATURE_DS18B20
 #ifndef TEMPERATURE_PIN
 #error TEMPERATURE_PIN missing
 #endif
+#endif  // FEATURE_DS18B20
 
 Temperature::Temperature() {}
 
@@ -16,9 +19,9 @@ Temperature::~Temperature() {
 }
 
 #ifdef FEATURE_TEMPERATURE_COMPENSATION
-void Temperature::setup(TC *tc)
+void Temperature::setup(::Preferences *p, TC *tc)
 #else
-void Temperature::setup()
+void Temperature::setup(::Preferences *p)
 #endif  // FEATURE_TEMPERATURE_COMPENSATION
 {
     uint32_t heap = esp_get_free_heap_size();
@@ -39,6 +42,8 @@ void Temperature::setup()
         [this](MpuTemperature *sensor) { onCrankTemperatureChange(sensor); }  // callback
     );
 #endif
+    crankSensor->setup(p);
+    addApiCommand();
 
 #ifdef FEATURE_BLE_SERVER
     crankSensor->addBleService(&board.bleServer);
@@ -137,5 +142,28 @@ float Temperature::getCompensation() {
     return compensation - compensationOffset;
 }
 #endif  // FEATURE_TEMPERATURE_COMPENSATION
+
+void Temperature::addApiCommand() {
+    board.api.addCommand(Api::Command("temp", [this](Api::Message *m) { return tempProcessor(m); }));
+}
+
+Api::Result *Temperature::tempProcessor(Api::Message *msg) {
+    // get/set offset: temp[=offset[:float]] -> offset:float
+    if (msg->argIs("") || msg->argStartsWith("offset")) {
+        if (msg->argHasParam("offset:")) {
+            char buf[8] = "";
+            msg->argGetParam("offset:", buf, sizeof(buf));
+            float f = atof(buf);
+            if (-100.0f <= f && f <= 100.0f) {
+                crankSensor->offset = f;
+                crankSensor->saveSettings();
+            }
+        }
+        snprintf(msg->reply, sizeof(msg->reply), "offset:%.3f", crankSensor->offset);
+        return Api::success();
+    }
+    msg->replyAppend("[offset[:float]]");
+    return Api::argInvalid();
+}
 
 #endif  // FEATURE_TEMPERATURE

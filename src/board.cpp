@@ -84,9 +84,10 @@ void Board::setupTask(const char *taskName) {
     // }
     if (strcmp("temperature", taskName) == 0) {
 #ifdef FEATURE_TEMPERATURE
-        temperature.setup(
+        temperature.setup(preferences
 #ifdef FEATURE_TEMPERATURE_COMPENSATION
-            &tc
+                          ,
+                          &tc
 #endif  // FEATURE_TEMPERATURE_COMPENSATION
         );
 #else

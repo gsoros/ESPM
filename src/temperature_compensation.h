@@ -6,15 +6,15 @@
 #include "api.h"
 
 #ifndef TC_TABLE_SIZE
-#define TC_TABLE_SIZE 256  // temperature correction lookup table size
+#define TC_TABLE_SIZE 128  // temperature correction lookup table size
 #endif
 
 #ifndef TC_TABLE_KEY_OFFSET
-#define TC_TABLE_KEY_OFFSET -15  // first element holds the correction value at -15˚C
+#define TC_TABLE_KEY_OFFSET -12  // first element holds the correction value at -12˚C
 #endif
 
 #ifndef TC_TABLE_KEY_RESOLUTION
-#define TC_TABLE_KEY_RESOLUTION 0.2F  // 50th element holds the correction value at -5˚C (OFFSET + 50 * RESOLUTION)
+#define TC_TABLE_KEY_RESOLUTION 0.4F  // 127th element holds the correction value at 38.8˚C (OFFSET + 127 * RESOLUTION)
 #endif
 
 #ifndef TC_TABLE_VALUE_RESOLUTION

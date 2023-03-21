@@ -2,6 +2,8 @@
 #define __temperature_h
 
 #include "definitions.h"
+#include "atoll_preferences.h"
+#include "api.h"
 
 #if !defined(FEATURE_DS18B20) && !defined(FEATURE_MPU_TEMPERATURE)
 #error missing sensor support
@@ -47,9 +49,13 @@ class Temperature {
 #endif
             *sensor);
 
+    void addApiCommand();
+    Api::Result *tempProcessor(Api::Message *msg);
+
 #ifdef FEATURE_TEMPERATURE_COMPENSATION
+   public:
     typedef TemperatureCompensation TC;
-    void setup(TC *tc);
+    void setup(::Preferences *p, TC *tc);
     TC *tc = nullptr;
     bool setCompensationOffset();
     float getCompensation();
@@ -59,7 +65,8 @@ class Temperature {
     float compensationOffset = 0.0f;  // kg
     float compensation = 0.0f;        // kg
 #else
-    void setup();
+   public:
+    void setup(::Preferences *p);
 #endif  // FEATURE_TEMPERATURE_COMPENSATION
 };
 
